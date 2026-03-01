@@ -1,6 +1,6 @@
 # Supported Identifiers
 
-phileas-net ships with 21 built-in PII identifier types. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
+phileas-net ships with 21 built-in PII identifier types plus a configurable **dictionary** filter. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
 
 ## Quick Reference
 
@@ -12,6 +12,7 @@ phileas-net ships with 21 built-in PII identifier types. Each type is enabled by
 | `CreditCard` | `creditCard` | Credit and debit card numbers |
 | `Currency` | `currency` | Currency amounts (e.g. "$1,234.56") |
 | `Date` | `date` | Calendar dates in common formats |
+| `Dictionaries` | `dictionaries` | One or more named lists of custom terms to redact |
 | `DriversLicense` | `driversLicense` | US driver's license numbers |
 | `EmailAddress` | `emailAddress` | Email addresses |
 | `IbanCode` | `ibanCode` | International Bank Account Numbers |
@@ -111,6 +112,64 @@ Detects dates in common written forms (e.g. `January 1, 2024`, `01/01/2024`, `20
 ```csharp
 Identifiers = new Identifiers { Date = new Date() }
 ```
+
+---
+
+### Dictionary
+
+Detects user-supplied terms in the input text. A policy can contain any number of dictionaries, each with its own `name` and list of `terms`. Matching is case-insensitive and whole-word.
+
+```csharp
+Identifiers = new Identifiers
+{
+    Dictionaries = new List<Dictionary>
+    {
+        new Dictionary
+        {
+            Name = "medical-conditions",
+            Terms = new List<string> { "diabetes", "hypertension", "asthma" }
+        }
+    }
+}
+```
+
+Multiple dictionaries can be combined in a single policy:
+
+```csharp
+Identifiers = new Identifiers
+{
+    Dictionaries = new List<Dictionary>
+    {
+        new Dictionary
+        {
+            Name = "conditions",
+            Terms = new List<string> { "diabetes", "hypertension" }
+        },
+        new Dictionary
+        {
+            Name = "medications",
+            Terms = new List<string> { "metformin", "lisinopril" }
+        }
+    }
+}
+```
+
+```json
+"identifiers": {
+  "dictionaries": [
+    {
+      "name": "conditions",
+      "terms": ["diabetes", "hypertension"]
+    },
+    {
+      "name": "medications",
+      "terms": ["metformin", "lisinopril"]
+    }
+  ]
+}
+```
+
+Each `Dictionary` entry also supports the common `AbstractPolicyFilter` options (`ignored`, `ignoredPatterns`, `priority`) and an optional `dictionaryFilterStrategies` list to override the default `REDACT` behaviour.
 
 ---
 
