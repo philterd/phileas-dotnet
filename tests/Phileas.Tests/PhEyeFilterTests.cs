@@ -52,7 +52,7 @@ public class PhEyeFilterTests
         };
 
         var json = JsonSerializer.Serialize(policy);
-        Assert.Contains("pheyes", json);
+        Assert.Contains("pheye", json);
         Assert.Contains("pheye.example.com", json);
     }
 
@@ -63,7 +63,7 @@ public class PhEyeFilterTests
         {
             "name": "test",
             "identifiers": {
-                "pheyes": [
+                "pheye": [
                     {
                         "phEyeConfiguration": {
                             "endpoint": "http://localhost:8080",
@@ -212,7 +212,7 @@ public class PhEyeFilterTests
             }
         };
 
-        // Verify that the policy correctly models multiple pheyes
+        // Verify that the policy correctly models multiple pheye
         Assert.Equal(2, policy.Identifiers.PhEyes!.Count);
         Assert.Equal("http://service1:8080", policy.Identifiers.PhEyes[0].PhEyeConfiguration.Endpoint);
         Assert.Equal("http://service2:8080", policy.Identifiers.PhEyes[1].PhEyeConfiguration.Endpoint);

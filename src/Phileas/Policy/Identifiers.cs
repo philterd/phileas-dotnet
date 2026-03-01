@@ -28,11 +28,11 @@ namespace Phileas.Policy;
 public class Identifiers
 {
     /// <summary>Gets or sets the list of PhEye (NLP-based) filter configurations.</summary>
-    [JsonPropertyName("pheyes")]
+    [JsonPropertyName("pheye")]
     public List<PhEye>? PhEyes { get; set; }
 
     /// <summary>Gets or sets the list of dictionary-based filter configurations.</summary>
-    [JsonPropertyName("dictionaries")]
+    [JsonPropertyName("dictionary")]
     public List<Dictionary>? Dictionaries { get; set; }
 
     /// <summary>Gets or sets the age-expression filter configuration.</summary>
