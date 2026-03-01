@@ -64,6 +64,7 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
             Last4 => new Replacement(token.Length >= 4 ? token[^4..] : token, salt, true),
             HashSha256Replace => new Replacement(HashSha256(token + salt), salt, true),
             CryptoReplace => crypto != null ? new Replacement(AesEncrypt(token, crypto), salt, true) : new Replacement(GetRedactedToken(token, classification, filterType), salt, true),
+            FpeEncryptReplace => fpe != null ? new Replacement(FpeEncrypt(token, fpe), salt, true) : new Replacement(GetRedactedToken(token, classification, filterType), salt, true),
             Same => new Replacement(token, salt, false),
             Truncate => new Replacement(token.Length > 0 ? token[..1] : token, salt, true),
             _ => new Replacement(GetRedactedToken(token, classification, filterType), salt, true)
@@ -116,6 +117,20 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
             var plaintextBytes = Encoding.UTF8.GetBytes(plaintext);
             var encrypted = encryptor.TransformFinalBlock(plaintextBytes, 0, plaintextBytes.Length);
             return Convert.ToBase64String(encrypted);
+        }
+        catch
+        {
+            return plaintext;
+        }
+    }
+
+    private static string FpeEncrypt(string plaintext, Fpe fpe)
+    {
+        try
+        {
+            var key = Convert.FromBase64String(fpe.Key ?? string.Empty);
+            var tweak = string.IsNullOrEmpty(fpe.Tweak) ? [] : Convert.FromBase64String(fpe.Tweak);
+            return Ff1.Encrypt(plaintext, key, tweak);
         }
         catch
         {
