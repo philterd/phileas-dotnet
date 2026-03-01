@@ -3,8 +3,8 @@ using Phileas.Model.Filtering;
 using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Services.Filters.Regex;
-using Phileas.Services.Strategies.Rules;
+using Phileas.Filters.Regex;
+using Phileas.Strategies.Rules;
 using Xunit;
 
 namespace Phileas.Tests;

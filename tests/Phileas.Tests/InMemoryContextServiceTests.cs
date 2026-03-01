@@ -2,10 +2,10 @@ using Phileas.Filters;
 using Phileas.Model.Filtering;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Services;
-using Phileas.Services.Filters.Regex;
-using Phileas.Services.Strategies;
-using Phileas.Services.Strategies.Rules;
+using Phileas;
+using Phileas.Filters.Regex;
+using Phileas.Strategies;
+using Phileas.Strategies.Rules;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
 

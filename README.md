@@ -41,7 +41,7 @@
 Add the NuGet package to your project:
 
 ```shell
-dotnet add package Phileas.Services
+dotnet add package Phileas
 ```
 
 ## Quick Start
@@ -49,9 +49,9 @@ dotnet add package Phileas.Services
 ### Redact an email address
 
 ```csharp
+using Phileas;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Services;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 var policy = new PhileasPolicy
@@ -202,7 +202,7 @@ See [docs/context-service.md](docs/context-service.md) for a full walkthrough.
 
 ```
 src/
-  Phileas.Services   – All filter types, policy configuration, and the FilterPolicyLoader entry point
+  Phileas            – All filter types, policy configuration, and the FilterPolicyLoader entry point
 tests/
   Phileas.Tests      – xUnit test suite
 ```

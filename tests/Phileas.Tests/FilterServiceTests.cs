@@ -1,6 +1,6 @@
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Services;
+using Phileas;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
 
