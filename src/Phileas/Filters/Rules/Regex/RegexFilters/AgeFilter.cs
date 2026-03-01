@@ -15,12 +15,10 @@
  */
 
 using System.Text.RegularExpressions;
-using Phileas.Filters;
 using Phileas.Model;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
 /// Regex-based filter that detects age expression entities in plain text.

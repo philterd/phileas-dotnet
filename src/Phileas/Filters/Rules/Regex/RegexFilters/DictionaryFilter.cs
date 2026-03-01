@@ -1,11 +1,11 @@
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
 /// Filter that detects entities by matching input tokens against a configurable list of terms,

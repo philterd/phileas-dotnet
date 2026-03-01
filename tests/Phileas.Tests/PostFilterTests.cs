@@ -16,7 +16,7 @@
 
 using Phileas.Filters;
 using Phileas.Filters.PostFilters;
-using Phileas.Policy.Filters.Regex;
+using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;

@@ -16,32 +16,32 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects passport number entities in plain text.
+/// Regex-based filter that detects Vehicle Identification Number (VIN) entities in plain text.
 /// </summary>
-public class PassportNumberFilter : RegexFilter
+public class VinFilter : RegexFilter
 {
-    private static readonly Analyzer PassportAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).Build()
+    private static readonly Analyzer VinAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b[A-HJ-NPR-Z0-9]{17}\b").WithInitialConfidence(0.80).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="PassportNumberFilter"/> with the given configuration.
+    /// Initializes a new <see cref="VinFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public PassportNumberFilter(FilterConfiguration configuration) : base(FilterType.PassportNumber, configuration) { }
+    public VinFilter(FilterConfiguration configuration) : base(FilterType.Vin, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, PassportAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, VinAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

@@ -16,35 +16,33 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects US state abbreviation entities in plain text.
+/// Regex-based filter that detects URL entities in plain text.
 /// </summary>
-public class StateAbbreviationFilter : RegexFilter
+public class UrlFilter : RegexFilter
 {
-    private static readonly Analyzer StateAnalyzer = new Analyzer(
-        new FilterPattern.Builder()
-            .WithPattern(@"\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|AS|GU|MP|PR|VI)\b")
-            .WithInitialConfidence(0.60)
-            .Build()
+    private static readonly Analyzer UrlAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.95).Build(),
+        new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="StateAbbreviationFilter"/> with the given configuration.
+    /// Initializes a new <see cref="UrlFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public StateAbbreviationFilter(FilterConfiguration configuration) : base(FilterType.StateAbbreviation, configuration) { }
+    public UrlFilter(FilterConfiguration configuration) : base(FilterType.Url, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, StateAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, UrlAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-using Phileas.Filters;
 using Phileas.Filters.PostFilters;
 using Phileas.Model;
 
-namespace Phileas.Rules;
+namespace Phileas.Filters.Rules;
 
 /// <summary>
 /// Intermediate base class between <see cref="AbstractFilter"/> and concrete rule-based filters.

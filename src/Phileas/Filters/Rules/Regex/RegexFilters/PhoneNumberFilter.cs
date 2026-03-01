@@ -16,33 +16,33 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects URL entities in plain text.
+/// Regex-based filter that detects phone number entities in plain text.
 /// </summary>
-public class UrlFilter : RegexFilter
+public class PhoneNumberFilter : RegexFilter
 {
-    private static readonly Analyzer UrlAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.95).Build(),
-        new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer PhoneAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b").WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b").WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="UrlFilter"/> with the given configuration.
+    /// Initializes a new <see cref="PhoneNumberFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public UrlFilter(FilterConfiguration configuration) : base(FilterType.Url, configuration) { }
+    public PhoneNumberFilter(FilterConfiguration configuration) : base(FilterType.PhoneNumber, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, UrlAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, PhoneAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

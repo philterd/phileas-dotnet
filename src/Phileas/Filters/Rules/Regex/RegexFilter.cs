@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-using Phileas.Filters;
 using Phileas.Model;
 
-namespace Phileas.Rules.Regex;
+namespace Phileas.Filters.Rules.Regex;
 
 /// <summary>
 /// Abstract base for filters that use regular-expression patterns to detect entities.

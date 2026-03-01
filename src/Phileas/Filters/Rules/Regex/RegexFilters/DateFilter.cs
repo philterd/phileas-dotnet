@@ -16,12 +16,12 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
 /// Regex-based filter that detects date expression entities in plain text.

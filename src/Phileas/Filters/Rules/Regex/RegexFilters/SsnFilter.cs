@@ -16,33 +16,32 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects Bitcoin wallet address entities in plain text.
+/// Regex-based filter that detects US Social Security Number (SSN) entities in plain text.
 /// </summary>
-public class BitcoinAddressFilter : RegexFilter
+public class SsnFilter : RegexFilter
 {
-    private static readonly Analyzer BitcoinAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b").WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\bbc1[a-z0-9]{6,87}\b").WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer SsnAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b").WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="BitcoinAddressFilter"/> with the given configuration.
+    /// Initializes a new <see cref="SsnFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public BitcoinAddressFilter(FilterConfiguration configuration) : base(FilterType.BitcoinAddress, configuration) { }
+    public SsnFilter(FilterConfiguration configuration) : base(FilterType.Ssn, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, BitcoinAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, SsnAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

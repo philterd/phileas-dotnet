@@ -16,32 +16,33 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects US bank routing (ABA) number entities in plain text.
+/// Regex-based filter that detects credit card number entities in plain text.
 /// </summary>
-public class BankRoutingNumberFilter : RegexFilter
+public class CreditCardFilter : RegexFilter
 {
-    private static readonly Analyzer BankRoutingAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.50).Build()
+    private static readonly Analyzer CreditCardAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})\b").WithInitialConfidence(0.95).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b").WithInitialConfidence(0.85).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="BankRoutingNumberFilter"/> with the given configuration.
+    /// Initializes a new <see cref="CreditCardFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public BankRoutingNumberFilter(FilterConfiguration configuration) : base(FilterType.BankRoutingNumber, configuration) { }
+    public CreditCardFilter(FilterConfiguration configuration) : base(FilterType.CreditCard, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, BankRoutingAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, CreditCardAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

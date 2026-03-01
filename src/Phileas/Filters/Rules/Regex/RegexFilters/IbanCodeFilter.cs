@@ -16,33 +16,32 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects currency amount entities in plain text.
+/// Regex-based filter that detects IBAN code entities in plain text.
 /// </summary>
-public class CurrencyFilter : RegexFilter
+public class IbanCodeFilter : RegexFilter
 {
-    private static readonly Analyzer CurrencyAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\$\s?[0-9,]+(\.[0-9]{1,2})?(?:\s?(million|billion|trillion|thousand))?", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b[0-9,]+(\.[0-9]{1,2})?\s?(USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY)\b").WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer IbanAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}\b").WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="CurrencyFilter"/> with the given configuration.
+    /// Initializes a new <see cref="IbanCodeFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public CurrencyFilter(FilterConfiguration configuration) : base(FilterType.Currency, configuration) { }
+    public IbanCodeFilter(FilterConfiguration configuration) : base(FilterType.IbanCode, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, CurrencyAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, IbanAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

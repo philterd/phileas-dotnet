@@ -16,35 +16,35 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Filters;
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Policy.Filters.Regex;
+namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects email address entities in plain text.
+/// Regex-based filter that detects US state abbreviation entities in plain text.
 /// </summary>
-public class EmailAddressFilter : RegexFilter
+public class StateAbbreviationFilter : RegexFilter
 {
-    private static readonly Analyzer EmailAnalyzer = new Analyzer(
+    private static readonly Analyzer StateAnalyzer = new Analyzer(
         new FilterPattern.Builder()
-            .WithPattern(@"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
-            .WithInitialConfidence(0.99)
+            .WithPattern(@"\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|AS|GU|MP|PR|VI)\b")
+            .WithInitialConfidence(0.60)
             .Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="EmailAddressFilter"/> with the given configuration.
+    /// Initializes a new <see cref="StateAbbreviationFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public EmailAddressFilter(FilterConfiguration configuration) : base(FilterType.EmailAddress, configuration) { }
+    public StateAbbreviationFilter(FilterConfiguration configuration) : base(FilterType.StateAbbreviation, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, EmailAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, StateAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

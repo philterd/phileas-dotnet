@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
+using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
 
 namespace Phileas.Filters;
 
 /// <summary>
 /// Groups one or more <see cref="FilterPattern"/> objects together with an optional set of
-/// contextual terms. An <see cref="Analyzer"/> is used by <see cref="Phileas.Rules.Regex.RegexFilter"/>
+/// contextual terms. An <see cref="Analyzer"/> is used by <see cref="RegexFilter"/>
 /// to scan input text and produce candidate <see cref="Phileas.Model.Filtering.Span"/> objects.
 /// </summary>
 public class Analyzer
