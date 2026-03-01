@@ -10,19 +10,16 @@ namespace Phileas.Services;
 
 public static class FilterPolicyLoader
 {
-    public static TextFilterResult Filter(IList<PhileasPolicy> policies, string context, int piece, string input, IContextService? contextService = null)
+    public static TextFilterResult Filter(PhileasPolicy policy, string context, int piece, string input, IContextService? contextService = null)
     {
         contextService ??= new InMemoryContextService();
         var allSpans = new List<Span>();
 
-        foreach (var policy in policies)
+        var filters = BuildFilters(policy, contextService);
+        foreach (var filter in filters)
         {
-            var filters = BuildFilters(policy, contextService);
-            foreach (var filter in filters)
-            {
-                var filtered = filter.Filter(policy, context, piece, input);
-                allSpans.AddRange(filtered.Spans);
-            }
+            var filtered = filter.Filter(policy, context, piece, input);
+            allSpans.AddRange(filtered.Spans);
         }
 
         var finalSpans = Span.DropOverlappingSpans(allSpans);
