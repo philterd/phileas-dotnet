@@ -16,6 +16,7 @@
 
 using System.Security.Cryptography;
 using System.Text;
+using Phileas.Conditions;
 using Phileas.Filters;
 using Phileas.Model.Filtering;
 using Phileas.Policy;
@@ -27,7 +28,7 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
     public override bool EvaluateCondition(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern)
     {
         if (string.IsNullOrEmpty(Condition)) return true;
-        return true;
+        return ConditionEvaluator.Evaluate(Condition, context, token, confidence, classification);
     }
 
     protected Replacement GetStandardReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe, FilterType filterType)

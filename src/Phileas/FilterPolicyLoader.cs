@@ -209,15 +209,53 @@ public static class FilterPolicyLoader
         where TFilter : RegexFilter
         where TStrategy : AbstractFilterStrategy, new()
     {
-        var strategy = new TStrategy { ContextService = contextService };
+        // Extract strategies from the policyFilter using reflection
+        var strategiesProperty = policyFilter.GetType().GetProperty("Strategies");
+        var strategies = new List<AbstractFilterStrategy>();
+
+        if (strategiesProperty != null)
+        {
+            var policyStrategies = strategiesProperty.GetValue(policyFilter) as System.Collections.IEnumerable;
+            if (policyStrategies != null)
+            {
+                foreach (var s in policyStrategies)
+                {
+                    // Copy strategy properties to runtime strategy object
+                    var runtimeStrategy = new TStrategy();
+                    var sourceType = s.GetType();
+
+                    // Copy all properties from policy strategy to runtime strategy
+                    foreach (var prop in sourceType.GetProperties())
+                    {
+                        var targetProp = typeof(TStrategy).GetProperty(prop.Name);
+                        if (targetProp != null && targetProp.CanWrite)
+                        {
+                            targetProp.SetValue(runtimeStrategy, prop.GetValue(s));
+                        }
+                    }
+
+                    runtimeStrategy.ContextService = contextService;
+                    strategies.Add(runtimeStrategy);
+                }
+            }
+        }
+
+        // If no strategies defined, create a default one
+        if (strategies.Count == 0)
+        {
+            strategies.Add(new TStrategy { ContextService = contextService });
+        }
+
         var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (policyFilter.Ignored != null)
             foreach (var s in policyFilter.Ignored) ignored.Add(s);
 
         var config = new FilterConfiguration.Builder()
-            .WithStrategies(new List<AbstractFilterStrategy> { strategy })
+            .WithStrategies(strategies)
             .WithIgnored(ignored)
             .WithIgnoredPatterns(policyFilter.IgnoredPatterns ?? new List<IgnoredPattern>())
+            .WithCrypto(policy.Crypto)
+            .WithFpe(policy.Fpe)
             .WithWindowSize(policy.Config.WindowSize)
             .WithPriority(policyFilter.Priority)
             .Build();
