@@ -216,4 +216,10 @@ dotnet test  Phileas.slnx
 
 ## License
 
-This project is licensed under the terms of the [LICENSE](LICENSE) file.
+Copyright 2026 Philterd, LLC.
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+
+"Phileas" and "Philter" are registered trademarks of Philterd, LLC.
+
+This project is a .NET port of [Phileas](https://github.com/philterd/phileas), which is also Apache-2.0 licensed.
