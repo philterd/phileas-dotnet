@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for US state abbreviation detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with
 ///     <c>FilterType.StateAbbreviation</c>.
 /// </summary>
 public class StateAbbreviationFilterStrategy : StandardFilterStrategy

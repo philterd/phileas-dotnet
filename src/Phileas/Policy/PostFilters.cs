@@ -18,11 +18,28 @@ using System.Text.Json.Serialization;
 
 namespace Phileas.Policy;
 
+/// <summary>
+///     Configures the post-filtering operations that are applied to detected spans after initial matching.
+///     Post-filters trim extraneous characters (trailing spaces, periods, and newlines) from the ends of
+///     matched entities so that punctuation is not inadvertently included in a redacted span.
+/// </summary>
 public class PostFilters
 {
+    /// <summary>
+    ///     Gets or sets a value indicating whether trailing newline characters (<c>\n</c>, <c>\r</c>) are stripped
+    ///     from the end of matched entity text. Defaults to <see langword="true" />.
+    /// </summary>
     [JsonPropertyName("trailingNewLines")] public bool TrailingNewLines { get; set; } = true;
 
+    /// <summary>
+    ///     Gets or sets a value indicating whether trailing period characters (<c>.</c>) are stripped from the end
+    ///     of matched entity text. Defaults to <see langword="true" />.
+    /// </summary>
     [JsonPropertyName("trailingPeriods")] public bool TrailingPeriods { get; set; } = true;
 
+    /// <summary>
+    ///     Gets or sets a value indicating whether trailing space characters are stripped from the end of matched
+    ///     entity text. Defaults to <see langword="true" />.
+    /// </summary>
     [JsonPropertyName("trailingSpaces")] public bool TrailingSpaces { get; set; } = true;
 }

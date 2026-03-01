@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for IBAN code detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.IbanCode</c>.
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with <c>FilterType.IbanCode</c>.
 /// </summary>
 public class IbanCodeFilterStrategy : StandardFilterStrategy
 {

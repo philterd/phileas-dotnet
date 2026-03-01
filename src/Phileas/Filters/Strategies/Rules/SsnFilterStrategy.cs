@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for Social Security Number (SSN) detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.Ssn</c>.
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with <c>FilterType.Ssn</c>.
 /// </summary>
 public class SsnFilterStrategy : StandardFilterStrategy
 {

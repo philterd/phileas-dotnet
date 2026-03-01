@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for currency amount detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.Currency</c>.
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with <c>FilterType.Currency</c>.
 /// </summary>
 public class CurrencyFilterStrategy : StandardFilterStrategy
 {

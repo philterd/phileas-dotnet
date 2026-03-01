@@ -18,8 +18,18 @@ using Phileas.Model;
 
 namespace Phileas.Filters.PostFilters;
 
+/// <summary>
+///     Post-filter that removes spans whose entity text appears in the filter's configured ignored-terms set.
+/// </summary>
 public static class IgnoredTermsPostFilter
 {
+    /// <summary>
+    ///     Returns only those spans whose <see cref="Phileas.Model.Span.Text" /> is not present in
+    ///     <paramref name="ignored" />.
+    /// </summary>
+    /// <param name="spans">The list of spans to post-filter.</param>
+    /// <param name="ignored">The set of exact token values that should be excluded from results.</param>
+    /// <returns>A filtered list containing only spans whose text is not in the ignored set.</returns>
     public static IList<Span> Apply(IList<Span> spans, ISet<string> ignored)
     {
         if (ignored == null || ignored.Count == 0)

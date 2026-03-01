@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for phone number extension detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with
 ///     <c>FilterType.PhoneNumberExtension</c>.
 /// </summary>
 public class PhoneNumberExtensionFilterStrategy : StandardFilterStrategy

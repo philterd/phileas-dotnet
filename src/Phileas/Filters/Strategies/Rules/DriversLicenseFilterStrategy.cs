@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for driver's license number detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with
 ///     <c>FilterType.DriversLicenseNumber</c>.
 /// </summary>
 public class DriversLicenseFilterStrategy : StandardFilterStrategy

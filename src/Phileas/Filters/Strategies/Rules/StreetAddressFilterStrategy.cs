@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for street address detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with
 ///     <c>FilterType.StreetAddress</c>.
 /// </summary>
 public class StreetAddressFilterStrategy : StandardFilterStrategy

@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for ZIP code detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.ZipCode</c>.
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with <c>FilterType.ZipCode</c>.
 /// </summary>
 public class ZipCodeFilterStrategy : StandardFilterStrategy
 {

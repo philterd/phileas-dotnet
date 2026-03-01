@@ -21,8 +21,19 @@ using RegexOptions = System.Text.RegularExpressions.RegexOptions;
 
 namespace Phileas.Filters.PostFilters;
 
+/// <summary>
+///     Post-filter that removes spans whose entity text matches any of the filter's configured ignored-pattern
+///     regular expressions.
+/// </summary>
 public static class IgnoredPatternsPostFilter
 {
+    /// <summary>
+    ///     Returns only those spans whose <see cref="Phileas.Model.Span.Text" /> does not match any pattern in
+    ///     <paramref name="ignoredPatterns" />.
+    /// </summary>
+    /// <param name="spans">The list of spans to post-filter.</param>
+    /// <param name="ignoredPatterns">The list of regex-based patterns for text that should be excluded.</param>
+    /// <returns>A filtered list containing only spans whose text does not match any ignored pattern.</returns>
     public static IList<Span> Apply(IList<Span> spans, IList<IgnoredPattern> ignoredPatterns)
     {
         if (ignoredPatterns == null || ignoredPatterns.Count == 0)

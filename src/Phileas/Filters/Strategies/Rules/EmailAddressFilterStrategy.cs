@@ -21,7 +21,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for email address detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.EmailAddress</c>
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with <c>FilterType.EmailAddress</c>
 ///     .
 /// </summary>
 public class EmailAddressFilterStrategy : StandardFilterStrategy
