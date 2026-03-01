@@ -5,9 +5,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Phileas.Services</RootNamespace>
   </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="../Phileas.Filters/Phileas.Filters.csproj" />
-    <ProjectReference Include="../Phileas.Policy/Phileas.Policy.csproj" />
-    <ProjectReference Include="../Phileas.Model/Phileas.Model.csproj" />
-  </ItemGroup>
 </Project>

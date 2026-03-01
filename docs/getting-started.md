@@ -5,7 +5,7 @@ This guide walks you through adding phileas-net to a .NET project and running yo
 ## Prerequisites
 
 - .NET 8 or later
-- A project that references `Phileas.Services` (and its transitive dependencies)
+- A project that references `Phileas.Services`
 
 ## Installation
 
@@ -14,8 +14,6 @@ Add a project reference or NuGet package reference to `Phileas.Services`:
 ```xml
 <ProjectReference Include="../src/Phileas.Services/Phileas.Services.csproj" />
 ```
-
-`Phileas.Services` depends on `Phileas.Filters`, `Phileas.Model`, and `Phileas.Policy`, which are pulled in automatically.
 
 ## Basic Usage
 

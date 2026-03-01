@@ -38,11 +38,10 @@
 
 ## Installation
 
-Add the NuGet packages to your project:
+Add the NuGet package to your project:
 
 ```shell
 dotnet add package Phileas.Services
-dotnet add package Phileas.Policy
 ```
 
 ## Quick Start
@@ -203,10 +202,7 @@ See [docs/context-service.md](docs/context-service.md) for a full walkthrough.
 
 ```
 src/
-  Phileas.Model      – Core domain types (Span, FilterType, Replacement, …)
-  Phileas.Filters    – Abstract filter and strategy contracts
-  Phileas.Policy     – Policy and identifier configuration classes
-  Phileas.Services   – Concrete filter implementations and FilterPolicyLoader
+  Phileas.Services   – All filter types, policy configuration, and the FilterPolicyLoader entry point
 tests/
   Phileas.Tests      – xUnit test suite
 ```
