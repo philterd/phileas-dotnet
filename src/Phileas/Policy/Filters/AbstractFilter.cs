@@ -26,15 +26,34 @@ namespace Phileas.Filters;
 /// </summary>
 public abstract class AbstractFilter
 {
+    /// <summary>AES encryption settings used by the <c>CRYPTO_REPLACE</c> strategy, or <see langword="null" /> if not configured.</summary>
     protected readonly Crypto? Crypto;
+
+    /// <summary>The entity type detected by this filter instance.</summary>
     protected readonly FilterType FilterType;
+
+    /// <summary>Format-preserving encryption settings used by the <c>FPE_ENCRYPT_REPLACE</c> strategy, or <see langword="null" /> if not configured.</summary>
     protected readonly Fpe? Fpe;
+
+    /// <summary>Post-filter configuration that controls trailing-character trimming.</summary>
     protected readonly Policy.PostFilters PostFiltersConfig;
+
+    /// <summary>The ordered list of replacement strategies to apply when a match is found.</summary>
     protected readonly IList<AbstractFilterStrategy> Strategies;
+
+    /// <summary>Optional classification label applied to all matches produced by this filter.</summary>
     protected string? Classification;
+
+    /// <summary>The set of exact token values that should not be filtered.</summary>
     protected ISet<string> Ignored;
+
+    /// <summary>The list of regex-based patterns for tokens that should not be filtered.</summary>
     protected IList<IgnoredPattern> IgnoredPatterns;
+
+    /// <summary>Priority used when resolving overlapping spans from different filters.</summary>
     protected int Priority;
+
+    /// <summary>Number of words on each side of a match to include in the context window.</summary>
     protected int WindowSize;
 
     /// <summary>
@@ -66,7 +85,7 @@ public abstract class AbstractFilter
     /// <returns>A <see cref="Filtered" /> containing all detected and (optionally) replaced spans.</returns>
     public abstract Filtered Filter(Policy.Policy policy, string context, int piece, string input);
 
-    /// <summary>Returns the <see cref="Model.Filtering.FilterType" /> handled by this filter instance.</summary>
+    /// <summary>Returns the <see cref="FilterType" /> handled by this filter instance.</summary>
     public FilterType GetFilterType()
     {
         return FilterType;

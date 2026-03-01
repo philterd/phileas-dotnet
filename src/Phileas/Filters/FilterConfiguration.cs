@@ -52,6 +52,7 @@ public class FilterConfiguration
     /// <summary>Gets the filter priority used when resolving overlapping spans. Defaults to 0.</summary>
     public int Priority { get; private set; }
 
+    /// <summary>Gets the post-filter settings that trim trailing characters from detected entity text.</summary>
     public Policy.PostFilters? PostFilters { get; private set; }
 
     /// <summary>

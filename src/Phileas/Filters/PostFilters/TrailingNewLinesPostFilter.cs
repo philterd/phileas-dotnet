@@ -18,8 +18,20 @@ using Phileas.Model;
 
 namespace Phileas.Filters.PostFilters;
 
+/// <summary>
+///     Post-filter that removes trailing newline characters (<c>\n</c>, <c>\r</c>) from the end of each matched
+///     entity's text, adjusting the character end index accordingly. Spans that become empty after trimming are
+///     discarded.
+/// </summary>
 public static class TrailingNewLinesPostFilter
 {
+    /// <summary>
+    ///     Removes trailing newline characters (<c>\n</c>, <c>\r</c>) from each span's
+    ///     <see cref="Phileas.Model.Span.Text" />, updates the <see cref="Phileas.Model.Span.CharacterEnd" /> offset
+    ///     to match, and discards any spans that become empty.
+    /// </summary>
+    /// <param name="spans">The list of spans to post-filter.</param>
+    /// <returns>A new list of spans with trailing newlines removed.</returns>
     public static IList<Span> Apply(IList<Span> spans)
     {
         var result = new List<Span>();

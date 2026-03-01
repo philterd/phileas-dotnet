@@ -18,8 +18,19 @@ using Phileas.Model;
 
 namespace Phileas.Filters.PostFilters;
 
+/// <summary>
+///     Post-filter that removes trailing period characters from the end of each matched entity's text,
+///     adjusting the character end index accordingly. Spans that become empty after trimming are discarded.
+/// </summary>
 public static class TrailingPeriodPostFilter
 {
+    /// <summary>
+    ///     Removes trailing period characters (<c>.</c>) from each span's <see cref="Phileas.Model.Span.Text" />,
+    ///     updates the <see cref="Phileas.Model.Span.CharacterEnd" /> offset to match, and discards any spans that
+    ///     become empty.
+    /// </summary>
+    /// <param name="spans">The list of spans to post-filter.</param>
+    /// <returns>A new list of spans with trailing periods removed.</returns>
     public static IList<Span> Apply(IList<Span> spans)
     {
         var result = new List<Span>();

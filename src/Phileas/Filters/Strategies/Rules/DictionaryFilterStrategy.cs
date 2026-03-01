@@ -5,7 +5,7 @@ namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
 ///     Runtime filter strategy for dictionary term detection. Delegates to
-///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.Dictionary</c>.
+///     <see cref="Phileas.Filters.Strategies.StandardFilterStrategy" /> with <c>FilterType.Dictionary</c>.
 /// </summary>
 public class DictionaryFilterStrategy : StandardFilterStrategy
 {

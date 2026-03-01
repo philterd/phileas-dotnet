@@ -53,5 +53,7 @@ public class Policy
     [JsonPropertyName("ignoredPatterns")]
     public List<IgnoredPattern> IgnoredPatterns { get; set; } = new();
 
-    [JsonPropertyName("postFilters")] public PostFilters PostFilters { get; set; } = new();
+    /// <summary>Gets or sets the post-filter settings that trim trailing characters from detected entity text.</summary>
+    [JsonPropertyName("postFilters")]
+    public PostFilters PostFilters { get; set; } = new();
 }

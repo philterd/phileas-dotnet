@@ -22,7 +22,7 @@ namespace Phileas.Filters;
 /// <summary>
 ///     Groups one or more <see cref="FilterPattern" /> objects together with an optional set of
 ///     contextual terms. An <see cref="Analyzer" /> is used by <see cref="RegexFilter" />
-///     to scan input text and produce candidate <see cref="Phileas.Model.Filtering.Span" /> objects.
+///     to scan input text and produce candidate <see cref="Span" /> objects.
 /// </summary>
 public class Analyzer
 {
