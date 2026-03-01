@@ -44,6 +44,33 @@ public static class FilterPolicyLoader
         return new TextFilterResult(filteredText, finalSpans);
     }
 
+    public static EvaluationResult Evaluate(PhileasPolicy policy, string context, int piece, string input, IList<Span> groundTruthSpans, IContextService? contextService = null)
+    {
+        var result = Filter(policy, context, piece, input, contextService);
+        var detectedSpans = result.Spans;
+
+        int truePositives = detectedSpans.Count(d =>
+            groundTruthSpans.Any(g => g.CharacterStart == d.CharacterStart && g.CharacterEnd == d.CharacterEnd));
+
+        int falsePositives = detectedSpans.Count - truePositives;
+        int falseNegatives = groundTruthSpans.Count(g =>
+            !detectedSpans.Any(d => d.CharacterStart == g.CharacterStart && d.CharacterEnd == g.CharacterEnd));
+
+        double precision = (truePositives + falsePositives) > 0
+            ? (double)truePositives / (truePositives + falsePositives)
+            : 0.0;
+
+        double recall = (truePositives + falseNegatives) > 0
+            ? (double)truePositives / (truePositives + falseNegatives)
+            : 0.0;
+
+        double f1 = (precision + recall) > 0
+            ? 2.0 * precision * recall / (precision + recall)
+            : 0.0;
+
+        return new EvaluationResult(precision, recall, f1);
+    }
+
     private static IList<AbstractFilter> BuildFilters(PhileasPolicy policy, IContextService contextService)
     {
         var filters = new List<AbstractFilter>();
