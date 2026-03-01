@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting package tracking numbers.
+/// </summary>
 public class TrackingNumber : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of tracking number filter strategies to apply.</summary>
     [JsonPropertyName("trackingNumberFilterStrategies")]
     public List<TrackingNumberFilterStrategy>? Strategies { get; set; }
 }

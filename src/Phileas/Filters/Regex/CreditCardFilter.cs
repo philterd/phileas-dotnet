@@ -23,6 +23,9 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects credit card number entities in plain text.
+/// </summary>
 public class CreditCardFilter : RegexFilter
 {
     private static readonly Analyzer CreditCardAnalyzer = new Analyzer(
@@ -30,8 +33,13 @@ public class CreditCardFilter : RegexFilter
         new FilterPattern.Builder().WithPattern(@"\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b").WithInitialConfidence(0.85).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="CreditCardFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public CreditCardFilter(FilterConfiguration configuration) : base(FilterType.CreditCard, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, CreditCardAnalyzer, input, context, piece);

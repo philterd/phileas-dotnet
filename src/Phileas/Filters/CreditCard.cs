@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting credit card numbers.
+/// </summary>
 public class CreditCard : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of credit card filter strategies to apply.</summary>
     [JsonPropertyName("creditCardFilterStrategies")]
     public List<CreditCardFilterStrategy>? Strategies { get; set; }
 }

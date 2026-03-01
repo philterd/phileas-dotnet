@@ -23,6 +23,9 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects email address entities in plain text.
+/// </summary>
 public class EmailAddressFilter : RegexFilter
 {
     private static readonly Analyzer EmailAnalyzer = new Analyzer(
@@ -32,8 +35,13 @@ public class EmailAddressFilter : RegexFilter
             .Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="EmailAddressFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public EmailAddressFilter(FilterConfiguration configuration) : base(FilterType.EmailAddress, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, EmailAnalyzer, input, context, piece);

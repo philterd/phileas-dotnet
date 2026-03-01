@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting currency amounts.
+/// </summary>
 public class Currency : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of currency filter strategies to apply.</summary>
     [JsonPropertyName("currencyFilterStrategies")]
     public List<CurrencyFilterStrategy>? Strategies { get; set; }
 }

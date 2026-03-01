@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting Vehicle Identification Numbers (VIN).
+/// </summary>
 public class Vin : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of VIN filter strategies to apply.</summary>
     [JsonPropertyName("vinFilterStrategies")]
     public List<VinFilterStrategy>? Strategies { get; set; }
 }

@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting Bitcoin wallet addresses.
+/// </summary>
 public class BitcoinAddress : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of Bitcoin address filter strategies to apply.</summary>
     [JsonPropertyName("bitcoinAddressFilterStrategies")]
     public List<BitcoinAddressFilterStrategy>? Strategies { get; set; }
 }

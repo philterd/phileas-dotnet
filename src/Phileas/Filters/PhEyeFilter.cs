@@ -24,6 +24,11 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters;
 
+/// <summary>
+/// Filter that delegates entity detection to a remote PhEye NLP service via HTTP.
+/// Each detected entity is compared against the configured label list and confidence
+/// thresholds before a replacement span is produced.
+/// </summary>
 public class PhEyeFilter : AbstractFilter
 {
     private readonly PhEyeConfiguration _configuration;
@@ -37,6 +42,14 @@ public class PhEyeFilter : AbstractFilter
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    /// <summary>
+    /// Initializes a new <see cref="PhEyeFilter"/>.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration (strategies, ignored terms, etc.).</param>
+    /// <param name="phEyeConfiguration">Connection and label settings for the PhEye service.</param>
+    /// <param name="removePunctuation">When <see langword="true"/>, punctuation is stripped from the input before sending to the service.</param>
+    /// <param name="thresholds">Per-label minimum confidence thresholds; entities below the threshold are discarded.</param>
+    /// <param name="httpClient">Optional pre-configured <see cref="HttpClient"/>; a new instance is created when <see langword="null"/>.</param>
     public PhEyeFilter(
         FilterConfiguration configuration,
         PhEyeConfiguration phEyeConfiguration,
@@ -52,6 +65,7 @@ public class PhEyeFilter : AbstractFilter
         _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout > 0 ? _configuration.Timeout : 30);
     }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = new List<Span>();

@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting email addresses.
+/// </summary>
 public class EmailAddress : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of email address filter strategies to apply.</summary>
     [JsonPropertyName("emailAddressFilterStrategies")]
     public List<EmailAddressFilterStrategy>? Strategies { get; set; }
 }

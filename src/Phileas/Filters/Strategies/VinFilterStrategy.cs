@@ -16,4 +16,7 @@
 
 namespace Phileas.Policy.Filters.Strategies;
 
+/// <summary>
+/// Defines the replacement strategy settings for a Vehicle Identification Number (VIN) filter, as deserialized from a policy JSON document.
+/// </summary>
 public class VinFilterStrategy : AbstractFilterStrategy { }

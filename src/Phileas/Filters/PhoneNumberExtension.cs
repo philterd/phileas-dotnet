@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting phone number extensions.
+/// </summary>
 public class PhoneNumberExtension : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of phone number extension filter strategies to apply.</summary>
     [JsonPropertyName("phoneNumberExtensionFilterStrategies")]
     public List<PhoneNumberExtensionFilterStrategy>? Strategies { get; set; }
 }

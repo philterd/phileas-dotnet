@@ -23,6 +23,9 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects date expression entities in plain text.
+/// </summary>
 public class DateFilter : RegexFilter
 {
     private static readonly Analyzer DateAnalyzer = new Analyzer(
@@ -32,8 +35,13 @@ public class DateFilter : RegexFilter
         new FilterPattern.Builder().WithPattern(@"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.\s]\s*\d{1,2},?\s*\d{4}\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.85).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="DateFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public DateFilter(FilterConfiguration configuration) : base(FilterType.Date, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, DateAnalyzer, input, context, piece);

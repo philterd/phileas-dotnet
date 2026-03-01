@@ -18,11 +18,16 @@ using System.Text.Json.Serialization;
 
 namespace Phileas.Policy;
 
+/// <summary>
+/// Global configuration settings that apply to all filters within a policy.
+/// </summary>
 public class Config
 {
+    /// <summary>Gets or sets the number of words on each side of a detected entity that form the context window. Defaults to 5.</summary>
     [JsonPropertyName("windowSize")]
     public int WindowSize { get; set; } = 5;
 
+    /// <summary>Gets or sets a value indicating whether the input text should be split on punctuation before filtering. Defaults to <see langword="false"/>.</summary>
     [JsonPropertyName("splitOnPunctuation")]
     public bool SplitOnPunctuation { get; set; } = false;
 }

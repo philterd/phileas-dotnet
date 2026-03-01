@@ -16,4 +16,7 @@
 
 namespace Phileas.Policy.Filters.Strategies;
 
+/// <summary>
+/// Defines the replacement strategy settings for a Social Security Number (SSN) filter, as deserialized from a policy JSON document.
+/// </summary>
 public class SsnFilterStrategy : AbstractFilterStrategy { }

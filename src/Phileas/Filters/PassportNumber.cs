@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting passport numbers.
+/// </summary>
 public class PassportNumber : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of passport number filter strategies to apply.</summary>
     [JsonPropertyName("passportNumberFilterStrategies")]
     public List<PassportNumberFilterStrategy>? Strategies { get; set; }
 }
