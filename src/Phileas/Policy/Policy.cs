@@ -56,4 +56,7 @@ public class Policy
     /// <summary>Gets or sets the graphical redaction configuration (e.g. for PDF redaction).</summary>
     [JsonPropertyName("graphical")]
     public Graphical Graphical { get; set; } = new Graphical();
+
+    [JsonPropertyName("postFilters")]
+    public PostFilters PostFilters { get; set; } = new PostFilters();
 }

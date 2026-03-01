@@ -91,4 +91,66 @@ public class FilterServiceTests
         Assert.Equal(Phileas.Model.Filtering.FilterType.EmailAddress, result.Spans[0].FilterType);
         Assert.Equal("user@example.com", result.Spans[0].Text);
     }
+
+    [Fact]
+    public void Filter_DefaultPostFilters_AllEnabled()
+    {
+        var policy = new PhileasPolicy { Name = "test" };
+        Assert.True(policy.PostFilters.TrailingNewLines);
+        Assert.True(policy.PostFilters.TrailingPeriods);
+        Assert.True(policy.PostFilters.TrailingSpaces);
+    }
+
+    [Fact]
+    public void Filter_PostFilters_CanBeDisabledInPolicy()
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers { Ssn = new Ssn() },
+            PostFilters = new PostFilters { TrailingNewLines = false, TrailingPeriods = false, TrailingSpaces = false }
+        };
+
+        // SSN regex uses \b so trailing chars are not captured; ensure filter still works normally
+        var result = FilterService.Filter(policy, "test", 0, "SSN: 123-45-6789");
+        Assert.Single(result.Spans);
+        Assert.Equal("123-45-6789", result.Spans[0].Text);
+    }
+
+    [Fact]
+    public void Policy_PostFilters_SerializesToJson()
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            PostFilters = new PostFilters { TrailingNewLines = false, TrailingPeriods = true, TrailingSpaces = false }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(policy);
+        Assert.Contains("postFilters", json);
+        Assert.Contains("trailingNewLines", json);
+        Assert.Contains("trailingPeriods", json);
+        Assert.Contains("trailingSpaces", json);
+    }
+
+    [Fact]
+    public void Policy_PostFilters_DeserializesFromJson()
+    {
+        var json = """
+        {
+            "name": "test",
+            "postFilters": {
+                "trailingNewLines": false,
+                "trailingPeriods": true,
+                "trailingSpaces": false
+            }
+        }
+        """;
+
+        var policy = System.Text.Json.JsonSerializer.Deserialize<PhileasPolicy>(json);
+        Assert.NotNull(policy);
+        Assert.False(policy.PostFilters.TrailingNewLines);
+        Assert.True(policy.PostFilters.TrailingPeriods);
+        Assert.False(policy.PostFilters.TrailingSpaces);
+    }
 }

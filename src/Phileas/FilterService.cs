@@ -185,6 +185,7 @@ public static class FilterService
                     .WithIgnoredPatterns(phEye.IgnoredPatterns ?? new List<IgnoredPattern>())
                     .WithWindowSize(policy.Config.WindowSize)
                     .WithPriority(phEye.Priority)
+                    .WithPostFilters(policy.PostFilters)
                     .Build();
 
                 filters.Add(new PhEyeFilter(config, phEye.PhEyeConfiguration, phEye.RemovePunctuation, phEye.Thresholds));
@@ -226,6 +227,7 @@ public static class FilterService
                     .WithIgnoredPatterns(dictionary.IgnoredPatterns ?? new List<IgnoredPattern>())
                     .WithWindowSize(policy.Config.WindowSize)
                     .WithPriority(dictionary.Priority)
+                    .WithPostFilters(policy.PostFilters)
                     .Build();
 
                 filters.Add(new DictionaryFilter(config, dictionary.Terms, dictionary.Fuzzy, dictionary.Level));
@@ -289,6 +291,7 @@ public static class FilterService
             .WithFpe(policy.Fpe)
             .WithWindowSize(policy.Config.WindowSize)
             .WithPriority(policyFilter.Priority)
+            .WithPostFilters(policy.PostFilters)
             .Build();
 
         return (TFilter)Activator.CreateInstance(typeof(TFilter), config)!;

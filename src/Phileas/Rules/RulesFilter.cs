@@ -44,9 +44,12 @@ public abstract class RulesFilter : AbstractFilter
     /// <returns>The refined list of spans.</returns>
     public virtual IList<Span> PostFilter(IList<Span> spans, string input)
     {
-        spans = TrailingNewLinesPostFilter.Apply(spans);
-        spans = TrailingPeriodPostFilter.Apply(spans);
-        spans = TrailingSpacePostFilter.Apply(spans);
+        if (PostFiltersConfig.TrailingNewLines)
+            spans = TrailingNewLinesPostFilter.Apply(spans);
+        if (PostFiltersConfig.TrailingPeriods)
+            spans = TrailingPeriodPostFilter.Apply(spans);
+        if (PostFiltersConfig.TrailingSpaces)
+            spans = TrailingSpacePostFilter.Apply(spans);
         spans = IgnoredTermsPostFilter.Apply(spans, Ignored);
         spans = IgnoredPatternsPostFilter.Apply(spans, IgnoredPatterns);
         return spans;

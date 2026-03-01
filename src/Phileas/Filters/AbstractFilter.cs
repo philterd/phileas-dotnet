@@ -34,6 +34,7 @@ public abstract class AbstractFilter
     protected int WindowSize;
     protected int Priority;
     protected string? Classification;
+    protected readonly Phileas.Policy.PostFilters PostFiltersConfig;
 
     /// <summary>
     /// Initializes the filter with the given <paramref name="filterType"/> and <paramref name="configuration"/>.
@@ -50,6 +51,7 @@ public abstract class AbstractFilter
         Fpe = configuration.Fpe;
         WindowSize = configuration.WindowSize;
         Priority = configuration.Priority;
+        PostFiltersConfig = configuration.PostFilters ?? new Phileas.Policy.PostFilters();
     }
 
     /// <summary>

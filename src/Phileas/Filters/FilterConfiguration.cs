@@ -47,6 +47,7 @@ public class FilterConfiguration
 
     /// <summary>Gets the filter priority used when resolving overlapping spans. Defaults to 0.</summary>
     public int Priority { get; private set; } = 0;
+    public Phileas.Policy.PostFilters? PostFilters { get; private set; }
 
     private FilterConfiguration() { }
 
@@ -80,6 +81,9 @@ public class FilterConfiguration
 
         /// <summary>Sets the filter priority.</summary>
         public Builder WithPriority(int priority) { _config.Priority = priority; return this; }
+      
+        /// <summary>Sets the post filters.</summary>
+        public Builder WithPostFilters(Phileas.Policy.PostFilters? postFilters) { _config.PostFilters = postFilters; return this; }
 
         /// <summary>Builds and returns the <see cref="FilterConfiguration"/>.</summary>
         public FilterConfiguration Build() => _config;
