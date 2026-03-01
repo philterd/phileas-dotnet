@@ -19,7 +19,7 @@ Referential integrity means that the relationship between two pieces of data is 
 ## IContextService Interface
 
 ```csharp
-namespace Phileas.Filters;
+namespace Phileas.Services;
 
 public interface IContextService
 {
@@ -60,8 +60,8 @@ var policy = new Policy
 
 // RANDOM_REPLACE strategy is set on the policy filter strategy.
 // FilterService defaults to InMemoryContextService.
-var result = FilterService.Filter(
-    new List<Policy> { policy },
+var result = new FilterService().Filter(
+    policy,
     context: "patient-123",
     piece: 0,
     input: "SSN: 123-45-6789"
@@ -73,8 +73,8 @@ var result = FilterService.Filter(
 ```csharp
 IContextService myContextService = new MyDatabaseContextService(connectionString);
 
-var result = FilterService.Filter(
-    new List<Policy> { policy },
+var result = new FilterService().Filter(
+    policy,
     context: "patient-123",
     piece: 0,
     input: "SSN: 123-45-6789",

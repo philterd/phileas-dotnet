@@ -14,7 +14,7 @@ public class Policy
     public Identifiers Identifiers { get; set; }
     public List<Ignored> Ignored { get; set; }
     public List<IgnoredPattern> IgnoredPatterns { get; set; }
-    public Graphical Graphical { get; set; }
+    public PostFilters PostFilters { get; set; }
 }
 ```
 
@@ -177,6 +177,31 @@ var policy = new Policy
     Ignored = new List<Ignored>
     {
         new Ignored { Value = "000-00-0000", CaseSensitive = false }
+    }
+};
+```
+
+---
+
+## PostFilters
+
+`PostFilters` controls lightweight cleanup applied to each replaced token after the strategy produces a replacement value.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `trailingNewLines` | `bool` | `true` | Strip trailing newline characters from the replacement. |
+| `trailingPeriods` | `bool` | `true` | Strip trailing period characters from the replacement. |
+| `trailingSpaces` | `bool` | `true` | Strip trailing whitespace from the replacement. |
+
+```csharp
+var policy = new Policy
+{
+    Name = "my-policy",
+    PostFilters = new PostFilters
+    {
+        TrailingNewLines = true,
+        TrailingPeriods  = false,
+        TrailingSpaces   = true
     }
 };
 ```

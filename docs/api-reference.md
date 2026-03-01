@@ -201,6 +201,7 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `IpAddress` | `"ip-address"` |
 | `MacAddress` | `"mac-address"` |
 | `PassportNumber` | `"passport-number"` |
+| `PhEye` | `"ph-eye"` |
 | `PhoneNumber` | `"phone-number"` |
 | `PhoneNumberExtension` | `"phone-number-extension"` |
 | `Ssn` | `"ssn"` |
@@ -210,6 +211,7 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `Url` | `"url"` |
 | `Vin` | `"vin"` |
 | `ZipCode` | `"zip-code"` |
+| `Dictionary` | `"dictionary"` |
 
 Call `filterType.GetFilterTypeName()` to get the lower-kebab-case string used in redaction format tokens (e.g. `"email-address"`, `"ssn"`).
 
@@ -218,7 +220,7 @@ Call `filterType.GetFilterTypeName()` to get the lower-kebab-case string used in
 ## IContextService
 
 ```csharp
-namespace Phileas.Filters;
+namespace Phileas.Services;
 
 public interface IContextService
 {
@@ -253,7 +255,7 @@ public class Policy
     public Identifiers Identifiers { get; set; }
     public List<Ignored> Ignored { get; set; }
     public List<IgnoredPattern> IgnoredPatterns { get; set; }
-    public Graphical Graphical { get; set; }
+    public PostFilters PostFilters { get; set; }
 }
 ```
 

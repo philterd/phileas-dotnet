@@ -49,9 +49,9 @@ dotnet add package Phileas
 ### Redact an email address
 
 ```csharp
-using Phileas;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
+using Phileas.Services;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 var policy = new PhileasPolicy
@@ -63,8 +63,8 @@ var policy = new PhileasPolicy
     }
 };
 
-var result = FilterService.Filter(
-    policies: new List<PhileasPolicy> { policy },
+var result = new FilterService().Filter(
+    policy: policy,
     context: "default",
     piece: 0,
     input: "Contact john.doe@example.com for help."
@@ -90,8 +90,8 @@ var policy = new PhileasPolicy
     }
 };
 
-var result = FilterService.Filter(
-    policies: new List<PhileasPolicy> { policy },
+var result = new FilterService().Filter(
+    policy: policy,
     context: "default",
     piece: 0,
     input: "Call 555-867-5309 or email jane@example.com. SSN: 123-45-6789."
@@ -167,8 +167,8 @@ When using `RANDOM_REPLACE`, the Context Service ensures the same PII token alwa
 // but you can supply your own implementation.
 IContextService contextService = new InMemoryContextService();
 
-var result = FilterService.Filter(
-    policies: new List<PhileasPolicy> { policy },
+var result = new FilterService().Filter(
+    policy: policy,
     context: "patient-123",   // all calls sharing this name reuse the same mappings
     piece: 0,
     input: "SSN: 123-45-6789",
