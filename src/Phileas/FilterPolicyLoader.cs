@@ -76,6 +76,47 @@ public static class FilterPolicyLoader
         if (identifiers.Currency != null)
             filters.Add(BuildFilter<CurrencyFilter, CurrencyFilterStrategy>(identifiers.Currency, policy, contextService));
 
+        if (identifiers.PhEyes != null)
+        {
+            foreach (var phEye in identifiers.PhEyes)
+            {
+                var strategies = new List<AbstractFilterStrategy>();
+                if (phEye.Strategies != null)
+                {
+                    foreach (var s in phEye.Strategies)
+                    {
+                        strategies.Add(new PhEyeFilterStrategy
+                        {
+                            Strategy = s.Strategy,
+                            RedactionFormat = s.RedactionFormat,
+                            StaticReplacement = s.StaticReplacement ?? string.Empty,
+                            MaskCharacter = s.MaskCharacter,
+                            MaskLength = s.MaskLength,
+                            Condition = s.Condition,
+                            Salt = s.Salt,
+                            ContextService = contextService
+                        });
+                    }
+                }
+                if (strategies.Count == 0)
+                    strategies.Add(new PhEyeFilterStrategy { ContextService = contextService });
+
+                var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (phEye.Ignored != null)
+                    foreach (var s in phEye.Ignored) ignored.Add(s);
+
+                var config = new FilterConfiguration.Builder()
+                    .WithStrategies(strategies)
+                    .WithIgnored(ignored)
+                    .WithIgnoredPatterns(phEye.IgnoredPatterns ?? new List<IgnoredPattern>())
+                    .WithWindowSize(policy.Config.WindowSize)
+                    .WithPriority(phEye.Priority)
+                    .Build();
+
+                filters.Add(new PhEyeFilter(config, phEye.PhEyeConfiguration, phEye.RemovePunctuation, phEye.Thresholds));
+            }
+        }
+
         return filters;
     }
 
