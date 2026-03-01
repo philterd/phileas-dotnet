@@ -42,7 +42,7 @@ public abstract class RulesFilter : AbstractFilter
     /// <param name="spans">The list of spans produced by the initial matching pass.</param>
     /// <param name="input">The original input text.</param>
     /// <returns>The refined list of spans.</returns>
-    public virtual IList<Span> PostFilter(IList<Span> spans, string input)
+    protected IList<Span> PostFilter(IList<Span> spans, string input)
     {
         if (PostFiltersConfig.TrailingNewLines)
             spans = TrailingNewLinesPostFilter.Apply(spans);

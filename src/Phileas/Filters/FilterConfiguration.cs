@@ -71,10 +71,10 @@ public class FilterConfiguration
         public Builder WithIgnoredPatterns(IList<IgnoredPattern> ignoredPatterns) { _config.IgnoredPatterns = ignoredPatterns; return this; }
 
         /// <summary>Sets the AES crypto configuration.</summary>
-        public Builder WithCrypto(Crypto crypto) { _config.Crypto = crypto; return this; }
+        public Builder WithCrypto(Crypto? crypto) { _config.Crypto = crypto; return this; }
 
         /// <summary>Sets the format-preserving encryption configuration.</summary>
-        public Builder WithFpe(Fpe fpe) { _config.Fpe = fpe; return this; }
+        public Builder WithFpe(Fpe? fpe) { _config.Fpe = fpe; return this; }
 
         /// <summary>Sets the context-window size (number of words on each side).</summary>
         public Builder WithWindowSize(int windowSize) { _config.WindowSize = windowSize; return this; }

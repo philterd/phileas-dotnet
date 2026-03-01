@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Phileas.Filters;
+namespace Phileas.Services;
 
 /// <summary>
 /// Provides referential integrity for the RANDOM_REPLACE filter strategy by

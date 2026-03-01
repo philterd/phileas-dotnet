@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-using Phileas.Filters;
-
 namespace Phileas.Services;
 
 /// <summary>
