@@ -1,14 +1,20 @@
-# phileas-net
+# Phileas (.NET)
 
-**phileas-net** is a .NET library for detecting and redacting Personally Identifiable Information (PII) from text. Define a *policy* that describes which types of sensitive data to find, choose how each type should be handled, and call a single method to get back clean, filtered text.
+A .NET port of [Phileas (Java)](https://github.com/philterd/phileas) — a library to deidentify and redact PII, PHI, and other sensitive information from text.
 
-## Features
+* Check out the [documentation](https://philterd.github.io/phileas-net/) or details and code examples.
+* Built by [Philterd](https://www.philterd.ai).
+* Commercial support and consulting is available - [contact us](https://www.philterd.ai).
 
-- **21 built-in filter types** – email addresses, SSNs, phone numbers, credit cards, IP addresses, URLs, ages, dates, ZIP codes, and more.
-- **Policy-based configuration** – combine multiple filters and strategies in a single reusable policy object.
-- **Multiple replacement strategies** – redact, mask, replace with a static value, hash (SHA-256), or generate a consistent random replacement.
-- **Referential integrity** – the optional Context Service ensures the same PII token is always replaced with the same value within a named scope.
-- **Extensible** – implement `IContextService` to persist replacement mappings in any store (Redis, SQL, etc.).
+## Overview
+
+Phileas (.NET) is a library for detecting and redacting Personally Identifiable Information (PII) from text. Define a *policy* that describes which types of sensitive data to find, choose how each type should be handled, and call a single method to get back redacted text.
+
+Phileas analyzes text searching for sensitive information such as email addresses, phone numbers, SSNs, credit card numbers, and many other types of PII/PHI. When sensitive information is identified, Phileas can manipulate it in a variety of ways: the information can be redacted, masked, hashed, or replaced with a static value. The user defines how to handle each type of sensitive information through policies (YAML or JSON).
+
+Other capabilities include referential integrity for redactions, conditional logic for redactions, and a CLI.
+
+Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended to be lightweight and easy to use.
 
 ## Supported Filter Types
 
@@ -135,7 +141,7 @@ var policy = new PhileasPolicy
 };
 ```
 
-### Available strategies
+### Redaction Strategies
 
 | C# constant | Strategy value | Behaviour |
 |---|---|---|
@@ -197,15 +203,6 @@ public class RedisContextService : IContextService
 ```
 
 See [docs/context-service.md](docs/context-service.md) for a full walkthrough.
-
-## Project Structure
-
-```
-src/
-  Phileas            – All filter types, policy configuration, and the FilterService entry point
-tests/
-  Phileas.Tests      – xUnit test suite
-```
 
 ## Building and Testing
 
