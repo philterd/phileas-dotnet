@@ -174,9 +174,9 @@ public class PhEyeFilter : AbstractFilter
 
         [JsonPropertyName("end")] public int End { get; set; }
 
-        [JsonPropertyName("label")] public string Label { get; } = string.Empty;
+        [JsonPropertyName("label")] public string Label { get; set;  } = string.Empty;
 
-        [JsonPropertyName("text")] public string Text { get; } = string.Empty;
+        [JsonPropertyName("text")] public string Text { get; set;  } = string.Empty;
 
         [JsonPropertyName("score")] public double Score { get; set; }
     }
