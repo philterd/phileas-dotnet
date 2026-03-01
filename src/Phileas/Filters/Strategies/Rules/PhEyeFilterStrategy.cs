@@ -1,0 +1,31 @@
+/*
+ * Copyright 2026 Philterd, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Strategies;
+
+namespace Phileas.Filters.Strategies.Rules;
+
+/// <summary>
+/// Runtime filter strategy for PhEye-detected entity detection. Delegates to <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement"/> with <c>FilterType.PhEye</c>.
+/// </summary>
+public class PhEyeFilterStrategy : StandardFilterStrategy
+{
+    /// <inheritdoc/>
+    public override Replacement GetReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
+        => GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe, FilterType.PhEye);
+}

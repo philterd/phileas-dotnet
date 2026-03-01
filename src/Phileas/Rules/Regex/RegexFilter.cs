@@ -15,7 +15,7 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model.Filtering;
+using Phileas.Model;
 
 namespace Phileas.Rules.Regex;
 

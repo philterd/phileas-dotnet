@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-using Phileas.Model.Filtering;
+using Phileas.Model;
 
 namespace Phileas.Filters;
 

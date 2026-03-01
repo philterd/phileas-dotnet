@@ -94,21 +94,21 @@ public class PhEyeFilterTests
             }
         };
 
-        Assert.True(identifiers.HasFilter(Phileas.Model.Filtering.FilterType.PhEye));
+        Assert.True(identifiers.HasFilter(Phileas.Model.FilterType.PhEye));
     }
 
     [Fact]
     public void Identifiers_HasFilter_PhEye_ReturnsFalseWhenNotConfigured()
     {
         var identifiers = new Identifiers();
-        Assert.False(identifiers.HasFilter(Phileas.Model.Filtering.FilterType.PhEye));
+        Assert.False(identifiers.HasFilter(Phileas.Model.FilterType.PhEye));
     }
 
     [Fact]
     public void Identifiers_HasFilter_PhEye_ReturnsFalseWhenListIsEmpty()
     {
         var identifiers = new Identifiers { PhEyes = new List<PhEye>() };
-        Assert.False(identifiers.HasFilter(Phileas.Model.Filtering.FilterType.PhEye));
+        Assert.False(identifiers.HasFilter(Phileas.Model.FilterType.PhEye));
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public class PhEyeFilterTests
         var result = filter.Filter(policy, "ctx", 0, "Hello, John Smith today.");
         Assert.Single(result.Spans);
         Assert.Equal("John Smith", result.Spans[0].Text);
-        Assert.Equal(Phileas.Model.Filtering.FilterType.Person, result.Spans[0].FilterType);
+        Assert.Equal(Phileas.Model.FilterType.Person, result.Spans[0].FilterType);
     }
 
     [Fact]

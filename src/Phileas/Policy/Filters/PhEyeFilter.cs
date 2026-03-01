@@ -17,7 +17,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Phileas.Model.Filtering;
+using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
 using PhileasPolicy = Phileas.Policy.Policy;

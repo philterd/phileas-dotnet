@@ -15,7 +15,7 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Model.Filtering;
+using Phileas.Model;
 using Phileas.Policy.Filters;
 
 namespace Phileas.Policy;

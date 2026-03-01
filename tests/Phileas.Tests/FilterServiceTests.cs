@@ -88,7 +88,7 @@ public class FilterServiceTests
 
         var result = FilterService.Filter(policy, "test", 0, "Email: user@example.com");
         Assert.NotEmpty(result.Spans);
-        Assert.Equal(Phileas.Model.Filtering.FilterType.EmailAddress, result.Spans[0].FilterType);
+        Assert.Equal(Phileas.Model.FilterType.EmailAddress, result.Spans[0].FilterType);
         Assert.Equal("user@example.com", result.Spans[0].Text);
     }
 

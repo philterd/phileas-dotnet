@@ -15,12 +15,12 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model.Filtering;
+using Phileas.Filters.Strategies.Rules;
+using Phileas.Model;
 using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters.Regex;
 using Phileas.Rules.Regex;
-using Phileas.Strategies.Rules;
 
 namespace Phileas;
 

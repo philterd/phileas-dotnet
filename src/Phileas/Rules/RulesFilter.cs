@@ -16,7 +16,7 @@
 
 using Phileas.Filters;
 using Phileas.Filters.PostFilters;
-using Phileas.Model.Filtering;
+using Phileas.Model;
 
 namespace Phileas.Rules;
 

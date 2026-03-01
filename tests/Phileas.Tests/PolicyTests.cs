@@ -76,7 +76,7 @@ public class PolicyTests
             EmailAddress = new EmailAddress()
         };
 
-        Assert.True(identifiers.HasFilter(Phileas.Model.Filtering.FilterType.EmailAddress));
-        Assert.False(identifiers.HasFilter(Phileas.Model.Filtering.FilterType.Ssn));
+        Assert.True(identifiers.HasFilter(Phileas.Model.FilterType.EmailAddress));
+        Assert.False(identifiers.HasFilter(Phileas.Model.FilterType.Ssn));
     }
 }
