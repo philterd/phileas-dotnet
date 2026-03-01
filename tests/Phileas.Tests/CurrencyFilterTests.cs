@@ -103,7 +103,7 @@ public class CurrencyFilterTests
             Name = "test",
             Identifiers = new Identifiers { Currency = new Currency() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Salary: $75,000.00 per year.");
+        var result = new FilterService().Filter(policy, "test", 0, "Salary: $75,000.00 per year.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("$75,000.00", result.FilteredText);
     }

@@ -47,7 +47,7 @@ public class ConditionIntegrationTests
             }
         };
 
-        var result = FilterService.Filter(policy, "ctx", 0, "Contact john@example.com for help");
+        var result = new FilterService().Filter(policy, "ctx", 0, "Contact john@example.com for help");
 
         // Should be redacted because email has confidence 1.0
         Assert.Contains("REDACTED", result.FilteredText);
@@ -80,10 +80,10 @@ public class ConditionIntegrationTests
             }
         };
 
-        var result1 = FilterService.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var result1 = new FilterService().Filter(policy, "ctx", 0, "SSN: 123-45-6789");
         Assert.Contains("REDACTED", result1.FilteredText);
 
-        var result2 = FilterService.Filter(policy, "ctx", 0, "SSN: 987-65-4321");
+        var result2 = new FilterService().Filter(policy, "ctx", 0, "SSN: 987-65-4321");
         Assert.DoesNotContain("REDACTED", result2.FilteredText);
         Assert.Contains("987-65-4321", result2.FilteredText); // Should remain unchanged
     }
@@ -114,11 +114,11 @@ public class ConditionIntegrationTests
             }
         };
 
-        var result1 = FilterService.Filter(policy, "sensitive-context", 0, "Email: test@example.com");
+        var result1 = new FilterService().Filter(policy, "sensitive-context", 0, "Email: test@example.com");
         Assert.Contains("*", result1.FilteredText);
         Assert.DoesNotContain("test@example.com", result1.FilteredText);
 
-        var result2 = FilterService.Filter(policy, "public-context", 0, "Email: test@example.com");
+        var result2 = new FilterService().Filter(policy, "public-context", 0, "Email: test@example.com");
         Assert.DoesNotContain("*", result2.FilteredText);
         Assert.Contains("test@example.com", result2.FilteredText);
     }
@@ -159,7 +159,7 @@ public class ConditionIntegrationTests
         };
 
         // Phone numbers have confidence 0.90, so second strategy (MASK) should match
-        var result = FilterService.Filter(policy, "ctx", 0, "Call 555-123-4567 today");
+        var result = new FilterService().Filter(policy, "ctx", 0, "Call 555-123-4567 today");
 
         Assert.Contains("*", result.FilteredText);
         Assert.DoesNotContain("555-123-4567", result.FilteredText);
@@ -195,12 +195,12 @@ public class ConditionIntegrationTests
         };
 
         // Context matches
-        var result1 = FilterService.Filter(policy, "medical", 0, "ZIP: 12345");
+        var result1 = new FilterService().Filter(policy, "medical", 0, "ZIP: 12345");
         Assert.Contains("00000", result1.FilteredText);
         Assert.DoesNotContain("12345", result1.FilteredText);
 
         // Context doesn't match
-        var result2 = FilterService.Filter(policy, "public", 0, "ZIP: 12345");
+        var result2 = new FilterService().Filter(policy, "public", 0, "ZIP: 12345");
         Assert.DoesNotContain("00000", result2.FilteredText);
         Assert.Contains("12345", result2.FilteredText);
     }
@@ -217,7 +217,7 @@ public class ConditionIntegrationTests
             }
         };
 
-        var result = FilterService.Filter(policy, "ctx", 0, "Email: test@example.com");
+        var result = new FilterService().Filter(policy, "ctx", 0, "Email: test@example.com");
 
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("test@example.com", result.FilteredText);
@@ -246,7 +246,7 @@ public class ConditionIntegrationTests
         };
 
         // Invalid condition should default to true and apply the strategy
-        var result = FilterService.Filter(policy, "ctx", 0, "Email: test@example.com");
+        var result = new FilterService().Filter(policy, "ctx", 0, "Email: test@example.com");
         Assert.Contains("REDACTED", result.FilteredText);
     }
 }

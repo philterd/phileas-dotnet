@@ -55,7 +55,7 @@ public class EndToEndTests
             "Dear John, please contact our support team at support@example.com for any questions. " +
             "We look forward to hearing from you.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.DoesNotContain("support@example.com", result.FilteredText);
         Assert.Contains("REDACTED", result.FilteredText);
@@ -69,7 +69,7 @@ public class EndToEndTests
             "Patient Jane Doe has been assigned SSN 123-45-6789 for billing purposes. " +
             "Please keep this information confidential.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.DoesNotContain("123-45-6789", result.FilteredText);
         Assert.Contains("REDACTED", result.FilteredText);
@@ -82,7 +82,7 @@ public class EndToEndTests
         const string input =
             "You can reach our office at 555-867-5309 between 9 AM and 5 PM on weekdays.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.DoesNotContain("555-867-5309", result.FilteredText);
         Assert.Contains("REDACTED", result.FilteredText);
@@ -96,7 +96,7 @@ public class EndToEndTests
             "The payment was processed using card number 4111111111111111. " +
             "Please do not share this number with anyone.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.DoesNotContain("4111111111111111", result.FilteredText);
         Assert.Contains("REDACTED", result.FilteredText);
@@ -109,7 +109,7 @@ public class EndToEndTests
         const string input =
             "The request originated from IP address 192.168.1.100 at 3:45 PM on Tuesday.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.DoesNotContain("192.168.1.100", result.FilteredText);
         Assert.Contains("REDACTED", result.FilteredText);
@@ -122,7 +122,7 @@ public class EndToEndTests
         const string input =
             "Please mail your documents to 123 Main Street, Springfield, 62704.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.DoesNotContain("62704", result.FilteredText);
         Assert.Contains("REDACTED", result.FilteredText);
@@ -145,7 +145,7 @@ public class EndToEndTests
             $"My credit card is {creditCard}. " +
             $"I connected from the address {ip} this morning.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.DoesNotContain(email, result.FilteredText);
         Assert.DoesNotContain(ssn, result.FilteredText);
@@ -165,7 +165,7 @@ public class EndToEndTests
     {
         const string input = "The weather today is sunny and warm with no chance of rain.";
 
-        var result = FilterService.Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
+        var result = new FilterService().Filter(BuildMultiFilterPolicy(), "ctx", 0, input);
 
         Assert.Equal(input, result.FilteredText);
         Assert.Empty(result.Spans);
@@ -186,7 +186,7 @@ public class EndToEndTests
 
         const string input = "Email me at user@example.com or call 555-123-4567.";
 
-        var result = FilterService.Filter(policy, "ctx", 0, input);
+        var result = new FilterService().Filter(policy, "ctx", 0, input);
 
         Assert.DoesNotContain("user@example.com", result.FilteredText);
         Assert.Contains("555-123-4567", result.FilteredText);
@@ -205,7 +205,7 @@ public class EndToEndTests
 
         const string input = "Contact admin@example.org. SSN on file: 321-54-9876.";
 
-        var result = FilterService.Filter(policy, "ctx", 0, input);
+        var result = new FilterService().Filter(policy, "ctx", 0, input);
 
         Assert.Contains("admin@example.org", result.FilteredText);
         Assert.DoesNotContain("321-54-9876", result.FilteredText);
@@ -224,7 +224,7 @@ public class EndToEndTests
 
         const string input = "Visit our site at https://www.example.com for more info.";
 
-        var result = FilterService.Filter(policy, "ctx", 0, input);
+        var result = new FilterService().Filter(policy, "ctx", 0, input);
 
         Assert.DoesNotContain("https://www.example.com", result.FilteredText);
         Assert.Contains("REDACTED", result.FilteredText);
@@ -248,7 +248,7 @@ public class EndToEndTests
         const string input = "Email: user@example.com end";
         // "user@example.com" starts at index 7; CharacterEnd is exclusive, so 7 + 16 = 23
 
-        var result = FilterService.Filter(policy, "ctx", 0, input);
+        var result = new FilterService().Filter(policy, "ctx", 0, input);
 
         Assert.Single(result.Spans);
         var span = result.Spans[0];
@@ -269,7 +269,7 @@ public class EndToEndTests
 
         const string input = "Contact a@example.com or b@example.com for support.";
 
-        var result = FilterService.Filter(policy, "ctx", 0, input);
+        var result = new FilterService().Filter(policy, "ctx", 0, input);
 
         Assert.DoesNotContain("a@example.com", result.FilteredText);
         Assert.DoesNotContain("b@example.com", result.FilteredText);
@@ -298,7 +298,7 @@ public class EndToEndTests
 
         const string input = "Reach Jane at jane.doe@example.com. Her SSN is 123-45-6789.";
 
-        var result = FilterService.Filter(policy, "ctx", 0, input);
+        var result = new FilterService().Filter(policy, "ctx", 0, input);
 
         Assert.DoesNotContain("jane.doe@example.com", result.FilteredText);
         Assert.DoesNotContain("123-45-6789", result.FilteredText);

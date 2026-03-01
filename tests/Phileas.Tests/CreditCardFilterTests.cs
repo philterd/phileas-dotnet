@@ -102,7 +102,7 @@ public class CreditCardFilterTests
             Name = "test",
             Identifiers = new Identifiers { CreditCard = new CreditCard() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Card: 4111111111111111 is on file.");
+        var result = new FilterService().Filter(policy, "test", 0, "Card: 4111111111111111 is on file.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("4111111111111111", result.FilteredText);
     }

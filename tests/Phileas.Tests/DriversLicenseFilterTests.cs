@@ -88,7 +88,7 @@ public class DriversLicenseFilterTests
             Name = "test",
             Identifiers = new Identifiers { DriversLicense = new DriversLicense() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "DL Number: A1234567");
+        var result = new FilterService().Filter(policy, "test", 0, "DL Number: A1234567");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("A1234567", result.FilteredText);
     }

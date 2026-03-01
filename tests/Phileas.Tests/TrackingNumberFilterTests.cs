@@ -99,7 +99,7 @@ public class TrackingNumberFilterTests
             Name = "test",
             Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Package UPS: 1Z12345E0205271688 has shipped.");
+        var result = new FilterService().Filter(policy, "test", 0, "Package UPS: 1Z12345E0205271688 has shipped.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("1Z12345E0205271688", result.FilteredText);
     }

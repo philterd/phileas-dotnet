@@ -89,7 +89,7 @@ public class IbanCodeFilterTests
             Name = "test",
             Identifiers = new Identifiers { IbanCode = new IbanCode() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Wire to GB29NWBK60161331926819");
+        var result = new FilterService().Filter(policy, "test", 0, "Wire to GB29NWBK60161331926819");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("GB29NWBK60161331926819", result.FilteredText);
     }

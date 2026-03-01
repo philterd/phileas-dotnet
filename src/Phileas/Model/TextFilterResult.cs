@@ -17,7 +17,7 @@
 namespace Phileas.Model;
 
 /// <summary>
-/// The result produced by <see cref="FilterService.Filter"/> containing the redacted text
+/// The result produced by <see cref="IFilterService.Filter"/> containing the redacted text
 /// and the list of <see cref="Span"/> objects that describe each detected entity.
 /// </summary>
 public class TextFilterResult

@@ -100,7 +100,7 @@ public class BitcoinAddressFilterTests
             Name = "test",
             Identifiers = new Identifiers { BitcoinAddress = new BitcoinAddress() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Send BTC to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+        var result = new FilterService().Filter(policy, "test", 0, "Send BTC to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
         Assert.Contains("REDACTED", result.FilteredText);
     }
 }

@@ -169,8 +169,8 @@ public class InMemoryContextServiceTests
 
         // When no context service is provided, FilterService should default to
         // InMemoryContextService. The same SSN filtered twice in the same call produces a span.
-        var result1 = FilterService.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
-        var result2 = FilterService.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var result1 = new FilterService().Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var result2 = new FilterService().Filter(policy, "ctx", 0, "SSN: 123-45-6789");
         Assert.NotEmpty(result1.Spans);
         Assert.NotEmpty(result2.Spans);
     }

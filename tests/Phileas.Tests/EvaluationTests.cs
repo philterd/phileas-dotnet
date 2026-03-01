@@ -20,10 +20,10 @@ public class EvaluationTests
     public void Evaluate_PerfectDetection_ReturnsPrecisionRecallF1OfOne()
     {
         const string input = "Contact john.doe@example.com for help.";
-        var filterResult = FilterService.Filter(EmailPolicy(), "test", 0, input);
+        var filterResult = new FilterService().Filter(EmailPolicy(), "test", 0, input);
         var groundTruth = filterResult.Spans.ToList();
 
-        var evaluation = FilterService.Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
+        var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
         Assert.Equal(1.0, evaluation.Precision);
         Assert.Equal(1.0, evaluation.Recall);
@@ -36,7 +36,7 @@ public class EvaluationTests
         const string input = "No PII here.";
         var groundTruth = new List<Span>();
 
-        var evaluation = FilterService.Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
+        var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
         Assert.Equal(0.0, evaluation.Precision);
         Assert.Equal(0.0, evaluation.Recall);
@@ -54,7 +54,7 @@ public class EvaluationTests
             new Span { CharacterStart = 0, CharacterEnd = 10 }
         };
 
-        var evaluation = FilterService.Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
+        var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
         Assert.Equal(0.0, evaluation.Precision);  // no detections at all → precision = 0
         Assert.Equal(0.0, evaluation.Recall);     // missed the ground truth span → recall = 0
@@ -68,7 +68,7 @@ public class EvaluationTests
         const string input = "Contact john.doe@example.com for help.";
         var groundTruth = new List<Span>(); // intentionally empty
 
-        var evaluation = FilterService.Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
+        var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
         Assert.Equal(0.0, evaluation.Precision);  // detection with no ground truth → precision = 0
         Assert.Equal(0.0, evaluation.Recall);     // no ground truth spans at all → recall = 0
@@ -81,7 +81,7 @@ public class EvaluationTests
         // Two ground-truth spans, policy detects one correctly and misses the other.
         // First, detect what the filter finds for a text with two emails.
         const string input = "a@a.com and b@b.com";
-        var both = FilterService.Filter(EmailPolicy(), "test", 0, input).Spans;
+        var both = new FilterService().Filter(EmailPolicy(), "test", 0, input).Spans;
         Assert.Equal(2, both.Count);
 
         // Ground truth contains both spans; provide a policy that only detects one
@@ -91,7 +91,7 @@ public class EvaluationTests
             new Span { CharacterStart = 100, CharacterEnd = 110 } // extra phantom → FN
         };
 
-        var evaluation = FilterService.Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
+        var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
         // TP=2, FP=0, FN=1
         double expectedPrecision = 2.0 / (2 + 0);     // 1.0

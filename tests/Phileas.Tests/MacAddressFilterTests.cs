@@ -101,7 +101,7 @@ public class MacAddressFilterTests
             Name = "test",
             Identifiers = new Identifiers { MacAddress = new MacAddress() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Device MAC: 00:1A:2B:3C:4D:5E");
+        var result = new FilterService().Filter(policy, "test", 0, "Device MAC: 00:1A:2B:3C:4D:5E");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("00:1A:2B:3C:4D:5E", result.FilteredText);
     }
