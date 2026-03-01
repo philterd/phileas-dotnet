@@ -2,12 +2,12 @@
 
 ## FilterService
 
-`FilterService` (in `Phileas.Services`) is the main entry point. It is a static class.
+`FilterService` (in `Phileas.Services`) is the main entry point. It implements the `IFilterService` interface.
 
 ### Filter
 
 ```csharp
-public static TextFilterResult Filter(
+public TextFilterResult Filter(
     Policy policy,
     string context,
     int piece,
@@ -30,7 +30,8 @@ Applies the policy to `input` and returns a [`TextFilterResult`](#textfilterresu
 **Example:**
 
 ```csharp
-var result = FilterService.Filter(
+var filterService = new FilterService();
+var result = filterService.Filter(
     policy,
     context: "patient-123",
     piece: 0,
@@ -43,7 +44,7 @@ var result = FilterService.Filter(
 ### Evaluate
 
 ```csharp
-public static EvaluationResult Evaluate(
+public EvaluationResult Evaluate(
     Policy policy,
     string context,
     int piece,
@@ -70,12 +71,13 @@ A detected span is counted as a **true positive** when its `CharacterStart` and 
 **Example:**
 
 ```csharp
+var filterService = new FilterService();
 var groundTruth = new List<Span>
 {
     new Span { CharacterStart = 8, CharacterEnd = 28 }  // position of "john.doe@example.com"
 };
 
-var evaluation = FilterService.Evaluate(
+var evaluation = filterService.Evaluate(
     policy,
     context: "default",
     piece: 0,
@@ -101,7 +103,7 @@ public class EvaluationResult
 }
 ```
 
-Returned by [`FilterService.Evaluate`](#evaluate). All values are in the range [0, 1].
+Returned by [`IFilterService.Evaluate`](#evaluate). All values are in the range [0, 1].
 
 | Property | Type | Description |
 |---|---|---|

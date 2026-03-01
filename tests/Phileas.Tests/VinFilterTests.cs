@@ -89,7 +89,7 @@ public class VinFilterTests
             Name = "test",
             Identifiers = new Identifiers { Vin = new Vin() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "VIN: 1HGBH41JXMN109186 on file.");
+        var result = new FilterService().Filter(policy, "test", 0, "VIN: 1HGBH41JXMN109186 on file.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("1HGBH41JXMN109186", result.FilteredText);
     }

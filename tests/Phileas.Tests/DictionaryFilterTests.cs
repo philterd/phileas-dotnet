@@ -111,7 +111,7 @@ public class DictionaryFilterTests
             }
         };
 
-        var result = FilterService.Filter(policy, "test", 0, "The patient has diabetes and hypertension.");
+        var result = new FilterService().Filter(policy, "test", 0, "The patient has diabetes and hypertension.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("diabetes", result.FilteredText);
         Assert.DoesNotContain("hypertension", result.FilteredText);
@@ -141,7 +141,7 @@ public class DictionaryFilterTests
             }
         };
 
-        var result = FilterService.Filter(policy, "test", 0, "Patient with diabetes takes metformin daily.");
+        var result = new FilterService().Filter(policy, "test", 0, "Patient with diabetes takes metformin daily.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("diabetes", result.FilteredText);
         Assert.DoesNotContain("metformin", result.FilteredText);
@@ -241,7 +241,7 @@ public class DictionaryFilterTests
             }
         };
 
-        var result = FilterService.Filter(policy, "test", 0, "The patient has diabtes.");
+        var result = new FilterService().Filter(policy, "test", 0, "The patient has diabtes.");
         Assert.Contains("REDACTED", result.FilteredText);
     }
 }

@@ -91,7 +91,7 @@ public class StateAbbreviationFilterTests
             Name = "test",
             Identifiers = new Identifiers { StateAbbreviation = new StateAbbreviation() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Address: 123 Main St, Springfield, IL 62701");
+        var result = new FilterService().Filter(policy, "test", 0, "Address: 123 Main St, Springfield, IL 62701");
         Assert.Contains("REDACTED", result.FilteredText);
     }
 }

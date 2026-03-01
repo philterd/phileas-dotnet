@@ -89,7 +89,7 @@ public class PhoneNumberExtensionFilterTests
             Name = "test",
             Identifiers = new Identifiers { PhoneNumberExtension = new PhoneNumberExtension() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Call us at ext. 4200 for support.");
+        var result = new FilterService().Filter(policy, "test", 0, "Call us at ext. 4200 for support.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("ext. 4200", result.FilteredText);
     }

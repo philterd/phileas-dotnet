@@ -108,7 +108,7 @@ public class AgeFilterTests
             Name = "test",
             Identifiers = new Identifiers { Age = new Age() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "The patient is 45 years old.");
+        var result = new FilterService().Filter(policy, "test", 0, "The patient is 45 years old.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("45 years old", result.FilteredText);
     }

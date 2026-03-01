@@ -90,7 +90,7 @@ public class StreetAddressFilterTests
             Name = "test",
             Identifiers = new Identifiers { StreetAddress = new StreetAddress() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Send mail to 123 Main Street.");
+        var result = new FilterService().Filter(policy, "test", 0, "Send mail to 123 Main Street.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("123 Main Street", result.FilteredText);
     }

@@ -89,7 +89,7 @@ public class BankRoutingNumberFilterTests
             Name = "test",
             Identifiers = new Identifiers { BankRoutingNumber = new BankRoutingNumber() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Wire routing: 021000021 for payment.");
+        var result = new FilterService().Filter(policy, "test", 0, "Wire routing: 021000021 for payment.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("021000021", result.FilteredText);
     }

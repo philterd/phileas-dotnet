@@ -114,7 +114,7 @@ public class DateFilterTests
             Name = "test",
             Identifiers = new Identifiers { Date = new Date() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "DOB: 01/15/1990");
+        var result = new FilterService().Filter(policy, "test", 0, "DOB: 01/15/1990");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("01/15/1990", result.FilteredText);
     }

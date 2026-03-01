@@ -88,7 +88,7 @@ public class PassportNumberFilterTests
             Name = "test",
             Identifiers = new Identifiers { PassportNumber = new PassportNumber() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "Passport: A12345678 expires next year.");
+        var result = new FilterService().Filter(policy, "test", 0, "Passport: A12345678 expires next year.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("A12345678", result.FilteredText);
     }

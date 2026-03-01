@@ -110,7 +110,7 @@ public class UrlFilterTests
             Name = "test",
             Identifiers = new Identifiers { Url = new Url() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "See https://example.com for details.");
+        var result = new FilterService().Filter(policy, "test", 0, "See https://example.com for details.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("https://example.com", result.FilteredText);
     }
