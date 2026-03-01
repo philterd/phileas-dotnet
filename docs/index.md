@@ -10,16 +10,9 @@ phileas-net is a .NET library for detecting and filtering Personally Identifiabl
 - **Referential integrity** — optional context service keeps random replacements consistent across documents
 - **Extensible** — implement `IContextService` to persist replacement mappings in any store (Redis, database, etc.)
 
-## Projects
+## Project
 
-The solution is split into four libraries:
-
-| Project | Description |
-|---|---|
-| `Phileas.Model` | Core value types: `Span`, `FilterType`, `FilterPattern`, `Replacement` |
-| `Phileas.Policy` | Policy configuration classes: `Policy`, `Identifiers`, filter strategy POCOs |
-| `Phileas.Filters` | Abstract filter infrastructure: `AbstractFilter`, `FilterConfiguration`, `IContextService` |
-| `Phileas.Services` | Concrete filter implementations and `FilterPolicyLoader` entry point |
+`Phileas.Services` is a single library containing all filter types, policy configuration, and the `FilterPolicyLoader` entry point.
 
 ## Quick Example
 
