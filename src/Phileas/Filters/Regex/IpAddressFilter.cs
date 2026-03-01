@@ -23,6 +23,9 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects IP address entities in plain text.
+/// </summary>
 public class IpAddressFilter : RegexFilter
 {
     private static readonly Analyzer IpAnalyzer = new Analyzer(
@@ -30,8 +33,13 @@ public class IpAddressFilter : RegexFilter
         new FilterPattern.Builder().WithPattern(@"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b").WithInitialConfidence(0.95).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="IpAddressFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public IpAddressFilter(FilterConfiguration configuration) : base(FilterType.IpAddress, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, IpAnalyzer, input, context, piece);

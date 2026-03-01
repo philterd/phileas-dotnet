@@ -16,4 +16,7 @@
 
 namespace Phileas.Policy.Filters.Strategies;
 
+/// <summary>
+/// Defines the replacement strategy settings for a PhEye-detected entity filter, as deserialized from a policy JSON document.
+/// </summary>
 public class PhEyeFilterStrategy : AbstractFilterStrategy { }

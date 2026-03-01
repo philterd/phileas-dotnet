@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting IPv4 and IPv6 addresses.
+/// </summary>
 public class IpAddress : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of IP address filter strategies to apply.</summary>
     [JsonPropertyName("ipAddressFilterStrategies")]
     public List<IpAddressFilterStrategy>? Strategies { get; set; }
 }

@@ -18,11 +18,23 @@ using Phileas.Model.Filtering;
 
 namespace Phileas;
 
+/// <summary>
+/// The result produced by <see cref="FilterService.Filter"/> containing the redacted text
+/// and the list of <see cref="Span"/> objects that describe each detected entity.
+/// </summary>
 public class TextFilterResult
 {
+    /// <summary>Gets the input text with all detected entities replaced by their configured redaction values.</summary>
     public string FilteredText { get; }
+
+    /// <summary>Gets the ordered list of spans that were identified and replaced.</summary>
     public IList<Span> Spans { get; }
 
+    /// <summary>
+    /// Initializes a new <see cref="TextFilterResult"/>.
+    /// </summary>
+    /// <param name="filteredText">The redacted output text.</param>
+    /// <param name="spans">The spans that were identified in the input.</param>
     public TextFilterResult(string filteredText, IList<Span> spans)
     {
         FilteredText = filteredText;

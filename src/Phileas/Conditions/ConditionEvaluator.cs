@@ -35,6 +35,17 @@ public static class ConditionEvaluator
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
+    /// <summary>
+    /// Evaluates the given condition string against the supplied runtime values.
+    /// Returns <see langword="true"/> when the condition is satisfied or when
+    /// <paramref name="condition"/> is <see langword="null"/> or whitespace.
+    /// </summary>
+    /// <param name="condition">The condition expression to evaluate, or <see langword="null"/>.</param>
+    /// <param name="context">The current context identifier.</param>
+    /// <param name="token">The detected entity text.</param>
+    /// <param name="confidence">The detection confidence score.</param>
+    /// <param name="classification">Optional entity classification label.</param>
+    /// <returns><see langword="true"/> if the condition passes; otherwise <see langword="false"/>.</returns>
     public static bool Evaluate(
         string condition,
         string context,

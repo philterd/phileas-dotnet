@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting International Bank Account Numbers (IBAN).
+/// </summary>
 public class IbanCode : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of IBAN code filter strategies to apply.</summary>
     [JsonPropertyName("ibanCodeFilterStrategies")]
     public List<IbanCodeFilterStrategy>? Strategies { get; set; }
 }

@@ -20,77 +20,110 @@ using Phileas.Policy.Filters;
 
 namespace Phileas.Policy;
 
+/// <summary>
+/// Contains the per-filter-type configuration objects that are active in a policy.
+/// A filter is enabled when its corresponding property is non-<see langword="null"/>
+/// (or, for collection-based filters, when the collection is non-empty).
+/// </summary>
 public class Identifiers
 {
+    /// <summary>Gets or sets the list of PhEye (NLP-based) filter configurations.</summary>
     [JsonPropertyName("pheyes")]
     public List<PhEye>? PhEyes { get; set; }
 
+    /// <summary>Gets or sets the list of dictionary-based filter configurations.</summary>
     [JsonPropertyName("dictionaries")]
     public List<Dictionary>? Dictionaries { get; set; }
 
+    /// <summary>Gets or sets the age-expression filter configuration.</summary>
     [JsonPropertyName("age")]
     public Age? Age { get; set; }
 
+    /// <summary>Gets or sets the bank routing number filter configuration.</summary>
     [JsonPropertyName("bankRoutingNumber")]
     public BankRoutingNumber? BankRoutingNumber { get; set; }
 
+    /// <summary>Gets or sets the Bitcoin address filter configuration.</summary>
     [JsonPropertyName("bitcoinAddress")]
     public BitcoinAddress? BitcoinAddress { get; set; }
 
+    /// <summary>Gets or sets the credit card number filter configuration.</summary>
     [JsonPropertyName("creditCard")]
     public CreditCard? CreditCard { get; set; }
 
+    /// <summary>Gets or sets the currency amount filter configuration.</summary>
     [JsonPropertyName("currency")]
     public Currency? Currency { get; set; }
 
+    /// <summary>Gets or sets the date expression filter configuration.</summary>
     [JsonPropertyName("date")]
     public Date? Date { get; set; }
 
+    /// <summary>Gets or sets the driver's license number filter configuration.</summary>
     [JsonPropertyName("driversLicense")]
     public DriversLicense? DriversLicense { get; set; }
 
+    /// <summary>Gets or sets the email address filter configuration.</summary>
     [JsonPropertyName("emailAddress")]
     public EmailAddress? EmailAddress { get; set; }
 
+    /// <summary>Gets or sets the IBAN code filter configuration.</summary>
     [JsonPropertyName("ibanCode")]
     public IbanCode? IbanCode { get; set; }
 
+    /// <summary>Gets or sets the IP address filter configuration.</summary>
     [JsonPropertyName("ipAddress")]
     public IpAddress? IpAddress { get; set; }
 
+    /// <summary>Gets or sets the MAC address filter configuration.</summary>
     [JsonPropertyName("macAddress")]
     public MacAddress? MacAddress { get; set; }
 
+    /// <summary>Gets or sets the passport number filter configuration.</summary>
     [JsonPropertyName("passportNumber")]
     public PassportNumber? PassportNumber { get; set; }
 
+    /// <summary>Gets or sets the phone number filter configuration.</summary>
     [JsonPropertyName("phoneNumber")]
     public PhoneNumber? PhoneNumber { get; set; }
 
+    /// <summary>Gets or sets the phone number extension filter configuration.</summary>
     [JsonPropertyName("phoneNumberExtension")]
     public PhoneNumberExtension? PhoneNumberExtension { get; set; }
 
+    /// <summary>Gets or sets the Social Security Number (SSN) filter configuration.</summary>
     [JsonPropertyName("ssn")]
     public Ssn? Ssn { get; set; }
 
+    /// <summary>Gets or sets the US state abbreviation filter configuration.</summary>
     [JsonPropertyName("stateAbbreviation")]
     public StateAbbreviation? StateAbbreviation { get; set; }
 
+    /// <summary>Gets or sets the street address filter configuration.</summary>
     [JsonPropertyName("streetAddress")]
     public StreetAddress? StreetAddress { get; set; }
 
+    /// <summary>Gets or sets the package tracking number filter configuration.</summary>
     [JsonPropertyName("trackingNumber")]
     public TrackingNumber? TrackingNumber { get; set; }
 
+    /// <summary>Gets or sets the URL filter configuration.</summary>
     [JsonPropertyName("url")]
     public Url? Url { get; set; }
 
+    /// <summary>Gets or sets the Vehicle Identification Number (VIN) filter configuration.</summary>
     [JsonPropertyName("vin")]
     public Vin? Vin { get; set; }
 
+    /// <summary>Gets or sets the ZIP code filter configuration.</summary>
     [JsonPropertyName("zipCode")]
     public ZipCode? ZipCode { get; set; }
 
+    /// <summary>
+    /// Determines whether the filter for the specified <paramref name="filterType"/> is enabled in this identifiers configuration.
+    /// </summary>
+    /// <param name="filterType">The filter type to check.</param>
+    /// <returns><see langword="true"/> if the filter is configured and enabled; otherwise <see langword="false"/>.</returns>
     public bool HasFilter(FilterType filterType) => filterType switch
     {
         FilterType.Age => Age != null,

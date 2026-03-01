@@ -20,17 +20,24 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for the PhEye NLP-based entity detection filter.
+/// </summary>
 public class PhEye : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of PhEye filter strategies to apply.</summary>
     [JsonPropertyName("phEyeFilterStrategies")]
     public List<PhEyeFilterStrategy>? Strategies { get; set; }
 
+    /// <summary>Gets or sets the connection and behavior settings for the PhEye service.</summary>
     [JsonPropertyName("phEyeConfiguration")]
     public PhEyeConfiguration PhEyeConfiguration { get; set; } = new PhEyeConfiguration();
 
+    /// <summary>Gets or sets a value indicating whether punctuation should be removed from the input before sending to the PhEye service. Defaults to <see langword="false"/>.</summary>
     [JsonPropertyName("removePunctuation")]
     public bool RemovePunctuation { get; set; } = false;
 
+    /// <summary>Gets or sets a dictionary of per-label minimum confidence thresholds. Entities with a score below the threshold are discarded.</summary>
     [JsonPropertyName("thresholds")]
     public Dictionary<string, double> Thresholds { get; set; } = new Dictionary<string, double>();
 }

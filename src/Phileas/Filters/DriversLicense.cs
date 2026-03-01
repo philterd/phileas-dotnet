@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting driver's license numbers.
+/// </summary>
 public class DriversLicense : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of driver's license filter strategies to apply.</summary>
     [JsonPropertyName("driversLicenseFilterStrategies")]
     public List<DriversLicenseFilterStrategy>? Strategies { get; set; }
 }

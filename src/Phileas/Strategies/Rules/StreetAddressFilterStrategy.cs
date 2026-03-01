@@ -20,8 +20,12 @@ using Phileas.Strategies;
 
 namespace Phileas.Strategies.Rules;
 
+/// <summary>
+/// Runtime filter strategy for street address detection. Delegates to <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement"/> with <c>FilterType.StreetAddress</c>.
+/// </summary>
 public class StreetAddressFilterStrategy : StandardFilterStrategy
 {
+    /// <inheritdoc/>
     public override Replacement GetReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
         => GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe, FilterType.StreetAddress);
 }

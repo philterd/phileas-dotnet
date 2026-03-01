@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting URLs and web addresses.
+/// </summary>
 public class Url : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of URL filter strategies to apply.</summary>
     [JsonPropertyName("urlFilterStrategies")]
     public List<UrlFilterStrategy>? Strategies { get; set; }
 }

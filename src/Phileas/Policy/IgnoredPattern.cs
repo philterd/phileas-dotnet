@@ -18,14 +18,20 @@ using System.Text.Json.Serialization;
 
 namespace Phileas.Policy;
 
+/// <summary>
+/// Specifies a named regular-expression pattern whose matches should be excluded from filtering.
+/// </summary>
 public class IgnoredPattern
 {
+    /// <summary>Gets or sets a human-readable name for this pattern.</summary>
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
+    /// <summary>Gets or sets the regular expression string. Tokens matching this pattern will not be filtered.</summary>
     [JsonPropertyName("pattern")]
     public string? Pattern { get; set; }
 
+    /// <summary>Gets or sets a value indicating whether the pattern matching is case-sensitive. Defaults to <see langword="false"/>.</summary>
     [JsonPropertyName("caseSensitive")]
     public bool CaseSensitive { get; set; } = false;
 }

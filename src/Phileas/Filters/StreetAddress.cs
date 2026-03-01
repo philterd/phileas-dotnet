@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting street addresses.
+/// </summary>
 public class StreetAddress : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of street address filter strategies to apply.</summary>
     [JsonPropertyName("streetAddressFilterStrategies")]
     public List<StreetAddressFilterStrategy>? Strategies { get; set; }
 }

@@ -23,14 +23,22 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects US ZIP code entities in plain text.
+/// </summary>
 public class ZipCodeFilter : RegexFilter
 {
     private static readonly Analyzer ZipAnalyzer = new Analyzer(
         new FilterPattern.Builder().WithPattern(@"\b\d{5}(?:-\d{4})?\b").WithInitialConfidence(0.60).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="ZipCodeFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public ZipCodeFilter(FilterConfiguration configuration) : base(FilterType.ZipCode, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, ZipAnalyzer, input, context, piece);

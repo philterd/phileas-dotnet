@@ -23,14 +23,34 @@ using Phileas.Policy;
 
 namespace Phileas.Strategies;
 
+/// <summary>
+/// Concrete base strategy that implements <see cref="EvaluateCondition"/> using
+/// <see cref="ConditionEvaluator"/> and provides <see cref="GetStandardReplacement"/>
+/// which dispatches to the correct algorithm based on <see cref="AbstractFilterStrategy.Strategy"/>.
+/// All type-specific filter strategies in the <c>Strategies.Rules</c> namespace inherit from this class.
+/// </summary>
 public abstract class StandardFilterStrategy : AbstractFilterStrategy
 {
+    /// <inheritdoc/>
     public override bool EvaluateCondition(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern)
     {
         if (string.IsNullOrEmpty(Condition)) return true;
         return ConditionEvaluator.Evaluate(Condition, context, token, confidence, classification);
     }
 
+    /// <summary>
+    /// Computes the replacement value for the detected entity using the configured <see cref="AbstractFilterStrategy.Strategy"/>.
+    /// </summary>
+    /// <param name="context">The context identifier.</param>
+    /// <param name="token">The original entity text.</param>
+    /// <param name="window">Words surrounding the entity.</param>
+    /// <param name="confidence">Confidence score of the detection.</param>
+    /// <param name="classification">Optional entity classification label.</param>
+    /// <param name="filterPattern">The pattern that produced the match.</param>
+    /// <param name="crypto">AES crypto settings, or <see langword="null"/>.</param>
+    /// <param name="fpe">Format-preserving encryption settings, or <see langword="null"/>.</param>
+    /// <param name="filterType">The type of filter invoking this method (used for default redaction format).</param>
+    /// <returns>A <see cref="Replacement"/> containing the replacement value and optional salt.</returns>
     protected Replacement GetStandardReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe, FilterType filterType)
     {
         var salt = Salt ? GenerateSalt() : string.Empty;

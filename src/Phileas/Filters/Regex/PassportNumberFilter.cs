@@ -23,14 +23,22 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects passport number entities in plain text.
+/// </summary>
 public class PassportNumberFilter : RegexFilter
 {
     private static readonly Analyzer PassportAnalyzer = new Analyzer(
         new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="PassportNumberFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public PassportNumberFilter(FilterConfiguration configuration) : base(FilterType.PassportNumber, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, PassportAnalyzer, input, context, piece);

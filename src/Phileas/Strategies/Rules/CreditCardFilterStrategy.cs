@@ -20,8 +20,12 @@ using Phileas.Strategies;
 
 namespace Phileas.Strategies.Rules;
 
+/// <summary>
+/// Runtime filter strategy for credit card number detection. Delegates to <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement"/> with <c>FilterType.CreditCard</c>.
+/// </summary>
 public class CreditCardFilterStrategy : StandardFilterStrategy
 {
+    /// <inheritdoc/>
     public override Replacement GetReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
         => GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe, FilterType.CreditCard);
 }

@@ -23,14 +23,22 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects Vehicle Identification Number (VIN) entities in plain text.
+/// </summary>
 public class VinFilter : RegexFilter
 {
     private static readonly Analyzer VinAnalyzer = new Analyzer(
         new FilterPattern.Builder().WithPattern(@"\b[A-HJ-NPR-Z0-9]{17}\b").WithInitialConfidence(0.80).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="VinFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public VinFilter(FilterConfiguration configuration) : base(FilterType.Vin, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, VinAnalyzer, input, context, piece);

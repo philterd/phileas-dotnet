@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting US Social Security Numbers (SSN).
+/// </summary>
 public class Ssn : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of SSN filter strategies to apply.</summary>
     [JsonPropertyName("ssnFilterStrategies")]
     public List<SsnFilterStrategy>? Strategies { get; set; }
 }
