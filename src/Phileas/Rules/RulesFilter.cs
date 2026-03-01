@@ -15,6 +15,7 @@
  */
 
 using Phileas.Filters;
+using Phileas.Filters.PostFilters;
 using Phileas.Model.Filtering;
 
 namespace Phileas.Rules;
@@ -24,5 +25,13 @@ public abstract class RulesFilter : AbstractFilter
     protected RulesFilter(FilterType filterType, FilterConfiguration configuration)
         : base(filterType, configuration) { }
 
-    public virtual IList<Span> PostFilter(IList<Span> spans, string input) => spans;
+    public virtual IList<Span> PostFilter(IList<Span> spans, string input)
+    {
+        spans = TrailingNewLinesPostFilter.Apply(spans);
+        spans = TrailingPeriodPostFilter.Apply(spans);
+        spans = TrailingSpacePostFilter.Apply(spans);
+        spans = IgnoredTermsPostFilter.Apply(spans, Ignored);
+        spans = IgnoredPatternsPostFilter.Apply(spans, IgnoredPatterns);
+        return spans;
+    }
 }
