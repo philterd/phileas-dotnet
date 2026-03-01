@@ -35,6 +35,7 @@ public enum FilterType
     Vin,
     ZipCode,
     CustomDictionary,
+    Dictionary,
     Person,
     MedicalCondition,
     Other
@@ -77,6 +78,7 @@ public static class FilterTypeExtensions
         FilterType.Vin => "vin",
         FilterType.ZipCode => "zip-code",
         FilterType.CustomDictionary => "custom-dictionary",
+        FilterType.Dictionary => "dictionary",
         FilterType.Person => "person",
         FilterType.MedicalCondition => "medical-condition",
         FilterType.Other => "other",

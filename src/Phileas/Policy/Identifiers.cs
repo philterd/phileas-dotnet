@@ -9,6 +9,9 @@ public class Identifiers
     [JsonPropertyName("pheyes")]
     public List<PhEye>? PhEyes { get; set; }
 
+    [JsonPropertyName("dictionaries")]
+    public List<Dictionary>? Dictionaries { get; set; }
+
     [JsonPropertyName("age")]
     public Age? Age { get; set; }
 
@@ -87,6 +90,7 @@ public class Identifiers
         FilterType.MacAddress => MacAddress != null,
         FilterType.PassportNumber => PassportNumber != null,
         FilterType.PhEye => PhEyes != null && PhEyes.Count > 0,
+        FilterType.Dictionary => Dictionaries != null && Dictionaries.Count > 0,
         FilterType.PhoneNumber => PhoneNumber != null,
         FilterType.PhoneNumberExtension => PhoneNumberExtension != null,
         FilterType.Ssn => Ssn != null,

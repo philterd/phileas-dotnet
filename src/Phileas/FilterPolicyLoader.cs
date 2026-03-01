@@ -117,6 +117,47 @@ public static class FilterPolicyLoader
             }
         }
 
+        if (identifiers.Dictionaries != null)
+        {
+            foreach (var dictionary in identifiers.Dictionaries)
+            {
+                var strategies = new List<AbstractFilterStrategy>();
+                if (dictionary.Strategies != null)
+                {
+                    foreach (var s in dictionary.Strategies)
+                    {
+                        strategies.Add(new DictionaryFilterStrategy
+                        {
+                            Strategy = s.Strategy,
+                            RedactionFormat = s.RedactionFormat,
+                            StaticReplacement = s.StaticReplacement ?? string.Empty,
+                            MaskCharacter = s.MaskCharacter,
+                            MaskLength = s.MaskLength,
+                            Condition = s.Condition,
+                            Salt = s.Salt,
+                            ContextService = contextService
+                        });
+                    }
+                }
+                if (strategies.Count == 0)
+                    strategies.Add(new DictionaryFilterStrategy { ContextService = contextService });
+
+                var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (dictionary.Ignored != null)
+                    foreach (var s in dictionary.Ignored) ignored.Add(s);
+
+                var config = new FilterConfiguration.Builder()
+                    .WithStrategies(strategies)
+                    .WithIgnored(ignored)
+                    .WithIgnoredPatterns(dictionary.IgnoredPatterns ?? new List<IgnoredPattern>())
+                    .WithWindowSize(policy.Config.WindowSize)
+                    .WithPriority(dictionary.Priority)
+                    .Build();
+
+                filters.Add(new DictionaryFilter(config, dictionary.Terms));
+            }
+        }
+
         return filters;
     }
 
