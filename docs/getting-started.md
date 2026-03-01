@@ -5,14 +5,20 @@ This guide walks you through adding phileas-net to a .NET project and running yo
 ## Prerequisites
 
 - .NET 8 or later
-- A project that references `Phileas.Services`
+- A project that references the `Phileas` NuGet package or project
 
 ## Installation
 
-Add a project reference or NuGet package reference to `Phileas.Services`:
+Add the NuGet package to your project:
+
+```shell
+dotnet add package Phileas
+```
+
+Or add a project reference directly:
 
 ```xml
-<ProjectReference Include="../src/Phileas.Services/Phileas.Services.csproj" />
+<ProjectReference Include="../src/Phileas/Phileas.csproj" />
 ```
 
 ## Basic Usage
@@ -41,12 +47,12 @@ By default, all detected PII is **redacted** (replaced with `{{{REDACTED-<type>}
 
 ### 2. Filter Text
 
-Call `FilterService.Filter` with the policy, a context name, a piece index, and the input text:
+Create an instance of `FilterService` and call `Filter` with the policy, a context name, a piece index, and the input text:
 
 ```csharp
 using Phileas.Services;
 
-var result = FilterService.Filter(
+var result = new FilterService().Filter(
     policy,
     context: "session-1",
     piece: 0,
@@ -150,11 +156,11 @@ var policy = new Policy
 };
 
 // Medical context - email will be redacted
-var medicalResult = FilterService.Filter(policy, "medical", 0, "Contact: john@example.com");
+var medicalResult = new FilterService().Filter(policy, "medical", 0, "Contact: john@example.com");
 // Output: "Contact: {{{REDACTED-email-address}}}"
 
 // Other context - email will be masked
-var defaultResult = FilterService.Filter(policy, "default", 0, "Contact: john@example.com");
+var defaultResult = new FilterService().Filter(policy, "default", 0, "Contact: john@example.com");
 // Output: "Contact: ****************"
 ```
 

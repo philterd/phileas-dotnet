@@ -85,7 +85,7 @@ var policy = new Policy
     }
 };
 
-var result = FilterService.Filter(policy, "context", 0, "Call 555-867-5309");
+var result = new FilterService().Filter(policy, "context", 0, "Call 555-867-5309");
 ```
 
 ### Context-Based Filtering
@@ -125,11 +125,11 @@ var policy = new Policy
 };
 
 // Medical context - email will be redacted
-var result1 = FilterService.Filter(policy, "medical", 0, "Contact: john@example.com");
+var result1 = new FilterService().Filter(policy, "medical", 0, "Contact: john@example.com");
 // Output: "Contact: {{{REDACTED-email-address}}}"
 
 // Public context - email unchanged
-var result2 = FilterService.Filter(policy, "public", 0, "Contact: john@example.com");
+var result2 = new FilterService().Filter(policy, "public", 0, "Contact: john@example.com");
 // Output: "Contact: john@example.com"
 ```
 
@@ -163,10 +163,10 @@ var policy = new Policy
     }
 };
 
-var result1 = FilterService.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+var result1 = new FilterService().Filter(policy, "ctx", 0, "SSN: 123-45-6789");
 // Output: "SSN: {{{REDACTED-ssn}}}"
 
-var result2 = FilterService.Filter(policy, "ctx", 0, "SSN: 987-65-4321");
+var result2 = new FilterService().Filter(policy, "ctx", 0, "SSN: 987-65-4321");
 // Output: "SSN: a1b2c3d4..." (SHA-256 hash)
 ```
 
@@ -220,26 +220,29 @@ var policy = new Policy
     Name = "type-policy",
     Identifiers = new Identifiers
     {
-        PhEye = new PhEye
+        PhEyes = new List<PhEye>
         {
-            Strategies = new List<PhEyeFilterStrategy>
+            new PhEye
             {
-                // Replace person names with consistent pseudonyms
-                new PhEyeFilterStrategy
+                Strategies = new List<PhEyeFilterStrategy>
                 {
-                    Strategy = "RANDOM_REPLACE",
-                    Condition = "type == \"PER\""
-                },
-                // Redact locations
-                new PhEyeFilterStrategy
-                {
-                    Strategy = "REDACT",
-                    Condition = "type == \"LOC\""
-                },
-                // Leave other types unchanged
-                new PhEyeFilterStrategy
-                {
-                    Strategy = "SAME"
+                    // Replace person names with consistent pseudonyms
+                    new PhEyeFilterStrategy
+                    {
+                        Strategy = "RANDOM_REPLACE",
+                        Condition = "type == \"PER\""
+                    },
+                    // Redact locations
+                    new PhEyeFilterStrategy
+                    {
+                        Strategy = "REDACT",
+                        Condition = "type == \"LOC\""
+                    },
+                    // Leave other types unchanged
+                    new PhEyeFilterStrategy
+                    {
+                        Strategy = "SAME"
+                    }
                 }
             }
         }
