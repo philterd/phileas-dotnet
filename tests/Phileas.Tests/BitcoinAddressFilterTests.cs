@@ -25,16 +25,16 @@ using Xunit;
 
 namespace Phileas.Tests;
 
-public class AgeFilterTests
+public class BitcoinAddressFilterTests
 {
-    private static AgeFilter CreateFilter()
+    private static BitcoinAddressFilter CreateFilter()
     {
         var config = new FilterConfiguration.Builder()
-            .WithStrategies(new List<AbstractFilterStrategy> { new AgeFilterStrategy() })
+            .WithStrategies(new List<AbstractFilterStrategy> { new BitcoinAddressFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new AgeFilter(config);
+        return new BitcoinAddressFilter(config);
     }
 
     private static PhileasPolicy CreatePolicy()
@@ -42,37 +42,39 @@ public class AgeFilterTests
         return new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { BitcoinAddress = new BitcoinAddress() }
         };
     }
 
     [Theory]
-    [InlineData("The patient is 45 years old.")]
-    [InlineData("He is 30 yo.")]
-    [InlineData("age 25")]
-    [InlineData("aged 65")]
-    [InlineData("She is 22 y/o.")]
-    public void Filter_DetectsAge(string input)
+    [InlineData("Send to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")]   // P2PKH (starts with 1)
+    [InlineData("Wallet: 3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy")]    // P2SH (starts with 3)
+    public void Filter_DetectsLegacyBitcoinAddress(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
-    }
-
-    [Fact]
-    public void Filter_ReplacesAgeWithRedaction()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.All(result.Spans, span => Assert.Contains("REDACTED", span.Replacement));
+        Assert.Equal(FilterType.BitcoinAddress, result.Spans[0].FilterType);
     }
 
     [Theory]
-    [InlineData("No age mentioned here.")]
-    [InlineData("The year is 2024.")]
-    public void Filter_DoesNotDetectNonAge(string input)
+    [InlineData("Native segwit: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq")]  // bech32
+    [InlineData("Pay to: bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")]
+    public void Filter_DetectsBech32BitcoinAddress(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.BitcoinAddress, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("No wallet here.")]
+    [InlineData("Email: test@example.com")]
+    [InlineData("Short: abc123")]
+    public void Filter_DoesNotDetectNonBitcoinAddress(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
@@ -90,25 +92,14 @@ public class AgeFilterTests
     }
 
     [Fact]
-    public void Filter_ReturnsCorrectFilterType()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.NotEmpty(result.Spans);
-        Assert.Equal(FilterType.Age, result.Spans[0].FilterType);
-    }
-
-    [Fact]
-    public void FilterService_RedactsAge()
+    public void FilterService_RedactsBitcoinAddress()
     {
         var policy = new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { BitcoinAddress = new BitcoinAddress() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "The patient is 45 years old.");
+        var result = FilterService.Filter(policy, "test", 0, "Send BTC to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
         Assert.Contains("REDACTED", result.FilteredText);
-        Assert.DoesNotContain("45 years old", result.FilteredText);
     }
 }
