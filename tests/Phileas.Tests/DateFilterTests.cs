@@ -107,6 +107,109 @@ public class DateFilterTests
     }
 
     [Fact]
+    public void FilterStrategy_ShiftDate_NumericFormat_ShiftsByYears()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Years = 1 };
+        var result = strategy.GetReplacement("ctx", "01/15/1990", [], 0.9, null, null, null, null);
+        Assert.Equal("1/15/1991", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_NumericFormat_ShiftsByDays()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Days = 10 };
+        var result = strategy.GetReplacement("ctx", "01/15/1990", [], 0.9, null, null, null, null);
+        Assert.Equal("1/25/1990", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_NumericFormat_ShiftsByMonths()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Months = 2 };
+        var result = strategy.GetReplacement("ctx", "01/15/1990", [], 0.9, null, null, null, null);
+        Assert.Equal("3/15/1990", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_NumericFormat_DashSeparator()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Years = -1 };
+        var result = strategy.GetReplacement("ctx", "12-31-2000", [], 0.9, null, null, null, null);
+        Assert.Equal("12-31-1999", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_FullMonthName_ShiftsByYears()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Years = 1 };
+        var result = strategy.GetReplacement("ctx", "January 15, 1990", [], 0.9, null, null, null, null);
+        Assert.Equal("January 15, 1991", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_DayMonthYear_ShiftsByMonths()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Months = 1 };
+        var result = strategy.GetReplacement("ctx", "15 January 1990", [], 0.9, null, null, null, null);
+        Assert.Equal("15 February 1990", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_AbbreviatedMonthWithDot_ShiftsByYears()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Years = 1 };
+        var result = strategy.GetReplacement("ctx", "Jan. 5, 2023", [], 0.9, null, null, null, null);
+        Assert.Equal("Jan. 5, 2024", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_AbbreviatedMonthNoComma_ShiftsByMonths()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", Months = 1 };
+        var result = strategy.GetReplacement("ctx", "Feb 28 2022", [], 0.9, null, null, null, null);
+        Assert.Equal("Mar 28 2022", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_ZeroShift_ReturnsReformattedDate()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE" };
+        var result = strategy.GetReplacement("ctx", "01/15/1990", [], 0.9, null, null, null, null);
+        // Zero shift still reformats; month/day leading zeros are not preserved.
+        Assert.Equal("1/15/1990", result.Value);
+    }
+
+    [Fact]
+    public void FilterService_ShiftDate_ProducesShiftedDate()
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers
+            {
+                Date = new Date
+                {
+                    Strategies = new List<Phileas.Policy.Filters.Strategies.DateFilterStrategy>
+                    {
+                        new() { Strategy = "SHIFT_DATE", Years = 1 }
+                    }
+                }
+            }
+        };
+        var result = new FilterService().Filter(policy, "test", 0, "DOB: 01/15/1990");
+        Assert.DoesNotContain("01/15/1990", result.FilteredText);
+        Assert.Contains("1991", result.FilteredText);
+    }
+
+    [Fact]
     public void FilterService_RedactsDate()
     {
         var policy = new PhileasPolicy

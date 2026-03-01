@@ -233,6 +233,7 @@ var policy = new PhileasPolicy
 | `AbstractFilterStrategy.HashSha256Replace` | `HASH_SHA256_REPLACE` | Replace with the SHA-256 hash of the original value |
 | `AbstractFilterStrategy.CryptoReplace` | `CRYPTO_REPLACE` | Encrypt the value |
 | `AbstractFilterStrategy.FpeEncryptReplace` | `FPE_ENCRYPT_REPLACE` | Format-preserving encryption |
+| `AbstractFilterStrategy.ShiftDate` | `SHIFT_DATE` | Shift a detected date by configured days, months, and/or years (date filters only) |
 
 ### Static replacement example
 

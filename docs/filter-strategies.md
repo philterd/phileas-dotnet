@@ -16,6 +16,7 @@ A **filter strategy** controls what happens to a detected PII token. Each identi
 | `MASK` | `AbstractFilterStrategy.Mask` | Overwrite characters with a mask character |
 | `SAME` | `AbstractFilterStrategy.Same` | Leave the token unchanged (mark as detected but not replaced) |
 | `TRUNCATE` | `AbstractFilterStrategy.Truncate` | Keep only the first character |
+| `SHIFT_DATE` | `AbstractFilterStrategy.ShiftDate` | Shift a detected date by a configurable offset (date filters only) |
 
 ---
 
@@ -200,6 +201,84 @@ Keeps only the first character of the token.
 ```csharp
 new EmailAddressFilterStrategy { Strategy = "TRUNCATE" }
 ```
+
+---
+
+### SHIFT_DATE
+
+> **Date filters only.** Applies to `DateFilterStrategy`; ignored by all other filter types.
+
+Shifts a detected date forward or backward by a configurable number of days, months, and/or years while preserving the original date format. All three offsets default to `0` and can be combined freely. Negative values shift the date into the past.
+
+**Supported date formats**
+
+| Example | Format |
+|---|---|
+| `1/15/1990` | Numeric M/D/YYYY |
+| `January 15, 1990` | Full month name |
+| `15-Jan-1990` | Day-abbreviated-month-year |
+| `Jan 15, 1990` | Abbreviated month name |
+
+If the detected token cannot be parsed as a date, or if the `Date` filter type is not active, `SHIFT_DATE` falls back to `REDACT`.
+
+**Properties**
+
+| Property | JSON key | Type | Default | Description |
+|---|---|---|---|---|
+| `Days` | `days` | `int` | `0` | Days to add (negative to subtract) |
+| `Months` | `months` | `int` | `0` | Months to add (negative to subtract) |
+| `Years` | `years` | `int` | `0` | Years to add (negative to subtract) |
+
+**C# example**
+
+```csharp
+using Phileas.Policy.Filters;
+using Phileas.Policy.Filters.Strategies;
+
+var policy = new Policy
+{
+    Name = "date-shift-policy",
+    Identifiers = new Identifiers
+    {
+        Date = new Date
+        {
+            DateFilterStrategies = new List<DateFilterStrategy>
+            {
+                new DateFilterStrategy
+                {
+                    Strategy = AbstractFilterStrategy.ShiftDate,
+                    Years  = -1,
+                    Days   = 14
+                }
+            }
+        }
+    }
+};
+```
+
+**JSON policy example**
+
+```json
+{
+  "name": "date-shift-policy",
+  "identifiers": {
+    "date": {
+      "dateFilterStrategies": [{
+        "strategy": "SHIFT_DATE",
+        "years": -1,
+        "days": 14
+      }]
+    }
+  }
+}
+```
+
+**Example transformation**
+
+| Input | Output |
+|---|---|
+| `DOB: January 15, 1990` | `DOB: January 29, 1989` |
+| `Admitted: 3/1/2024` | `Admitted: 3/15/2023` |
 
 ---
 

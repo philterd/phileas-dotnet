@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using System.Text.Json.Serialization;
+
 namespace Phileas.Policy.Filters.Strategies;
 
 /// <summary>
@@ -22,4 +24,15 @@ namespace Phileas.Policy.Filters.Strategies;
 /// </summary>
 public class DateFilterStrategy : AbstractFilterStrategy
 {
+    /// <summary>Gets or sets the number of days to shift the date when using the <c>SHIFT_DATE</c> strategy.</summary>
+    [JsonPropertyName("days")]
+    public int Days { get; set; } = 0;
+
+    /// <summary>Gets or sets the number of months to shift the date when using the <c>SHIFT_DATE</c> strategy.</summary>
+    [JsonPropertyName("months")]
+    public int Months { get; set; } = 0;
+
+    /// <summary>Gets or sets the number of years to shift the date when using the <c>SHIFT_DATE</c> strategy.</summary>
+    [JsonPropertyName("years")]
+    public int Years { get; set; } = 0;
 }
