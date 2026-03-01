@@ -53,6 +53,9 @@ public abstract class AbstractFilterStrategy
     /// <summary>Replacement strategy constant: keep the original entity unchanged.</summary>
     public const string Same = "SAME";
 
+    /// <summary>Replacement strategy constant: shift a detected date by configured days, months, and/or years.</summary>
+    public const string ShiftDate = "SHIFT_DATE";
+
     /// <summary>Replacement strategy constant: keep only the first character.</summary>
     public const string Truncate = "TRUNCATE";
 
