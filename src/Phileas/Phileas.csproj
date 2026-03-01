@@ -1,28 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Phileas</RootNamespace>
-    <!-- NuGet package metadata -->
-    <PackageId>Phileas</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>Philterd, LLC</Authors>
-    <Company>Philterd, LLC</Company>
-    <Description>A .NET library for detecting and redacting Personally Identifiable Information (PII) from text using configurable, policy-based filters.</Description>
-    <PackageTags>pii;redaction;privacy;nlp;phileas;philter</PackageTags>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/philterd/phileas-net</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/philterd/phileas-net</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Copyright>Copyright 2026 Philterd, LLC</Copyright>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="YamlDotNet" Version="16.3.0" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>Phileas</RootNamespace>
+        <!-- NuGet package metadata -->
+        <PackageId>Phileas</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Philterd, LLC</Authors>
+        <Company>Philterd, LLC</Company>
+        <Description>A .NET library for detecting and redacting Personally Identifiable Information (PII) from text using configurable, policy-based filters.</Description>
+        <PackageTags>pii;redaction;privacy;nlp;phileas;philter</PackageTags>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/philterd/phileas-net</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/philterd/phileas-net</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Copyright>Copyright 2026 Philterd, LLC</Copyright>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="YamlDotNet" Version="16.3.0"/>
+    </ItemGroup>
 </Project>

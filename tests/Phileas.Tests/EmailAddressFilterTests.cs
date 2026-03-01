@@ -16,13 +16,12 @@
 
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Strategies.Rules;
-using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 

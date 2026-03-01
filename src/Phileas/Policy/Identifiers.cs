@@ -21,9 +21,9 @@ using Phileas.Policy.Filters;
 namespace Phileas.Policy;
 
 /// <summary>
-/// Contains the per-filter-type configuration objects that are active in a policy.
-/// A filter is enabled when its corresponding property is non-<see langword="null"/>
-/// (or, for collection-based filters, when the collection is non-empty).
+///     Contains the per-filter-type configuration objects that are active in a policy.
+///     A filter is enabled when its corresponding property is non-<see langword="null" />
+///     (or, for collection-based filters, when the collection is non-empty).
 /// </summary>
 public class Identifiers
 {
@@ -120,35 +120,39 @@ public class Identifiers
     public ZipCode? ZipCode { get; set; }
 
     /// <summary>
-    /// Determines whether the filter for the specified <paramref name="filterType"/> is enabled in this identifiers configuration.
+    ///     Determines whether the filter for the specified <paramref name="filterType" /> is enabled in this identifiers
+    ///     configuration.
     /// </summary>
     /// <param name="filterType">The filter type to check.</param>
-    /// <returns><see langword="true"/> if the filter is configured and enabled; otherwise <see langword="false"/>.</returns>
-    public bool HasFilter(FilterType filterType) => filterType switch
+    /// <returns><see langword="true" /> if the filter is configured and enabled; otherwise <see langword="false" />.</returns>
+    public bool HasFilter(FilterType filterType)
     {
-        FilterType.Age => Age != null,
-        FilterType.BankRoutingNumber => BankRoutingNumber != null,
-        FilterType.BitcoinAddress => BitcoinAddress != null,
-        FilterType.CreditCard => CreditCard != null,
-        FilterType.Currency => Currency != null,
-        FilterType.Date => Date != null,
-        FilterType.DriversLicenseNumber => DriversLicense != null,
-        FilterType.EmailAddress => EmailAddress != null,
-        FilterType.IbanCode => IbanCode != null,
-        FilterType.IpAddress => IpAddress != null,
-        FilterType.MacAddress => MacAddress != null,
-        FilterType.PassportNumber => PassportNumber != null,
-        FilterType.PhEye => PhEyes != null && PhEyes.Count > 0,
-        FilterType.Dictionary => Dictionaries != null && Dictionaries.Count > 0,
-        FilterType.PhoneNumber => PhoneNumber != null,
-        FilterType.PhoneNumberExtension => PhoneNumberExtension != null,
-        FilterType.Ssn => Ssn != null,
-        FilterType.StateAbbreviation => StateAbbreviation != null,
-        FilterType.StreetAddress => StreetAddress != null,
-        FilterType.TrackingNumber => TrackingNumber != null,
-        FilterType.Url => Url != null,
-        FilterType.Vin => Vin != null,
-        FilterType.ZipCode => ZipCode != null,
-        _ => false
-    };
+        return filterType switch
+        {
+            FilterType.Age => Age != null,
+            FilterType.BankRoutingNumber => BankRoutingNumber != null,
+            FilterType.BitcoinAddress => BitcoinAddress != null,
+            FilterType.CreditCard => CreditCard != null,
+            FilterType.Currency => Currency != null,
+            FilterType.Date => Date != null,
+            FilterType.DriversLicenseNumber => DriversLicense != null,
+            FilterType.EmailAddress => EmailAddress != null,
+            FilterType.IbanCode => IbanCode != null,
+            FilterType.IpAddress => IpAddress != null,
+            FilterType.MacAddress => MacAddress != null,
+            FilterType.PassportNumber => PassportNumber != null,
+            FilterType.PhEye => PhEyes != null && PhEyes.Count > 0,
+            FilterType.Dictionary => Dictionaries != null && Dictionaries.Count > 0,
+            FilterType.PhoneNumber => PhoneNumber != null,
+            FilterType.PhoneNumberExtension => PhoneNumberExtension != null,
+            FilterType.Ssn => Ssn != null,
+            FilterType.StateAbbreviation => StateAbbreviation != null,
+            FilterType.StreetAddress => StreetAddress != null,
+            FilterType.TrackingNumber => TrackingNumber != null,
+            FilterType.Url => Url != null,
+            FilterType.Vin => Vin != null,
+            FilterType.ZipCode => ZipCode != null,
+            _ => false
+        };
+    }
 }

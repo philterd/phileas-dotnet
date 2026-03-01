@@ -19,11 +19,15 @@ using Phileas.Policy;
 namespace Phileas.Filters;
 
 /// <summary>
-/// Immutable runtime configuration for a filter instance. Use the nested <see cref="Builder"/>
-/// class to construct instances.
+///     Immutable runtime configuration for a filter instance. Use the nested <see cref="Builder" />
+///     class to construct instances.
 /// </summary>
 public class FilterConfiguration
 {
+    private FilterConfiguration()
+    {
+    }
+
     /// <summary>Gets the list of replacement strategies to apply in order.</summary>
     public IList<AbstractFilterStrategy>? Strategies { get; private set; }
 
@@ -46,46 +50,84 @@ public class FilterConfiguration
     public int WindowSize { get; private set; } = 5;
 
     /// <summary>Gets the filter priority used when resolving overlapping spans. Defaults to 0.</summary>
-    public int Priority { get; private set; } = 0;
-    public Phileas.Policy.PostFilters? PostFilters { get; private set; }
+    public int Priority { get; private set; }
 
-    private FilterConfiguration() { }
+    public Policy.PostFilters? PostFilters { get; private set; }
 
     /// <summary>
-    /// Fluent builder for <see cref="FilterConfiguration"/>.
+    ///     Fluent builder for <see cref="FilterConfiguration" />.
     /// </summary>
     public class Builder
     {
-        private readonly FilterConfiguration _config = new FilterConfiguration();
+        private readonly FilterConfiguration _config = new();
 
         /// <summary>Sets the replacement strategies.</summary>
-        public Builder WithStrategies(IList<AbstractFilterStrategy> strategies) { _config.Strategies = strategies; return this; }
+        public Builder WithStrategies(IList<AbstractFilterStrategy> strategies)
+        {
+            _config.Strategies = strategies;
+            return this;
+        }
 
         /// <summary>Sets the ignored exact-match tokens.</summary>
-        public Builder WithIgnored(ISet<string> ignored) { _config.Ignored = ignored; return this; }
+        public Builder WithIgnored(ISet<string> ignored)
+        {
+            _config.Ignored = ignored;
+            return this;
+        }
 
         /// <summary>Sets the ignored-files paths.</summary>
-        public Builder WithIgnoredFiles(ISet<string> ignoredFiles) { _config.IgnoredFiles = ignoredFiles; return this; }
+        public Builder WithIgnoredFiles(ISet<string> ignoredFiles)
+        {
+            _config.IgnoredFiles = ignoredFiles;
+            return this;
+        }
 
         /// <summary>Sets the regex-based ignored patterns.</summary>
-        public Builder WithIgnoredPatterns(IList<IgnoredPattern> ignoredPatterns) { _config.IgnoredPatterns = ignoredPatterns; return this; }
+        public Builder WithIgnoredPatterns(IList<IgnoredPattern> ignoredPatterns)
+        {
+            _config.IgnoredPatterns = ignoredPatterns;
+            return this;
+        }
 
         /// <summary>Sets the AES crypto configuration.</summary>
-        public Builder WithCrypto(Crypto? crypto) { _config.Crypto = crypto; return this; }
+        public Builder WithCrypto(Crypto? crypto)
+        {
+            _config.Crypto = crypto;
+            return this;
+        }
 
         /// <summary>Sets the format-preserving encryption configuration.</summary>
-        public Builder WithFpe(Fpe? fpe) { _config.Fpe = fpe; return this; }
+        public Builder WithFpe(Fpe? fpe)
+        {
+            _config.Fpe = fpe;
+            return this;
+        }
 
         /// <summary>Sets the context-window size (number of words on each side).</summary>
-        public Builder WithWindowSize(int windowSize) { _config.WindowSize = windowSize; return this; }
+        public Builder WithWindowSize(int windowSize)
+        {
+            _config.WindowSize = windowSize;
+            return this;
+        }
 
         /// <summary>Sets the filter priority.</summary>
-        public Builder WithPriority(int priority) { _config.Priority = priority; return this; }
-      
-        /// <summary>Sets the post filters.</summary>
-        public Builder WithPostFilters(Phileas.Policy.PostFilters? postFilters) { _config.PostFilters = postFilters; return this; }
+        public Builder WithPriority(int priority)
+        {
+            _config.Priority = priority;
+            return this;
+        }
 
-        /// <summary>Builds and returns the <see cref="FilterConfiguration"/>.</summary>
-        public FilterConfiguration Build() => _config;
+        /// <summary>Sets the post filters.</summary>
+        public Builder WithPostFilters(Policy.PostFilters? postFilters)
+        {
+            _config.PostFilters = postFilters;
+            return this;
+        }
+
+        /// <summary>Builds and returns the <see cref="FilterConfiguration" />.</summary>
+        public FilterConfiguration Build()
+        {
+            return _config;
+        }
     }
 }

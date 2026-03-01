@@ -16,13 +16,13 @@
 
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Strategies.Rules;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,7 +48,7 @@ public class DriversLicenseFilterTests
     }
 
     [Theory]
-    [InlineData("DL: A1234567")]    // Letter + 7 digits
+    [InlineData("DL: A1234567")] // Letter + 7 digits
     [InlineData("License: B9876543")]
     public void Filter_DetectsLetterSevenDigitLicense(string input)
     {
@@ -60,7 +60,7 @@ public class DriversLicenseFilterTests
     }
 
     [Theory]
-    [InlineData("DL: AB123456")]    // 2 letters + 6 digits
+    [InlineData("DL: AB123456")] // 2 letters + 6 digits
     [InlineData("License: XY654321")]
     public void Filter_DetectsTwoLetterSixDigitLicense(string input)
     {

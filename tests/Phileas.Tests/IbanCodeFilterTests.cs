@@ -15,14 +15,14 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model;
-using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
-using Phileas.Policy.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
+using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Policy.Filters;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,7 +48,7 @@ public class IbanCodeFilterTests
     }
 
     [Theory]
-    [InlineData("IBAN: GB29NWBK60161331926819")]    // UK IBAN
+    [InlineData("IBAN: GB29NWBK60161331926819")] // UK IBAN
     [InlineData("Account: DE89370400440532013000")] // German IBAN
     [InlineData("Bank: FR7614508059151234567890185")] // French IBAN
     public void Filter_DetectsIbanCode(string input)

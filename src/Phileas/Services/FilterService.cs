@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using System.Collections;
+using System.Text;
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex;
 using Phileas.Filters.Rules.Regex.RegexFilters;
@@ -26,12 +28,13 @@ using PhileasPolicy = Phileas.Policy.Policy;
 namespace Phileas.Services;
 
 /// <summary>
-/// Entry-point service for applying a <see cref="Phileas.Policy.Policy"/> to a piece of plain text.
+///     Entry-point service for applying a <see cref="Phileas.Policy.Policy" /> to a piece of plain text.
 /// </summary>
 public class FilterService : IFilterService
 {
-    /// <inheritdoc/>
-    public TextFilterResult Filter(PhileasPolicy policy, string context, int piece, string input, IContextService? contextService = null)
+    /// <inheritdoc />
+    public TextFilterResult Filter(PhileasPolicy policy, string context, int piece, string input,
+        IContextService? contextService = null)
     {
         contextService ??= new InMemoryContextService();
         var allSpans = new List<Span>();
@@ -49,28 +52,29 @@ public class FilterService : IFilterService
         return new TextFilterResult(filteredText, finalSpans);
     }
 
-    /// <inheritdoc/>
-    public EvaluationResult Evaluate(PhileasPolicy policy, string context, int piece, string input, IList<Span> groundTruthSpans, IContextService? contextService = null)
+    /// <inheritdoc />
+    public EvaluationResult Evaluate(PhileasPolicy policy, string context, int piece, string input,
+        IList<Span> groundTruthSpans, IContextService? contextService = null)
     {
         var result = Filter(policy, context, piece, input, contextService);
         var detectedSpans = result.Spans;
 
-        int truePositives = detectedSpans.Count(d =>
+        var truePositives = detectedSpans.Count(d =>
             groundTruthSpans.Any(g => g.CharacterStart == d.CharacterStart && g.CharacterEnd == d.CharacterEnd));
 
-        int falsePositives = detectedSpans.Count - truePositives;
-        int falseNegatives = groundTruthSpans.Count(g =>
+        var falsePositives = detectedSpans.Count - truePositives;
+        var falseNegatives = groundTruthSpans.Count(g =>
             !detectedSpans.Any(d => d.CharacterStart == g.CharacterStart && d.CharacterEnd == g.CharacterEnd));
 
-        double precision = (truePositives + falsePositives) > 0
+        var precision = truePositives + falsePositives > 0
             ? (double)truePositives / (truePositives + falsePositives)
             : 0.0;
 
-        double recall = (truePositives + falseNegatives) > 0
+        var recall = truePositives + falseNegatives > 0
             ? (double)truePositives / (truePositives + falseNegatives)
             : 0.0;
 
-        double f1 = (precision + recall) > 0
+        var f1 = precision + recall > 0
             ? 2.0 * precision * recall / (precision + recall)
             : 0.0;
 
@@ -85,55 +89,74 @@ public class FilterService : IFilterService
         if (identifiers.Age != null)
             filters.Add(BuildFilter<AgeFilter, AgeFilterStrategy>(identifiers.Age, policy, contextService));
         if (identifiers.EmailAddress != null)
-            filters.Add(BuildFilter<EmailAddressFilter, EmailAddressFilterStrategy>(identifiers.EmailAddress, policy, contextService));
+            filters.Add(
+                BuildFilter<EmailAddressFilter, EmailAddressFilterStrategy>(identifiers.EmailAddress, policy,
+                    contextService));
         if (identifiers.PhoneNumber != null)
-            filters.Add(BuildFilter<PhoneNumberFilter, PhoneNumberFilterStrategy>(identifiers.PhoneNumber, policy, contextService));
+            filters.Add(
+                BuildFilter<PhoneNumberFilter, PhoneNumberFilterStrategy>(identifiers.PhoneNumber, policy,
+                    contextService));
         if (identifiers.Ssn != null)
             filters.Add(BuildFilter<SsnFilter, SsnFilterStrategy>(identifiers.Ssn, policy, contextService));
         if (identifiers.ZipCode != null)
             filters.Add(BuildFilter<ZipCodeFilter, ZipCodeFilterStrategy>(identifiers.ZipCode, policy, contextService));
         if (identifiers.CreditCard != null)
-            filters.Add(BuildFilter<CreditCardFilter, CreditCardFilterStrategy>(identifiers.CreditCard, policy, contextService));
+            filters.Add(
+                BuildFilter<CreditCardFilter, CreditCardFilterStrategy>(identifiers.CreditCard, policy,
+                    contextService));
         if (identifiers.IpAddress != null)
-            filters.Add(BuildFilter<IpAddressFilter, IpAddressFilterStrategy>(identifiers.IpAddress, policy, contextService));
+            filters.Add(
+                BuildFilter<IpAddressFilter, IpAddressFilterStrategy>(identifiers.IpAddress, policy, contextService));
         if (identifiers.Url != null)
             filters.Add(BuildFilter<UrlFilter, UrlFilterStrategy>(identifiers.Url, policy, contextService));
         if (identifiers.BitcoinAddress != null)
-            filters.Add(BuildFilter<BitcoinAddressFilter, BitcoinAddressFilterStrategy>(identifiers.BitcoinAddress, policy, contextService));
+            filters.Add(BuildFilter<BitcoinAddressFilter, BitcoinAddressFilterStrategy>(identifiers.BitcoinAddress,
+                policy, contextService));
         if (identifiers.BankRoutingNumber != null)
-            filters.Add(BuildFilter<BankRoutingNumberFilter, BankRoutingNumberFilterStrategy>(identifiers.BankRoutingNumber, policy, contextService));
+            filters.Add(
+                BuildFilter<BankRoutingNumberFilter, BankRoutingNumberFilterStrategy>(identifiers.BankRoutingNumber,
+                    policy, contextService));
         if (identifiers.MacAddress != null)
-            filters.Add(BuildFilter<MacAddressFilter, MacAddressFilterStrategy>(identifiers.MacAddress, policy, contextService));
+            filters.Add(
+                BuildFilter<MacAddressFilter, MacAddressFilterStrategy>(identifiers.MacAddress, policy,
+                    contextService));
         if (identifiers.Vin != null)
             filters.Add(BuildFilter<VinFilter, VinFilterStrategy>(identifiers.Vin, policy, contextService));
         if (identifiers.Date != null)
             filters.Add(BuildFilter<DateFilter, DateFilterStrategy>(identifiers.Date, policy, contextService));
         if (identifiers.PassportNumber != null)
-            filters.Add(BuildFilter<PassportNumberFilter, PassportNumberFilterStrategy>(identifiers.PassportNumber, policy, contextService));
+            filters.Add(BuildFilter<PassportNumberFilter, PassportNumberFilterStrategy>(identifiers.PassportNumber,
+                policy, contextService));
         if (identifiers.DriversLicense != null)
-            filters.Add(BuildFilter<DriversLicenseFilter, DriversLicenseFilterStrategy>(identifiers.DriversLicense, policy, contextService));
+            filters.Add(BuildFilter<DriversLicenseFilter, DriversLicenseFilterStrategy>(identifiers.DriversLicense,
+                policy, contextService));
         if (identifiers.StreetAddress != null)
-            filters.Add(BuildFilter<StreetAddressFilter, StreetAddressFilterStrategy>(identifiers.StreetAddress, policy, contextService));
+            filters.Add(BuildFilter<StreetAddressFilter, StreetAddressFilterStrategy>(identifiers.StreetAddress, policy,
+                contextService));
         if (identifiers.PhoneNumberExtension != null)
-            filters.Add(BuildFilter<PhoneNumberExtensionFilter, PhoneNumberExtensionFilterStrategy>(identifiers.PhoneNumberExtension, policy, contextService));
+            filters.Add(
+                BuildFilter<PhoneNumberExtensionFilter, PhoneNumberExtensionFilterStrategy>(
+                    identifiers.PhoneNumberExtension, policy, contextService));
         if (identifiers.TrackingNumber != null)
-            filters.Add(BuildFilter<TrackingNumberFilter, TrackingNumberFilterStrategy>(identifiers.TrackingNumber, policy, contextService));
+            filters.Add(BuildFilter<TrackingNumberFilter, TrackingNumberFilterStrategy>(identifiers.TrackingNumber,
+                policy, contextService));
         if (identifiers.IbanCode != null)
-            filters.Add(BuildFilter<IbanCodeFilter, IbanCodeFilterStrategy>(identifiers.IbanCode, policy, contextService));
+            filters.Add(
+                BuildFilter<IbanCodeFilter, IbanCodeFilterStrategy>(identifiers.IbanCode, policy, contextService));
         if (identifiers.StateAbbreviation != null)
-            filters.Add(BuildFilter<StateAbbreviationFilter, StateAbbreviationFilterStrategy>(identifiers.StateAbbreviation, policy, contextService));
+            filters.Add(
+                BuildFilter<StateAbbreviationFilter, StateAbbreviationFilterStrategy>(identifiers.StateAbbreviation,
+                    policy, contextService));
         if (identifiers.Currency != null)
-            filters.Add(BuildFilter<CurrencyFilter, CurrencyFilterStrategy>(identifiers.Currency, policy, contextService));
+            filters.Add(
+                BuildFilter<CurrencyFilter, CurrencyFilterStrategy>(identifiers.Currency, policy, contextService));
 
         if (identifiers.PhEyes != null)
-        {
             foreach (var phEye in identifiers.PhEyes)
             {
                 var strategies = new List<AbstractFilterStrategy>();
                 if (phEye.Strategies != null)
-                {
                     foreach (var s in phEye.Strategies)
-                    {
                         strategies.Add(new PhEyeFilterStrategy
                         {
                             Strategy = s.Strategy,
@@ -145,14 +168,14 @@ public class FilterService : IFilterService
                             Salt = s.Salt,
                             ContextService = contextService
                         });
-                    }
-                }
+
                 if (strategies.Count == 0)
                     strategies.Add(new PhEyeFilterStrategy { ContextService = contextService });
 
                 var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 if (phEye.Ignored != null)
-                    foreach (var s in phEye.Ignored) ignored.Add(s);
+                    foreach (var s in phEye.Ignored)
+                        ignored.Add(s);
 
                 var config = new FilterConfiguration.Builder()
                     .WithStrategies(strategies)
@@ -163,19 +186,16 @@ public class FilterService : IFilterService
                     .WithPostFilters(policy.PostFilters)
                     .Build();
 
-                filters.Add(new PhEyeFilter(config, phEye.PhEyeConfiguration, phEye.RemovePunctuation, phEye.Thresholds));
+                filters.Add(
+                    new PhEyeFilter(config, phEye.PhEyeConfiguration, phEye.RemovePunctuation, phEye.Thresholds));
             }
-        }
 
         if (identifiers.Dictionaries != null)
-        {
             foreach (var dictionary in identifiers.Dictionaries)
             {
                 var strategies = new List<AbstractFilterStrategy>();
                 if (dictionary.Strategies != null)
-                {
                     foreach (var s in dictionary.Strategies)
-                    {
                         strategies.Add(new DictionaryFilterStrategy
                         {
                             Strategy = s.Strategy,
@@ -187,14 +207,14 @@ public class FilterService : IFilterService
                             Salt = s.Salt,
                             ContextService = contextService
                         });
-                    }
-                }
+
                 if (strategies.Count == 0)
                     strategies.Add(new DictionaryFilterStrategy { ContextService = contextService });
 
                 var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 if (dictionary.Ignored != null)
-                    foreach (var s in dictionary.Ignored) ignored.Add(s);
+                    foreach (var s in dictionary.Ignored)
+                        ignored.Add(s);
 
                 var config = new FilterConfiguration.Builder()
                     .WithStrategies(strategies)
@@ -207,7 +227,6 @@ public class FilterService : IFilterService
 
                 filters.Add(new DictionaryFilter(config, dictionary.Terms, dictionary.Fuzzy, dictionary.Level));
             }
-        }
 
         return filters;
     }
@@ -223,9 +242,8 @@ public class FilterService : IFilterService
 
         if (strategiesProperty != null)
         {
-            var policyStrategies = strategiesProperty.GetValue(policyFilter) as System.Collections.IEnumerable;
+            var policyStrategies = strategiesProperty.GetValue(policyFilter) as IEnumerable;
             if (policyStrategies != null)
-            {
                 foreach (var s in policyStrategies)
                 {
                     // Copy strategy properties to runtime strategy object
@@ -237,26 +255,21 @@ public class FilterService : IFilterService
                     {
                         var targetProp = typeof(TStrategy).GetProperty(prop.Name);
                         if (targetProp != null && targetProp.CanWrite)
-                        {
                             targetProp.SetValue(runtimeStrategy, prop.GetValue(s));
-                        }
                     }
 
                     runtimeStrategy.ContextService = contextService;
                     strategies.Add(runtimeStrategy);
                 }
-            }
         }
 
         // If no strategies defined, create a default one
-        if (strategies.Count == 0)
-        {
-            strategies.Add(new TStrategy { ContextService = contextService });
-        }
+        if (strategies.Count == 0) strategies.Add(new TStrategy { ContextService = contextService });
 
         var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (policyFilter.Ignored != null)
-            foreach (var s in policyFilter.Ignored) ignored.Add(s);
+            foreach (var s in policyFilter.Ignored)
+                ignored.Add(s);
 
         var config = new FilterConfiguration.Builder()
             .WithStrategies(strategies)
@@ -276,8 +289,8 @@ public class FilterService : IFilterService
     {
         if (!spans.Any()) return input;
 
-        var result = new System.Text.StringBuilder();
-        int lastIndex = 0;
+        var result = new StringBuilder();
+        var lastIndex = 0;
 
         foreach (var span in spans.OrderBy(s => s.CharacterStart))
         {

@@ -28,7 +28,7 @@ public static class TrailingNewLinesPostFilter
             var text = span.Text;
             if (!string.IsNullOrEmpty(text))
             {
-                int trimCount = 0;
+                var trimCount = 0;
                 while (trimCount < text.Length &&
                        (text[text.Length - 1 - trimCount] == '\n' || text[text.Length - 1 - trimCount] == '\r'))
                     trimCount++;
@@ -43,6 +43,7 @@ public static class TrailingNewLinesPostFilter
             if (span.CharacterEnd > span.CharacterStart)
                 result.Add(span);
         }
+
         return result;
     }
 }

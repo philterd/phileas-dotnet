@@ -19,8 +19,8 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy;
 
 /// <summary>
-/// Format-preserving encryption (FPE) settings used by the <c>FPE_ENCRYPT_REPLACE</c>
-/// filter strategy.
+///     Format-preserving encryption (FPE) settings used by the <c>FPE_ENCRYPT_REPLACE</c>
+///     filter strategy.
 /// </summary>
 public class Fpe
 {

@@ -17,6 +17,9 @@
 namespace Phileas.Policy.Filters.Strategies;
 
 /// <summary>
-/// Defines the replacement strategy settings for a date expression filter, as deserialized from a policy JSON document.
+///     Defines the replacement strategy settings for a date expression filter, as deserialized from a policy JSON
+///     document.
 /// </summary>
-public class DateFilterStrategy : AbstractFilterStrategy { }
+public class DateFilterStrategy : AbstractFilterStrategy
+{
+}

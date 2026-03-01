@@ -20,35 +20,35 @@ using Phileas.Model;
 namespace Phileas.Filters;
 
 /// <summary>
-/// Groups one or more <see cref="FilterPattern"/> objects together with an optional set of
-/// contextual terms. An <see cref="Analyzer"/> is used by <see cref="RegexFilter"/>
-/// to scan input text and produce candidate <see cref="Phileas.Model.Filtering.Span"/> objects.
+///     Groups one or more <see cref="FilterPattern" /> objects together with an optional set of
+///     contextual terms. An <see cref="Analyzer" /> is used by <see cref="RegexFilter" />
+///     to scan input text and produce candidate <see cref="Phileas.Model.Filtering.Span" /> objects.
 /// </summary>
 public class Analyzer
 {
-    /// <summary>Gets the set of contextual terms that increase match confidence when found near a detected entity.</summary>
-    public ISet<string>? ContextualTerms { get; }
-
-    /// <summary>Gets the list of filter patterns used to detect entities in input text.</summary>
-    public IList<FilterPattern> FilterPatterns { get; }
-
     /// <summary>
-    /// Initializes an <see cref="Analyzer"/> with the given patterns and no contextual terms.
+    ///     Initializes an <see cref="Analyzer" /> with the given patterns and no contextual terms.
     /// </summary>
-    /// <param name="patterns">One or more <see cref="FilterPattern"/> objects.</param>
+    /// <param name="patterns">One or more <see cref="FilterPattern" /> objects.</param>
     public Analyzer(params FilterPattern[] patterns)
     {
         FilterPatterns = patterns.ToList();
     }
 
     /// <summary>
-    /// Initializes an <see cref="Analyzer"/> with contextual terms and the given patterns.
+    ///     Initializes an <see cref="Analyzer" /> with contextual terms and the given patterns.
     /// </summary>
     /// <param name="contextualTerms">Terms whose proximity to a match boosts confidence.</param>
-    /// <param name="patterns">One or more <see cref="FilterPattern"/> objects.</param>
+    /// <param name="patterns">One or more <see cref="FilterPattern" /> objects.</param>
     public Analyzer(ISet<string> contextualTerms, params FilterPattern[] patterns)
     {
         ContextualTerms = contextualTerms;
         FilterPatterns = patterns.ToList();
     }
+
+    /// <summary>Gets the set of contextual terms that increase match confidence when found near a detected entity.</summary>
+    public ISet<string>? ContextualTerms { get; }
+
+    /// <summary>Gets the list of filter patterns used to detect entities in input text.</summary>
+    public IList<FilterPattern> FilterPatterns { get; }
 }

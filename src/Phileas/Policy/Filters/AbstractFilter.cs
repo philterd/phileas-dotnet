@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
+using System.Text.RegularExpressions;
 using Phileas.Model;
 using Phileas.Policy;
 
 namespace Phileas.Filters;
 
 /// <summary>
-/// Base class for all Phileas filters. Stores common configuration (strategies, ignored terms,
-/// crypto settings, window size, and priority) and provides helper methods used by concrete filters.
+///     Base class for all Phileas filters. Stores common configuration (strategies, ignored terms,
+///     crypto settings, window size, and priority) and provides helper methods used by concrete filters.
 /// </summary>
 public abstract class AbstractFilter
 {
+    protected readonly Crypto? Crypto;
     protected readonly FilterType FilterType;
+    protected readonly Fpe? Fpe;
+    protected readonly Policy.PostFilters PostFiltersConfig;
     protected readonly IList<AbstractFilterStrategy> Strategies;
+    protected string? Classification;
     protected ISet<string> Ignored;
     protected IList<IgnoredPattern> IgnoredPatterns;
-    protected readonly Crypto? Crypto;
-    protected readonly Fpe? Fpe;
-    protected int WindowSize;
     protected int Priority;
-    protected string? Classification;
-    protected readonly Phileas.Policy.PostFilters PostFiltersConfig;
+    protected int WindowSize;
 
     /// <summary>
-    /// Initializes the filter with the given <paramref name="filterType"/> and <paramref name="configuration"/>.
+    ///     Initializes the filter with the given <paramref name="filterType" /> and <paramref name="configuration" />.
     /// </summary>
     /// <param name="filterType">The type of entity this filter detects.</param>
     /// <param name="configuration">Runtime configuration including strategies, ignored terms, and window size.</param>
@@ -51,29 +52,32 @@ public abstract class AbstractFilter
         Fpe = configuration.Fpe;
         WindowSize = configuration.WindowSize;
         Priority = configuration.Priority;
-        PostFiltersConfig = configuration.PostFilters ?? new Phileas.Policy.PostFilters();
+        PostFiltersConfig = configuration.PostFilters ?? new Policy.PostFilters();
     }
 
     /// <summary>
-    /// Scans <paramref name="input"/> for entities, applies the configured replacement strategy
-    /// to each match, and returns a <see cref="Filtered"/> containing all detected spans.
+    ///     Scans <paramref name="input" /> for entities, applies the configured replacement strategy
+    ///     to each match, and returns a <see cref="Filtered" /> containing all detected spans.
     /// </summary>
     /// <param name="policy">The active policy providing per-filter settings.</param>
     /// <param name="context">The context identifier used for referential-integrity replacements.</param>
     /// <param name="piece">Zero-based piece index within a multi-part document.</param>
     /// <param name="input">The plain-text string to search.</param>
-    /// <returns>A <see cref="Filtered"/> containing all detected and (optionally) replaced spans.</returns>
-    public abstract Filtered Filter(Phileas.Policy.Policy policy, string context, int piece, string input);
+    /// <returns>A <see cref="Filtered" /> containing all detected and (optionally) replaced spans.</returns>
+    public abstract Filtered Filter(Policy.Policy policy, string context, int piece, string input);
 
-    /// <summary>Returns the <see cref="Model.Filtering.FilterType"/> handled by this filter instance.</summary>
-    public FilterType GetFilterType() => FilterType;
+    /// <summary>Returns the <see cref="Model.Filtering.FilterType" /> handled by this filter instance.</summary>
+    public FilterType GetFilterType()
+    {
+        return FilterType;
+    }
 
     /// <summary>
-    /// Determines whether <paramref name="token"/> should be excluded from filtering based on
-    /// the configured ignored terms and ignored-pattern rules.
+    ///     Determines whether <paramref name="token" /> should be excluded from filtering based on
+    ///     the configured ignored terms and ignored-pattern rules.
     /// </summary>
     /// <param name="token">The candidate entity text to check.</param>
-    /// <returns><see langword="true"/> if the token is on the ignore list; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true" /> if the token is on the ignore list; otherwise <see langword="false" />.</returns>
     protected bool IsIgnored(string token)
     {
         if (Ignored.Contains(token)) return true;
@@ -81,36 +85,42 @@ public abstract class AbstractFilter
         {
             if (pattern.Pattern == null) continue;
             var options = pattern.CaseSensitive
-                ? System.Text.RegularExpressions.RegexOptions.None
-                : System.Text.RegularExpressions.RegexOptions.IgnoreCase;
-            if (System.Text.RegularExpressions.Regex.IsMatch(token, pattern.Pattern, options))
+                ? RegexOptions.None
+                : RegexOptions.IgnoreCase;
+            if (Regex.IsMatch(token, pattern.Pattern, options))
                 return true;
         }
+
         return false;
     }
 
     /// <summary>
-    /// Returns the words that appear within <see cref="WindowSize"/> words of the matched entity,
-    /// providing surrounding context for condition evaluation.
+    ///     Returns the words that appear within <see cref="WindowSize" /> words of the matched entity,
+    ///     providing surrounding context for condition evaluation.
     /// </summary>
     /// <param name="text">The full input text.</param>
     /// <param name="characterStart">Start offset of the entity.</param>
     /// <param name="characterEnd">Exclusive end offset of the entity.</param>
-    /// <returns>An array of words surrounding the entity, up to <see cref="WindowSize"/> words on each side.</returns>
+    /// <returns>An array of words surrounding the entity, up to <see cref="WindowSize" /> words on each side.</returns>
     protected string[] GetWindow(string text, int characterStart, int characterEnd)
     {
         var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (words.Length == 0) return Array.Empty<string>();
 
-        int spanStartWord = -1;
-        int spanEndWord = -1;
-        int charPos = 0;
+        var spanStartWord = -1;
+        var spanEndWord = -1;
+        var charPos = 0;
 
-        for (int i = 0; i < words.Length; i++)
+        for (var i = 0; i < words.Length; i++)
         {
-            int wordStart = text.IndexOf(words[i], charPos, StringComparison.Ordinal);
-            if (wordStart < 0) { charPos += words[i].Length; continue; }
-            int wordEnd = wordStart + words[i].Length;
+            var wordStart = text.IndexOf(words[i], charPos, StringComparison.Ordinal);
+            if (wordStart < 0)
+            {
+                charPos += words[i].Length;
+                continue;
+            }
+
+            var wordEnd = wordStart + words[i].Length;
             if (spanStartWord < 0 && wordEnd > characterStart) spanStartWord = i;
             if (wordStart < characterEnd) spanEndWord = i;
             charPos = wordEnd;
@@ -119,15 +129,15 @@ public abstract class AbstractFilter
         if (spanStartWord < 0) spanStartWord = 0;
         if (spanEndWord < 0) spanEndWord = words.Length - 1;
 
-        int windowStart = Math.Max(0, spanStartWord - WindowSize);
-        int windowEnd = Math.Min(words.Length - 1, spanEndWord + WindowSize);
+        var windowStart = Math.Max(0, spanStartWord - WindowSize);
+        var windowEnd = Math.Min(words.Length - 1, spanEndWord + WindowSize);
 
         return words.Skip(windowStart).Take(windowEnd - windowStart + 1).ToArray();
     }
 
     /// <summary>
-    /// Iterates the configured strategies and returns the replacement produced by the first strategy
-    /// whose condition is satisfied. Falls back to a default redaction token when no strategy matches.
+    ///     Iterates the configured strategies and returns the replacement produced by the first strategy
+    ///     whose condition is satisfied. Falls back to a default redaction token when no strategy matches.
     /// </summary>
     /// <param name="policy">The active policy.</param>
     /// <param name="context">The context identifier.</param>
@@ -135,16 +145,16 @@ public abstract class AbstractFilter
     /// <param name="window">Surrounding context words.</param>
     /// <param name="confidence">Confidence score of the detection.</param>
     /// <param name="classification">Optional entity classification label.</param>
-    /// <param name="filterPattern">The <see cref="FilterPattern"/> that produced the match, or <see langword="null"/>.</param>
-    /// <returns>A <see cref="Replacement"/> containing the replacement value and salt.</returns>
-    protected Replacement GetReplacement(Phileas.Policy.Policy policy, string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern)
+    /// <param name="filterPattern">The <see cref="FilterPattern" /> that produced the match, or <see langword="null" />.</param>
+    /// <returns>A <see cref="Replacement" /> containing the replacement value and salt.</returns>
+    protected Replacement GetReplacement(Policy.Policy policy, string context, string token, string[] window,
+        double confidence, string? classification, FilterPattern? filterPattern)
     {
         foreach (var strategy in Strategies)
-        {
             if (strategy.EvaluateCondition(context, token, window, confidence, classification, filterPattern))
-                return strategy.GetReplacement(context, token, window, confidence, classification, filterPattern, Crypto, Fpe);
-        }
+                return strategy.GetReplacement(context, token, window, confidence, classification, filterPattern,
+                    Crypto, Fpe);
 
-        return new Replacement("{{{REDACTED-" + FilterType.GetFilterTypeName() + "}}}", string.Empty, true);
+        return new Replacement("{{{REDACTED-" + FilterType.GetFilterTypeName() + "}}}", string.Empty);
     }
 }

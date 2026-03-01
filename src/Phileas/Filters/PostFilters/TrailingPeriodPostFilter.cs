@@ -28,7 +28,7 @@ public static class TrailingPeriodPostFilter
             var text = span.Text;
             if (!string.IsNullOrEmpty(text))
             {
-                int trimCount = text.Length - text.TrimEnd('.').Length;
+                var trimCount = text.Length - text.TrimEnd('.').Length;
                 if (trimCount > 0)
                 {
                     span.Text = text.TrimEnd('.');
@@ -39,6 +39,7 @@ public static class TrailingPeriodPostFilter
             if (span.CharacterEnd > span.CharacterStart)
                 result.Add(span);
         }
+
         return result;
     }
 }

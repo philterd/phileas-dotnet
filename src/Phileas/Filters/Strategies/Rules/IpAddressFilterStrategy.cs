@@ -17,15 +17,19 @@
 using Phileas.Model;
 using Phileas.Policy;
 
-
 namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
-/// Runtime filter strategy for IP address detection. Delegates to <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement"/> with <c>FilterType.IpAddress</c>.
+///     Runtime filter strategy for IP address detection. Delegates to
+///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.IpAddress</c>.
 /// </summary>
 public class IpAddressFilterStrategy : StandardFilterStrategy
 {
-    /// <inheritdoc/>
-    public override Replacement GetReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
-        => GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe, FilterType.IpAddress);
+    /// <inheritdoc />
+    public override Replacement GetReplacement(string context, string token, string[] window, double confidence,
+        string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
+    {
+        return GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe,
+            FilterType.IpAddress);
+    }
 }

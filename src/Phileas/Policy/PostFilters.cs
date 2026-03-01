@@ -20,12 +20,9 @@ namespace Phileas.Policy;
 
 public class PostFilters
 {
-    [JsonPropertyName("trailingNewLines")]
-    public bool TrailingNewLines { get; set; } = true;
+    [JsonPropertyName("trailingNewLines")] public bool TrailingNewLines { get; set; } = true;
 
-    [JsonPropertyName("trailingPeriods")]
-    public bool TrailingPeriods { get; set; } = true;
+    [JsonPropertyName("trailingPeriods")] public bool TrailingPeriods { get; set; } = true;
 
-    [JsonPropertyName("trailingSpaces")]
-    public bool TrailingSpaces { get; set; } = true;
+    [JsonPropertyName("trailingSpaces")] public bool TrailingSpaces { get; set; } = true;
 }

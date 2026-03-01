@@ -15,7 +15,6 @@
  */
 
 using Phileas.Filters.Conditions;
-using Phileas.Services;
 using Xunit;
 
 namespace Phileas.Tests;

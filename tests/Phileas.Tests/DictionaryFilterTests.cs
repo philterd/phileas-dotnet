@@ -1,9 +1,10 @@
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
+using Phileas.Policy.Filters;
 using Phileas.Services;
-using Phileas.Filters.Strategies.Rules;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
 
@@ -28,7 +29,7 @@ public class DictionaryFilterTests
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new DictionaryFilter(config, terms, fuzzy: true, level: level);
+        return new DictionaryFilter(config, terms, true, level);
     }
 
     private static PhileasPolicy CreatePolicy(IEnumerable<string> terms)
@@ -38,9 +39,9 @@ public class DictionaryFilterTests
             Name = "test",
             Identifiers = new Identifiers
             {
-                Dictionaries = new List<Phileas.Policy.Filters.Dictionary>
+                Dictionaries = new List<Dictionary>
                 {
-                    new Phileas.Policy.Filters.Dictionary { Terms = terms.ToList() }
+                    new() { Terms = terms.ToList() }
                 }
             }
         };
@@ -57,7 +58,7 @@ public class DictionaryFilterTests
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
         Assert.Equal(FilterType.Dictionary, result.Spans[0].FilterType);
-        Assert.Equal(term, result.Spans[0].Text, ignoreCase: true);
+        Assert.Equal(term, result.Spans[0].Text, true);
     }
 
     [Theory]
@@ -100,9 +101,9 @@ public class DictionaryFilterTests
             Name = "test",
             Identifiers = new Identifiers
             {
-                Dictionaries = new List<Phileas.Policy.Filters.Dictionary>
+                Dictionaries = new List<Dictionary>
                 {
-                    new Phileas.Policy.Filters.Dictionary
+                    new()
                     {
                         Name = "conditions",
                         Terms = new List<string> { "diabetes", "hypertension" }
@@ -125,14 +126,14 @@ public class DictionaryFilterTests
             Name = "test",
             Identifiers = new Identifiers
             {
-                Dictionaries = new List<Phileas.Policy.Filters.Dictionary>
+                Dictionaries = new List<Dictionary>
                 {
-                    new Phileas.Policy.Filters.Dictionary
+                    new()
                     {
                         Name = "conditions",
                         Terms = new List<string> { "diabetes" }
                     },
-                    new Phileas.Policy.Filters.Dictionary
+                    new()
                     {
                         Name = "medications",
                         Terms = new List<string> { "metformin" }
@@ -162,7 +163,7 @@ public class DictionaryFilterTests
     [Fact]
     public void FuzzyFilter_ExactTermStillDetected()
     {
-        var filter = CreateFuzzyFilter(new[] { "diabetes" }, "low");
+        var filter = CreateFuzzyFilter(new[] { "diabetes" });
         var policy = CreatePolicy(new[] { "diabetes" });
         var result = filter.Filter(policy, "test", 0, "The patient has diabetes.");
         Assert.NotEmpty(result.Spans);
@@ -170,9 +171,9 @@ public class DictionaryFilterTests
     }
 
     [Theory]
-    [InlineData("low",    "diabtes",  0.9)]
-    [InlineData("medium", "dizbtes",  0.75)]
-    [InlineData("high",   "dibzaes",  0.6)]
+    [InlineData("low", "diabtes", 0.9)]
+    [InlineData("medium", "dizbtes", 0.75)]
+    [InlineData("high", "dibzaes", 0.6)]
     public void FuzzyFilter_ConfidenceMatchesLevel(string level, string misspelled, double expectedConfidence)
     {
         var term = "diabetes";
@@ -188,7 +189,7 @@ public class DictionaryFilterTests
     [Fact]
     public void FuzzyFilter_DoesNotMatchDistantTerms()
     {
-        var filter = CreateFuzzyFilter(new[] { "diabetes" }, "low");
+        var filter = CreateFuzzyFilter(new[] { "diabetes" });
         var policy = CreatePolicy(new[] { "diabetes" });
         var result = filter.Filter(policy, "test", 0, "The patient has xyzzy.");
         Assert.Empty(result.Spans);
@@ -197,7 +198,7 @@ public class DictionaryFilterTests
     [Fact]
     public void DictionaryPolicyFilter_FuzzyAndLevelPropertiesDefault()
     {
-        var dict = new Phileas.Policy.Filters.Dictionary
+        var dict = new Dictionary
         {
             Name = "conditions",
             Terms = new List<string> { "diabetes" }
@@ -209,7 +210,7 @@ public class DictionaryFilterTests
     [Fact]
     public void DictionaryPolicyFilter_FuzzyAndLevelPropertiesCanBeSet()
     {
-        var dict = new Phileas.Policy.Filters.Dictionary
+        var dict = new Dictionary
         {
             Name = "conditions",
             Terms = new List<string> { "diabetes" },
@@ -228,9 +229,9 @@ public class DictionaryFilterTests
             Name = "test",
             Identifiers = new Identifiers
             {
-                Dictionaries = new List<Phileas.Policy.Filters.Dictionary>
+                Dictionaries = new List<Dictionary>
                 {
-                    new Phileas.Policy.Filters.Dictionary
+                    new()
                     {
                         Name = "conditions",
                         Terms = new List<string> { "diabetes" },

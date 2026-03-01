@@ -14,33 +14,32 @@
  * limitations under the License.
  */
 
-using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects driver's license number entities in plain text.
+///     Regex-based filter that detects driver's license number entities in plain text.
 /// </summary>
 public class DriversLicenseFilter : RegexFilter
 {
-    private static readonly Analyzer DriversLicenseAnalyzer = new Analyzer(
+    private static readonly Analyzer DriversLicenseAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b[A-Z][0-9]{7}\b").WithInitialConfidence(0.70).Build(),
         new FilterPattern.Builder().WithPattern(@"\b[A-Z]{2}[0-9]{6}\b").WithInitialConfidence(0.70).Build(),
         new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.50).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="DriversLicenseFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="DriversLicenseFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public DriversLicenseFilter(FilterConfiguration configuration) : base(FilterType.DriversLicenseNumber, configuration) { }
+    public DriversLicenseFilter(FilterConfiguration configuration) : base(FilterType.DriversLicenseNumber,
+        configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, DriversLicenseAnalyzer, input, context, piece);

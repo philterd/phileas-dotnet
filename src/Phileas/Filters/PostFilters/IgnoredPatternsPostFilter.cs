@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Text.RegularExpressions;
 using Phileas.Model;
 using Phileas.Policy;
 using RegexOptions = System.Text.RegularExpressions.RegexOptions;
@@ -35,9 +36,10 @@ public static class IgnoredPatternsPostFilter
                 var options = pattern.CaseSensitive
                     ? RegexOptions.None
                     : RegexOptions.IgnoreCase;
-                if (System.Text.RegularExpressions.Regex.IsMatch(span.Text, pattern.Pattern, options))
+                if (Regex.IsMatch(span.Text, pattern.Pattern, options))
                     return false;
             }
+
             return true;
         }).ToList();
     }

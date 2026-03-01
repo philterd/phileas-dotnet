@@ -14,42 +14,49 @@
  * limitations under the License.
  */
 
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Phileas.Model;
-using Phileas.Policy;
 using Phileas.Policy.Filters;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters;
 
 /// <summary>
-/// Filter that delegates entity detection to a remote PhEye NLP service via HTTP.
-/// Each detected entity is compared against the configured label list and confidence
-/// thresholds before a replacement span is produced.
+///     Filter that delegates entity detection to a remote PhEye NLP service via HTTP.
+///     Each detected entity is compared against the configured label list and confidence
+///     thresholds before a replacement span is produced.
 /// </summary>
 public class PhEyeFilter : AbstractFilter
 {
-    private readonly PhEyeConfiguration _configuration;
-    private readonly bool _removePunctuation;
-    private readonly Dictionary<string, double> _thresholds;
-    private readonly HttpClient _httpClient;
-
-    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    private readonly PhEyeConfiguration _configuration;
+    private readonly HttpClient _httpClient;
+    private readonly bool _removePunctuation;
+    private readonly Dictionary<string, double> _thresholds;
+
     /// <summary>
-    /// Initializes a new <see cref="PhEyeFilter"/>.
+    ///     Initializes a new <see cref="PhEyeFilter" />.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration (strategies, ignored terms, etc.).</param>
     /// <param name="phEyeConfiguration">Connection and label settings for the PhEye service.</param>
-    /// <param name="removePunctuation">When <see langword="true"/>, punctuation is stripped from the input before sending to the service.</param>
+    /// <param name="removePunctuation">
+    ///     When <see langword="true" />, punctuation is stripped from the input before sending to
+    ///     the service.
+    /// </param>
     /// <param name="thresholds">Per-label minimum confidence thresholds; entities below the threshold are discarded.</param>
-    /// <param name="httpClient">Optional pre-configured <see cref="HttpClient"/>; a new instance is created when <see langword="null"/>.</param>
+    /// <param name="httpClient">
+    ///     Optional pre-configured <see cref="HttpClient" />; a new instance is created when
+    ///     <see langword="null" />.
+    /// </param>
     public PhEyeFilter(
         FilterConfiguration configuration,
         PhEyeConfiguration phEyeConfiguration,
@@ -65,13 +72,13 @@ public class PhEyeFilter : AbstractFilter
         _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout > 0 ? _configuration.Timeout : 30);
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = new List<Span>();
 
         var formattedInput = _removePunctuation
-            ? System.Text.RegularExpressions.Regex.Replace(input, @"\p{P}", " ")
+            ? Regex.Replace(input, @"\p{P}", " ")
             : input;
 
         var request = new PhEyeRequest
@@ -86,10 +93,10 @@ public class PhEyeFilter : AbstractFilter
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
         httpRequest.Content = JsonContent.Create(request, options: JsonOptions);
-        httpRequest.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         if (!string.IsNullOrEmpty(_configuration.BearerToken))
-            httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _configuration.BearerToken);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.BearerToken);
 
         HttpResponseMessage response;
         try
@@ -114,10 +121,12 @@ public class PhEyeFilter : AbstractFilter
 
         foreach (var phEyeSpan in phEyeSpans)
         {
-            if (_configuration.Labels.Count > 0 && !_configuration.Labels.Contains(phEyeSpan.Label, StringComparer.OrdinalIgnoreCase))
+            if (_configuration.Labels.Count > 0 &&
+                !_configuration.Labels.Contains(phEyeSpan.Label, StringComparer.OrdinalIgnoreCase))
                 continue;
 
-            if (_thresholds.TryGetValue(phEyeSpan.Label.ToUpperInvariant(), out var threshold) && phEyeSpan.Score < threshold)
+            if (_thresholds.TryGetValue(phEyeSpan.Label.ToUpperInvariant(), out var threshold) &&
+                phEyeSpan.Score < threshold)
                 continue;
 
             if (IsIgnored(phEyeSpan.Text))
@@ -128,7 +137,8 @@ public class PhEyeFilter : AbstractFilter
                 ? FilterType.Person
                 : FilterType.Other;
 
-            var replacement = GetReplacement(policy, context, phEyeSpan.Text, window, phEyeSpan.Score, phEyeSpan.Label, null);
+            var replacement = GetReplacement(policy, context, phEyeSpan.Text, window, phEyeSpan.Score, phEyeSpan.Label,
+                null);
 
             if (string.Equals(replacement.Value, phEyeSpan.Text, StringComparison.OrdinalIgnoreCase))
                 continue;
@@ -149,34 +159,25 @@ public class PhEyeFilter : AbstractFilter
 
     private sealed class PhEyeRequest
     {
-        [JsonPropertyName("text")]
-        public string Text { get; set; } = string.Empty;
+        [JsonPropertyName("text")] public string Text { get; set; } = string.Empty;
 
-        [JsonPropertyName("context")]
-        public string Context { get; set; } = string.Empty;
+        [JsonPropertyName("context")] public string Context { get; set; } = string.Empty;
 
-        [JsonPropertyName("piece")]
-        public int Piece { get; set; }
+        [JsonPropertyName("piece")] public int Piece { get; set; }
 
-        [JsonPropertyName("labels")]
-        public List<string> Labels { get; set; } = new List<string>();
+        [JsonPropertyName("labels")] public List<string> Labels { get; set; } = new();
     }
 
     private sealed class PhEyeSpan
     {
-        [JsonPropertyName("start")]
-        public int Start { get; set; }
+        [JsonPropertyName("start")] public int Start { get; set; }
 
-        [JsonPropertyName("end")]
-        public int End { get; set; }
+        [JsonPropertyName("end")] public int End { get; set; }
 
-        [JsonPropertyName("label")]
-        public string Label { get; set; } = string.Empty;
+        [JsonPropertyName("label")] public string Label { get; } = string.Empty;
 
-        [JsonPropertyName("text")]
-        public string Text { get; set; } = string.Empty;
+        [JsonPropertyName("text")] public string Text { get; } = string.Empty;
 
-        [JsonPropertyName("score")]
-        public double Score { get; set; }
+        [JsonPropertyName("score")] public double Score { get; set; }
     }
 }

@@ -16,13 +16,13 @@
 
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Strategies.Rules;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,8 +48,8 @@ public class BitcoinAddressFilterTests
     }
 
     [Theory]
-    [InlineData("Send to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")]   // P2PKH (starts with 1)
-    [InlineData("Wallet: 3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy")]    // P2SH (starts with 3)
+    [InlineData("Send to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")] // P2PKH (starts with 1)
+    [InlineData("Wallet: 3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy")] // P2SH (starts with 3)
     public void Filter_DetectsLegacyBitcoinAddress(string input)
     {
         var filter = CreateFilter();
@@ -60,7 +60,7 @@ public class BitcoinAddressFilterTests
     }
 
     [Theory]
-    [InlineData("Native segwit: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq")]  // bech32
+    [InlineData("Native segwit: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq")] // bech32
     [InlineData("Pay to: bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")]
     public void Filter_DetectsBech32BitcoinAddress(string input)
     {

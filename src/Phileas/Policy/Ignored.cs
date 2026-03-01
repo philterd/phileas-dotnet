@@ -19,7 +19,7 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy;
 
 /// <summary>
-/// Specifies a single literal value that should be excluded from filtering.
+///     Specifies a single literal value that should be excluded from filtering.
 /// </summary>
 public class Ignored
 {
@@ -27,7 +27,10 @@ public class Ignored
     [JsonPropertyName("value")]
     public string? Value { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether the comparison is case-sensitive. Defaults to <see langword="false"/>.</summary>
+    /// <summary>
+    ///     Gets or sets a value indicating whether the comparison is case-sensitive. Defaults to <see langword="false" />
+    ///     .
+    /// </summary>
     [JsonPropertyName("caseSensitive")]
     public bool CaseSensitive { get; set; } = false;
 }

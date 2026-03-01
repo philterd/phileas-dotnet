@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting credit card numbers.
+///     Policy configuration for detecting credit card numbers.
 /// </summary>
 public class CreditCard : AbstractPolicyFilter
 {

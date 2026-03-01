@@ -17,6 +17,9 @@
 namespace Phileas.Policy.Filters.Strategies;
 
 /// <summary>
-/// Defines the replacement strategy settings for a US state abbreviation filter, as deserialized from a policy JSON document.
+///     Defines the replacement strategy settings for a US state abbreviation filter, as deserialized from a policy JSON
+///     document.
 /// </summary>
-public class StateAbbreviationFilterStrategy : AbstractFilterStrategy { }
+public class StateAbbreviationFilterStrategy : AbstractFilterStrategy
+{
+}

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using System.Text.Json;
+using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
 using Phileas.Services;
@@ -88,7 +90,7 @@ public class FilterServiceTests
 
         var result = new FilterService().Filter(policy, "test", 0, "Email: user@example.com");
         Assert.NotEmpty(result.Spans);
-        Assert.Equal(Phileas.Model.FilterType.EmailAddress, result.Spans[0].FilterType);
+        Assert.Equal(FilterType.EmailAddress, result.Spans[0].FilterType);
         Assert.Equal("user@example.com", result.Spans[0].Text);
     }
 
@@ -126,7 +128,7 @@ public class FilterServiceTests
             PostFilters = new PostFilters { TrailingNewLines = false, TrailingPeriods = true, TrailingSpaces = false }
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(policy);
+        var json = JsonSerializer.Serialize(policy);
         Assert.Contains("postFilters", json);
         Assert.Contains("trailingNewLines", json);
         Assert.Contains("trailingPeriods", json);
@@ -137,17 +139,17 @@ public class FilterServiceTests
     public void Policy_PostFilters_DeserializesFromJson()
     {
         var json = """
-        {
-            "name": "test",
-            "postFilters": {
-                "trailingNewLines": false,
-                "trailingPeriods": true,
-                "trailingSpaces": false
-            }
-        }
-        """;
+                   {
+                       "name": "test",
+                       "postFilters": {
+                           "trailingNewLines": false,
+                           "trailingPeriods": true,
+                           "trailingSpaces": false
+                       }
+                   }
+                   """;
 
-        var policy = System.Text.Json.JsonSerializer.Deserialize<PhileasPolicy>(json);
+        var policy = JsonSerializer.Deserialize<PhileasPolicy>(json);
         Assert.NotNull(policy);
         Assert.False(policy.PostFilters.TrailingNewLines);
         Assert.True(policy.PostFilters.TrailingPeriods);

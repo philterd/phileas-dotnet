@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting International Bank Account Numbers (IBAN).
+///     Policy configuration for detecting International Bank Account Numbers (IBAN).
 /// </summary>
 public class IbanCode : AbstractPolicyFilter
 {

@@ -1,6 +1,6 @@
+using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Model;
 using Phileas.Services;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
@@ -10,11 +10,15 @@ namespace Phileas.Tests;
 public class EvaluationTests
 {
     private const int FloatingPointPrecision = 6;
-    private static PhileasPolicy EmailPolicy() => new PhileasPolicy
+
+    private static PhileasPolicy EmailPolicy()
     {
-        Name = "test",
-        Identifiers = new Identifiers { EmailAddress = new EmailAddress() }
-    };
+        return new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers { EmailAddress = new EmailAddress() }
+        };
+    }
 
     [Fact]
     public void Evaluate_PerfectDetection_ReturnsPrecisionRecallF1OfOne()
@@ -51,13 +55,13 @@ public class EvaluationTests
         const string input = "No PII here.";
         var groundTruth = new List<Span>
         {
-            new Span { CharacterStart = 0, CharacterEnd = 10 }
+            new() { CharacterStart = 0, CharacterEnd = 10 }
         };
 
         var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
-        Assert.Equal(0.0, evaluation.Precision);  // no detections at all → precision = 0
-        Assert.Equal(0.0, evaluation.Recall);     // missed the ground truth span → recall = 0
+        Assert.Equal(0.0, evaluation.Precision); // no detections at all → precision = 0
+        Assert.Equal(0.0, evaluation.Recall); // missed the ground truth span → recall = 0
         Assert.Equal(0.0, evaluation.F1);
     }
 
@@ -70,8 +74,8 @@ public class EvaluationTests
 
         var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
-        Assert.Equal(0.0, evaluation.Precision);  // detection with no ground truth → precision = 0
-        Assert.Equal(0.0, evaluation.Recall);     // no ground truth spans at all → recall = 0
+        Assert.Equal(0.0, evaluation.Precision); // detection with no ground truth → precision = 0
+        Assert.Equal(0.0, evaluation.Recall); // no ground truth spans at all → recall = 0
         Assert.Equal(0.0, evaluation.F1);
     }
 
@@ -88,15 +92,15 @@ public class EvaluationTests
         // by constructing the ground truth manually with an extra phantom span.
         var groundTruth = new List<Span>(both)
         {
-            new Span { CharacterStart = 100, CharacterEnd = 110 } // extra phantom → FN
+            new() { CharacterStart = 100, CharacterEnd = 110 } // extra phantom → FN
         };
 
         var evaluation = new FilterService().Evaluate(EmailPolicy(), "test", 0, input, groundTruth);
 
         // TP=2, FP=0, FN=1
-        double expectedPrecision = 2.0 / (2 + 0);     // 1.0
-        double expectedRecall    = 2.0 / (2 + 1);     // ~0.667
-        double expectedF1        = 2.0 * expectedPrecision * expectedRecall / (expectedPrecision + expectedRecall);
+        var expectedPrecision = 2.0 / (2 + 0); // 1.0
+        var expectedRecall = 2.0 / (2 + 1); // ~0.667
+        var expectedF1 = 2.0 * expectedPrecision * expectedRecall / (expectedPrecision + expectedRecall);
 
         Assert.Equal(expectedPrecision, evaluation.Precision, FloatingPointPrecision);
         Assert.Equal(expectedRecall, evaluation.Recall, FloatingPointPrecision);

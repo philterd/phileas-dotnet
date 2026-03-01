@@ -15,12 +15,12 @@
  */
 
 using System.Net;
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Phileas.Filters;
+using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Policy.Filters.Strategies;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
 using AbstractFilterStrategy = Phileas.Filters.AbstractFilterStrategy;
@@ -39,7 +39,7 @@ public class PhEyeFilterTests
             {
                 PhEyes = new List<PhEye>
                 {
-                    new PhEye
+                    new()
                     {
                         PhEyeConfiguration = new PhEyeConfiguration
                         {
@@ -60,21 +60,21 @@ public class PhEyeFilterTests
     public void Policy_WithPhEyes_DeserializesFromJson()
     {
         var json = """
-        {
-            "name": "test",
-            "identifiers": {
-                "pheye": [
-                    {
-                        "phEyeConfiguration": {
-                            "endpoint": "http://localhost:8080",
-                            "labels": ["PERSON"]
-                        },
-                        "removePunctuation": false
-                    }
-                ]
-            }
-        }
-        """;
+                   {
+                       "name": "test",
+                       "identifiers": {
+                           "pheye": [
+                               {
+                                   "phEyeConfiguration": {
+                                       "endpoint": "http://localhost:8080",
+                                       "labels": ["PERSON"]
+                                   },
+                                   "removePunctuation": false
+                               }
+                           ]
+                       }
+                   }
+                   """;
 
         var policy = JsonSerializer.Deserialize<PhileasPolicy>(json);
         Assert.NotNull(policy);
@@ -90,35 +90,35 @@ public class PhEyeFilterTests
         {
             PhEyes = new List<PhEye>
             {
-                new PhEye { PhEyeConfiguration = new PhEyeConfiguration { Endpoint = "http://localhost:8080" } }
+                new() { PhEyeConfiguration = new PhEyeConfiguration { Endpoint = "http://localhost:8080" } }
             }
         };
 
-        Assert.True(identifiers.HasFilter(Phileas.Model.FilterType.PhEye));
+        Assert.True(identifiers.HasFilter(FilterType.PhEye));
     }
 
     [Fact]
     public void Identifiers_HasFilter_PhEye_ReturnsFalseWhenNotConfigured()
     {
         var identifiers = new Identifiers();
-        Assert.False(identifiers.HasFilter(Phileas.Model.FilterType.PhEye));
+        Assert.False(identifiers.HasFilter(FilterType.PhEye));
     }
 
     [Fact]
     public void Identifiers_HasFilter_PhEye_ReturnsFalseWhenListIsEmpty()
     {
         var identifiers = new Identifiers { PhEyes = new List<PhEye>() };
-        Assert.False(identifiers.HasFilter(Phileas.Model.FilterType.PhEye));
+        Assert.False(identifiers.HasFilter(FilterType.PhEye));
     }
 
     [Fact]
     public void PhEyeFilter_ReturnsSpansFromRemoteService()
     {
         var phEyeResponseJson = """
-        [
-            {"start": 7, "end": 17, "label": "PERSON", "text": "John Smith", "score": 0.99}
-        ]
-        """;
+                                [
+                                    {"start": 7, "end": 17, "label": "PERSON", "text": "John Smith", "score": 0.99}
+                                ]
+                                """;
 
         var fakeHandler = new FakeHttpMessageHandler(phEyeResponseJson);
         var httpClient = new HttpClient(fakeHandler);
@@ -144,24 +144,24 @@ public class PhEyeFilterTests
             Name = "test",
             Identifiers = new Identifiers
             {
-                PhEyes = new List<PhEye> { new PhEye { PhEyeConfiguration = phEyeConfig } }
+                PhEyes = new List<PhEye> { new() { PhEyeConfiguration = phEyeConfig } }
             }
         };
 
         var result = filter.Filter(policy, "ctx", 0, "Hello, John Smith today.");
         Assert.Single(result.Spans);
         Assert.Equal("John Smith", result.Spans[0].Text);
-        Assert.Equal(Phileas.Model.FilterType.Person, result.Spans[0].FilterType);
+        Assert.Equal(FilterType.Person, result.Spans[0].FilterType);
     }
 
     [Fact]
     public void PhEyeFilter_FiltersOutSpansBelowThreshold()
     {
         var phEyeResponseJson = """
-        [
-            {"start": 7, "end": 17, "label": "PERSON", "text": "John Smith", "score": 0.50}
-        ]
-        """;
+                                [
+                                    {"start": 7, "end": 17, "label": "PERSON", "text": "John Smith", "score": 0.50}
+                                ]
+                                """;
 
         var fakeHandler = new FakeHttpMessageHandler(phEyeResponseJson);
         var httpClient = new HttpClient(fakeHandler);
@@ -188,7 +188,7 @@ public class PhEyeFilterTests
             Name = "test",
             Identifiers = new Identifiers
             {
-                PhEyes = new List<PhEye> { new PhEye { PhEyeConfiguration = phEyeConfig } }
+                PhEyes = new List<PhEye> { new() { PhEyeConfiguration = phEyeConfig } }
             }
         };
 
@@ -206,8 +206,8 @@ public class PhEyeFilterTests
             {
                 PhEyes = new List<PhEye>
                 {
-                    new PhEye { PhEyeConfiguration = new PhEyeConfiguration { Endpoint = "http://service1:8080" } },
-                    new PhEye { PhEyeConfiguration = new PhEyeConfiguration { Endpoint = "http://service2:8080" } }
+                    new() { PhEyeConfiguration = new PhEyeConfiguration { Endpoint = "http://service1:8080" } },
+                    new() { PhEyeConfiguration = new PhEyeConfiguration { Endpoint = "http://service2:8080" } }
                 }
             }
         };
@@ -227,11 +227,12 @@ public class PhEyeFilterTests
             _responseBody = responseBody;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(_responseBody, System.Text.Encoding.UTF8, "application/json")
+                Content = new StringContent(_responseBody, Encoding.UTF8, "application/json")
             };
             return Task.FromResult(response);
         }

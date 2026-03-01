@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting Vehicle Identification Numbers (VIN).
+///     Policy configuration for detecting Vehicle Identification Numbers (VIN).
 /// </summary>
 public class Vin : AbstractPolicyFilter
 {

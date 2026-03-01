@@ -19,8 +19,8 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy;
 
 /// <summary>
-/// AES-256 encryption key and initialization vector used by the <c>CRYPTO_REPLACE</c>
-/// filter strategy. Both values must be Base64-encoded.
+///     AES-256 encryption key and initialization vector used by the <c>CRYPTO_REPLACE</c>
+///     filter strategy. Both values must be Base64-encoded.
 /// </summary>
 public class Crypto
 {

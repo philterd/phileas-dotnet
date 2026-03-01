@@ -15,14 +15,14 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model;
-using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
-using Phileas.Policy.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
+using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Policy.Filters;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,9 +48,9 @@ public class VinFilterTests
     }
 
     [Theory]
-    [InlineData("VIN: 1HGBH41JXMN109186")]   // Honda VIN example
+    [InlineData("VIN: 1HGBH41JXMN109186")] // Honda VIN example
     [InlineData("Vehicle: 2T1BURHE0JC043821")] // Toyota VIN example
-    [InlineData("Car VIN 4T1BF3EK9AU118018")]  // Another valid VIN
+    [InlineData("Car VIN 4T1BF3EK9AU118018")] // Another valid VIN
     public void Filter_DetectsVin(string input)
     {
         var filter = CreateFilter();

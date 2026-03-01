@@ -15,12 +15,11 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model;
+using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Services;
-using Phileas.Filters.Strategies.Rules;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
 
@@ -88,7 +87,8 @@ public class InMemoryContextServiceTests
         };
 
         var contextService = new InMemoryContextService();
-        var strategy = new SsnFilterStrategy { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
+        var strategy = new SsnFilterStrategy
+            { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { strategy })
             .WithIgnored(new HashSet<string>())
@@ -114,7 +114,8 @@ public class InMemoryContextServiceTests
         };
 
         var contextService = new InMemoryContextService();
-        var strategy = new SsnFilterStrategy { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
+        var strategy = new SsnFilterStrategy
+            { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { strategy })
             .WithIgnored(new HashSet<string>())
@@ -145,7 +146,8 @@ public class InMemoryContextServiceTests
         var knownReplacement = "pre-seeded-value";
         contextService.Put("ctx", "123-45-6789", knownReplacement);
 
-        var strategy = new SsnFilterStrategy { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
+        var strategy = new SsnFilterStrategy
+            { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { strategy })
             .WithIgnored(new HashSet<string>())

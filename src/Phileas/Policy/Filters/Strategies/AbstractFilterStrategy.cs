@@ -19,16 +19,22 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy.Filters.Strategies;
 
 /// <summary>
-/// Base class for all policy-level filter strategy objects deserialized from a Phileas policy
-/// JSON document. Defines the common replacement strategy properties shared by all concrete strategies.
+///     Base class for all policy-level filter strategy objects deserialized from a Phileas policy
+///     JSON document. Defines the common replacement strategy properties shared by all concrete strategies.
 /// </summary>
 public abstract class AbstractFilterStrategy
 {
-    /// <summary>Gets or sets the replacement strategy name (e.g. <c>"REDACT"</c>, <c>"STATIC_REPLACE"</c>). Defaults to <c>"REDACT"</c>.</summary>
+    /// <summary>
+    ///     Gets or sets the replacement strategy name (e.g. <c>"REDACT"</c>, <c>"STATIC_REPLACE"</c>). Defaults to
+    ///     <c>"REDACT"</c>.
+    /// </summary>
     [JsonPropertyName("strategy")]
     public string Strategy { get; set; } = "REDACT";
 
-    /// <summary>Gets or sets the redaction format string. The placeholder <c>%t</c> is replaced with the filter-type slug. Defaults to <c>"{{{REDACTED-%t}}}"</c>.</summary>
+    /// <summary>
+    ///     Gets or sets the redaction format string. The placeholder <c>%t</c> is replaced with the filter-type slug.
+    ///     Defaults to <c>"{{{REDACTED-%t}}}"</c>.
+    /// </summary>
     [JsonPropertyName("redactionFormat")]
     public string RedactionFormat { get; set; } = "{{{REDACTED-%t}}}";
 
@@ -40,15 +46,24 @@ public abstract class AbstractFilterStrategy
     [JsonPropertyName("maskCharacter")]
     public string MaskCharacter { get; set; } = "*";
 
-    /// <summary>Gets or sets the mask length for the <c>MASK</c> strategy. Use <c>"same"</c> to match the entity length, or a numeric string for a fixed length.</summary>
+    /// <summary>
+    ///     Gets or sets the mask length for the <c>MASK</c> strategy. Use <c>"same"</c> to match the entity length, or a
+    ///     numeric string for a fixed length.
+    /// </summary>
     [JsonPropertyName("maskLength")]
     public string MaskLength { get; set; } = "same";
 
-    /// <summary>Gets or sets an optional condition expression. When <see langword="null"/> or empty the strategy always applies.</summary>
+    /// <summary>
+    ///     Gets or sets an optional condition expression. When <see langword="null" /> or empty the strategy always
+    ///     applies.
+    /// </summary>
     [JsonPropertyName("condition")]
     public string? Condition { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether a random cryptographic salt is used. Defaults to <see langword="false"/>.</summary>
+    /// <summary>
+    ///     Gets or sets a value indicating whether a random cryptographic salt is used. Defaults to
+    ///     <see langword="false" />.
+    /// </summary>
     [JsonPropertyName("salt")]
     public bool Salt { get; set; } = false;
 }

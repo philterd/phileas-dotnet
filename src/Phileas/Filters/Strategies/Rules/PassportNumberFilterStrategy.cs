@@ -17,15 +17,20 @@
 using Phileas.Model;
 using Phileas.Policy;
 
-
 namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
-/// Runtime filter strategy for passport number detection. Delegates to <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement"/> with <c>FilterType.PassportNumber</c>.
+///     Runtime filter strategy for passport number detection. Delegates to
+///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with
+///     <c>FilterType.PassportNumber</c>.
 /// </summary>
 public class PassportNumberFilterStrategy : StandardFilterStrategy
 {
-    /// <inheritdoc/>
-    public override Replacement GetReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
-        => GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe, FilterType.PassportNumber);
+    /// <inheritdoc />
+    public override Replacement GetReplacement(string context, string token, string[] window, double confidence,
+        string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
+    {
+        return GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe,
+            FilterType.PassportNumber);
+    }
 }

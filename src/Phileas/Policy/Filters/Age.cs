@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting age expressions (e.g. "32 years old").
+///     Policy configuration for detecting age expressions (e.g. "32 years old").
 /// </summary>
 public class Age : AbstractPolicyFilter
 {

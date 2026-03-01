@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects Vehicle Identification Number (VIN) entities in plain text.
+///     Regex-based filter that detects Vehicle Identification Number (VIN) entities in plain text.
 /// </summary>
 public class VinFilter : RegexFilter
 {
-    private static readonly Analyzer VinAnalyzer = new Analyzer(
+    private static readonly Analyzer VinAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b[A-HJ-NPR-Z0-9]{17}\b").WithInitialConfidence(0.80).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="VinFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="VinFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public VinFilter(FilterConfiguration configuration) : base(FilterType.Vin, configuration) { }
+    public VinFilter(FilterConfiguration configuration) : base(FilterType.Vin, configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, VinAnalyzer, input, context, piece);

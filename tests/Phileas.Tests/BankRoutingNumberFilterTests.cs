@@ -16,13 +16,13 @@
 
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Strategies.Rules;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,8 +48,8 @@ public class BankRoutingNumberFilterTests
     }
 
     [Theory]
-    [InlineData("Routing: 021000021")]   // JPMorgan Chase
-    [InlineData("ABA: 322271627")]       // Wells Fargo
+    [InlineData("Routing: 021000021")] // JPMorgan Chase
+    [InlineData("ABA: 322271627")] // Wells Fargo
     [InlineData("Routing number 111000025")]
     public void Filter_DetectsBankRoutingNumber(string input)
     {
@@ -62,7 +62,7 @@ public class BankRoutingNumberFilterTests
 
     [Theory]
     [InlineData("No routing here.")]
-    [InlineData("Zip: 12345")]            // 5 digits (not 9)
+    [InlineData("Zip: 12345")] // 5 digits (not 9)
     [InlineData("Too long: 1234567890")] // 10 digits
     public void Filter_DoesNotDetectNonRoutingNumber(string input)
     {

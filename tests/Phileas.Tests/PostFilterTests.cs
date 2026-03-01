@@ -17,19 +17,21 @@
 using Phileas.Filters;
 using Phileas.Filters.PostFilters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Strategies.Rules;
-using PhileasPolicy = Phileas.Policy.Policy;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
 public class PostFilterTests
 {
-    private static Span MakeSpan(int start, int end, string text) =>
-        Span.Make(start, end, FilterType.EmailAddress, "ctx", 1.0, text, "REDACTED", "", false, true, null, 0);
+    private static Span MakeSpan(int start, int end, string text)
+    {
+        return Span.Make(start, end, FilterType.EmailAddress, "ctx", 1.0, text, "REDACTED", "", false, true, null, 0);
+    }
 
     // ── TrailingNewLinesPostFilter ──────────────────────────────────────────
 
@@ -159,7 +161,7 @@ public class PostFilterTests
     {
         var patterns = new List<IgnoredPattern>
         {
-            new IgnoredPattern { Pattern = @"^\d{3}-\d{2}-\d{4}$", CaseSensitive = false }
+            new() { Pattern = @"^\d{3}-\d{2}-\d{4}$", CaseSensitive = false }
         };
         var spans = new List<Span>
         {
@@ -176,7 +178,7 @@ public class PostFilterTests
     {
         var patterns = new List<IgnoredPattern>
         {
-            new IgnoredPattern { Pattern = "^ABC$", CaseSensitive = false }
+            new() { Pattern = "^ABC$", CaseSensitive = false }
         };
         var spans = new List<Span> { MakeSpan(0, 3, "abc") };
         var result = IgnoredPatternsPostFilter.Apply(spans, patterns);
@@ -188,7 +190,7 @@ public class PostFilterTests
     {
         var patterns = new List<IgnoredPattern>
         {
-            new IgnoredPattern { Pattern = "^ABC$", CaseSensitive = true }
+            new() { Pattern = "^ABC$", CaseSensitive = true }
         };
         var spans = new List<Span> { MakeSpan(0, 3, "abc") };
         var result = IgnoredPatternsPostFilter.Apply(spans, patterns);
@@ -226,7 +228,7 @@ public class PostFilterTests
     {
         var patterns = new List<IgnoredPattern>
         {
-            new IgnoredPattern { Pattern = @"^\d{3}-\d{2}-\d{4}$", CaseSensitive = false }
+            new() { Pattern = @"^\d{3}-\d{2}-\d{4}$", CaseSensitive = false }
         };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { new SsnFilterStrategy() })

@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects US ZIP code entities in plain text.
+///     Regex-based filter that detects US ZIP code entities in plain text.
 /// </summary>
 public class ZipCodeFilter : RegexFilter
 {
-    private static readonly Analyzer ZipAnalyzer = new Analyzer(
+    private static readonly Analyzer ZipAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b\d{5}(?:-\d{4})?\b").WithInitialConfidence(0.60).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="ZipCodeFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="ZipCodeFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public ZipCodeFilter(FilterConfiguration configuration) : base(FilterType.ZipCode, configuration) { }
+    public ZipCodeFilter(FilterConfiguration configuration) : base(FilterType.ZipCode, configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, ZipAnalyzer, input, context, piece);

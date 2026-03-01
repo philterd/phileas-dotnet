@@ -17,15 +17,19 @@
 using Phileas.Model;
 using Phileas.Policy;
 
-
 namespace Phileas.Filters.Strategies.Rules;
 
 /// <summary>
-/// Runtime filter strategy for credit card number detection. Delegates to <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement"/> with <c>FilterType.CreditCard</c>.
+///     Runtime filter strategy for credit card number detection. Delegates to
+///     <see cref="Phileas.Strategies.StandardFilterStrategy.GetStandardReplacement" /> with <c>FilterType.CreditCard</c>.
 /// </summary>
 public class CreditCardFilterStrategy : StandardFilterStrategy
 {
-    /// <inheritdoc/>
-    public override Replacement GetReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
-        => GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe, FilterType.CreditCard);
+    /// <inheritdoc />
+    public override Replacement GetReplacement(string context, string token, string[] window, double confidence,
+        string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe)
+    {
+        return GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe,
+            FilterType.CreditCard);
+    }
 }

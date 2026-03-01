@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting URLs and web addresses.
+///     Policy configuration for detecting URLs and web addresses.
 /// </summary>
 public class Url : AbstractPolicyFilter
 {

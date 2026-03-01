@@ -19,33 +19,33 @@ using System.Text.RegularExpressions;
 namespace Phileas.Filters.Conditions;
 
 /// <summary>
-/// Evaluates filter strategy conditions based on the grammar defined in FilterCondition.g4
-/// Supported conditions:
-/// - population COMPARATOR NUMBER
-/// - token COMPARATOR WORD
-/// - type COMPARATOR TYPE
-/// - confidence COMPARATOR NUMBER
-/// - context COMPARATOR WORD
-/// - Multiple conditions combined with AND
+///     Evaluates filter strategy conditions based on the grammar defined in FilterCondition.g4
+///     Supported conditions:
+///     - population COMPARATOR NUMBER
+///     - token COMPARATOR WORD
+///     - type COMPARATOR TYPE
+///     - confidence COMPARATOR NUMBER
+///     - context COMPARATOR WORD
+///     - Multiple conditions combined with AND
 /// </summary>
 public static class ConditionEvaluator
 {
-    private static readonly Regex ConditionPattern = new Regex(
+    private static readonly Regex ConditionPattern = new(
         @"^\s*(?<field>population|token|type|confidence|context)\s+(?<op>>|<|<=|>=|==|!=|startswith|is|is not)\s+(?<value>""[^""]*""|\d+(?:\.\d+)?)\s*(?<and>and\s+(?<rest>.+))?$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
     /// <summary>
-    /// Evaluates the given condition string against the supplied runtime values.
-    /// Returns <see langword="true"/> when the condition is satisfied or when
-    /// <paramref name="condition"/> is <see langword="null"/> or whitespace.
+    ///     Evaluates the given condition string against the supplied runtime values.
+    ///     Returns <see langword="true" /> when the condition is satisfied or when
+    ///     <paramref name="condition" /> is <see langword="null" /> or whitespace.
     /// </summary>
-    /// <param name="condition">The condition expression to evaluate, or <see langword="null"/>.</param>
+    /// <param name="condition">The condition expression to evaluate, or <see langword="null" />.</param>
     /// <param name="context">The current context identifier.</param>
     /// <param name="token">The detected entity text.</param>
     /// <param name="confidence">The detection confidence score.</param>
     /// <param name="classification">Optional entity classification label.</param>
-    /// <returns><see langword="true"/> if the condition passes; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true" /> if the condition passes; otherwise <see langword="false" />.</returns>
     public static bool Evaluate(
         string condition,
         string context,
@@ -89,9 +89,7 @@ public static class ConditionEvaluator
 
         // If there's an AND clause, evaluate it recursively
         if (hasAnd && !string.IsNullOrWhiteSpace(rest))
-        {
             return result && EvaluateSingle(rest, context, token, confidence, classification);
-        }
 
         return result;
     }

@@ -15,13 +15,13 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model;
-using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
-using Phileas.Policy.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
+using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Policy.Filters;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -59,7 +59,7 @@ public class ZipCodeFilterTests
 
     [Theory]
     [InlineData("No zip here.")]
-    [InlineData("Short: 1234")]           // Only 4 digits
+    [InlineData("Short: 1234")] // Only 4 digits
     public void Filter_DoesNotDetectNonZipCode(string input)
     {
         var filter = CreateFilter();

@@ -15,14 +15,14 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model;
-using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
-using Phileas.Policy.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
+using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Policy.Filters;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,9 +48,9 @@ public class PassportNumberFilterTests
     }
 
     [Theory]
-    [InlineData("Passport: A12345678")]   // 1 letter + 8 digits
+    [InlineData("Passport: A12345678")] // 1 letter + 8 digits
     [InlineData("Travel doc: B98765432")]
-    [InlineData("Passport No: AB123456")]  // 2 letters + 6 digits
+    [InlineData("Passport No: AB123456")] // 2 letters + 6 digits
     public void Filter_DetectsPassportNumber(string input)
     {
         var filter = CreateFilter();

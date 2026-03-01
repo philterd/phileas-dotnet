@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting street addresses.
+///     Policy configuration for detecting street addresses.
 /// </summary>
 public class StreetAddress : AbstractPolicyFilter
 {

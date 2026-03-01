@@ -15,30 +15,31 @@
  */
 
 using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects phone number extension entities in plain text.
+///     Regex-based filter that detects phone number extension entities in plain text.
 /// </summary>
 public class PhoneNumberExtensionFilter : RegexFilter
 {
-    private static readonly Analyzer PhoneExtAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b(?:ext|x|extension)\.?\s*[0-9]{1,6}\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.80).Build()
+    private static readonly Analyzer PhoneExtAnalyzer = new(
+        new FilterPattern.Builder().WithPattern(@"\b(?:ext|x|extension)\.?\s*[0-9]{1,6}\b", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.80).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="PhoneNumberExtensionFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="PhoneNumberExtensionFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public PhoneNumberExtensionFilter(FilterConfiguration configuration) : base(FilterType.PhoneNumberExtension, configuration) { }
+    public PhoneNumberExtensionFilter(FilterConfiguration configuration) : base(FilterType.PhoneNumberExtension,
+        configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, PhoneExtAnalyzer, input, context, piece);

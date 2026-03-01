@@ -15,33 +15,34 @@
  */
 
 using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects street address entities in plain text.
+///     Regex-based filter that detects street address entities in plain text.
 /// </summary>
 public class StreetAddressFilter : RegexFilter
 {
-    private static readonly Analyzer StreetAddressAnalyzer = new Analyzer(
+    private static readonly Analyzer StreetAddressAnalyzer = new(
         new FilterPattern.Builder()
-            .WithPattern(@"\b\d{1,5}\s+([A-Za-z]+\s?){1,5}(Street|St|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Road|Rd|Lane|Ln|Way|Court|Ct|Place|Pl|Circle|Cir|Highway|Hwy|Parkway|Pkwy|Square|Sq|Trail|Trl|Terrace|Ter)\b\.?", RegexOptions.IgnoreCase)
+            .WithPattern(
+                @"\b\d{1,5}\s+([A-Za-z]+\s?){1,5}(Street|St|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Road|Rd|Lane|Ln|Way|Court|Ct|Place|Pl|Circle|Cir|Highway|Hwy|Parkway|Pkwy|Square|Sq|Trail|Trl|Terrace|Ter)\b\.?",
+                RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.85)
             .Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="StreetAddressFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="StreetAddressFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public StreetAddressFilter(FilterConfiguration configuration) : base(FilterType.StreetAddress, configuration) { }
+    public StreetAddressFilter(FilterConfiguration configuration) : base(FilterType.StreetAddress, configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, StreetAddressAnalyzer, input, context, piece);

@@ -15,13 +15,13 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model;
-using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
-using Phileas.Policy.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
+using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Policy.Filters;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -68,9 +68,9 @@ public class SsnFilterTests
     }
 
     [Theory]
-    [InlineData("SSN: 000-45-6789")]    // Area 000 is invalid
-    [InlineData("SSN: 666-45-6789")]    // Area 666 is invalid
-    [InlineData("SSN: 900-45-6789")]    // Area 9xx is invalid
+    [InlineData("SSN: 000-45-6789")] // Area 000 is invalid
+    [InlineData("SSN: 666-45-6789")] // Area 666 is invalid
+    [InlineData("SSN: 900-45-6789")] // Area 9xx is invalid
     public void Filter_DoesNotDetectInvalidSsnPrefix(string input)
     {
         var filter = CreateFilter();
@@ -80,8 +80,8 @@ public class SsnFilterTests
     }
 
     [Theory]
-    [InlineData("SSN: 123-00-6789")]    // Group 00 is invalid
-    [InlineData("SSN: 123-45-0000")]    // Serial 0000 is invalid
+    [InlineData("SSN: 123-00-6789")] // Group 00 is invalid
+    [InlineData("SSN: 123-45-0000")] // Serial 0000 is invalid
     public void Filter_DoesNotDetectInvalidSsnGroupOrSerial(string input)
     {
         var filter = CreateFilter();

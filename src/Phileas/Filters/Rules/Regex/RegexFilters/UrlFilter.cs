@@ -15,31 +15,32 @@
  */
 
 using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects URL entities in plain text.
+///     Regex-based filter that detects URL entities in plain text.
 /// </summary>
 public class UrlFilter : RegexFilter
 {
-    private static readonly Analyzer UrlAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.95).Build(),
-        new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer UrlAnalyzer = new(
+        new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.95).Build(),
+        new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="UrlFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="UrlFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public UrlFilter(FilterConfiguration configuration) : base(FilterType.Url, configuration) { }
+    public UrlFilter(FilterConfiguration configuration) : base(FilterType.Url, configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, UrlAnalyzer, input, context, piece);

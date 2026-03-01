@@ -15,6 +15,7 @@
  */
 
 using System.Text.Json;
+using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Strategies;
@@ -38,7 +39,7 @@ public class PolicyTests
                 {
                     Strategies = new List<EmailAddressFilterStrategy>
                     {
-                        new EmailAddressFilterStrategy { Strategy = "REDACT" }
+                        new() { Strategy = "REDACT" }
                     }
                 }
             }
@@ -53,15 +54,15 @@ public class PolicyTests
     public void Policy_DeserializesFromJson()
     {
         var json = """
-        {
-            "name": "test",
-            "identifiers": {
-                "emailAddress": {
-                    "emailAddressFilterStrategies": [{"strategy": "REDACT"}]
-                }
-            }
-        }
-        """;
+                   {
+                       "name": "test",
+                       "identifiers": {
+                           "emailAddress": {
+                               "emailAddressFilterStrategies": [{"strategy": "REDACT"}]
+                           }
+                       }
+                   }
+                   """;
 
         var policy = JsonSerializer.Deserialize<PhileasPolicy>(json);
         Assert.NotNull(policy);
@@ -81,7 +82,7 @@ public class PolicyTests
                 {
                     Strategies = new List<EmailAddressFilterStrategy>
                     {
-                        new EmailAddressFilterStrategy { Strategy = "REDACT" }
+                        new() { Strategy = "REDACT" }
                     }
                 }
             }
@@ -96,12 +97,12 @@ public class PolicyTests
     public void Policy_DeserializesFromYaml()
     {
         var yaml = """
-        name: test-yaml
-        identifiers:
-          emailAddress:
-            emailAddressFilterStrategies:
-              - strategy: REDACT
-        """;
+                   name: test-yaml
+                   identifiers:
+                     emailAddress:
+                       emailAddressFilterStrategies:
+                         - strategy: REDACT
+                   """;
 
         var policy = Serializer.DeserializeFromYaml(yaml);
         Assert.NotNull(policy);
@@ -121,7 +122,7 @@ public class PolicyTests
                 {
                     Strategies = new List<SsnFilterStrategy>
                     {
-                        new SsnFilterStrategy { Strategy = "REDACT" }
+                        new() { Strategy = "REDACT" }
                     }
                 }
             }
@@ -142,7 +143,7 @@ public class PolicyTests
             EmailAddress = new EmailAddress()
         };
 
-        Assert.True(identifiers.HasFilter(Phileas.Model.FilterType.EmailAddress));
-        Assert.False(identifiers.HasFilter(Phileas.Model.FilterType.Ssn));
+        Assert.True(identifiers.HasFilter(FilterType.EmailAddress));
+        Assert.False(identifiers.HasFilter(FilterType.Ssn));
     }
 }

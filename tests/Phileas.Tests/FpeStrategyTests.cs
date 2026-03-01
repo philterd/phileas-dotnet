@@ -16,10 +16,9 @@
 
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
-using Phileas.Model;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Strategies.Rules;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
 
@@ -43,13 +42,15 @@ public class FpeStrategyTests
         return new SsnFilter(config);
     }
 
-    private static PhileasPolicy CreateSsnPolicy(Fpe? fpe = null) =>
-        new PhileasPolicy
+    private static PhileasPolicy CreateSsnPolicy(Fpe? fpe = null)
+    {
+        return new PhileasPolicy
         {
             Name = "test",
             Identifiers = new Identifiers { Ssn = new Ssn() },
             Fpe = fpe ?? new Fpe { Key = TestKey }
         };
+    }
 
     [Fact]
     public void FpeStrategy_WithValidKey_ProducesNonOriginalOutput()
@@ -103,8 +104,10 @@ public class FpeStrategyTests
         var filter1 = CreateSsnFilterWithFpe(key1);
         var filter2 = CreateSsnFilterWithFpe(key2);
 
-        var policy1 = new PhileasPolicy { Name = "test", Identifiers = new Identifiers { Ssn = new Ssn() }, Fpe = new Fpe { Key = key1 } };
-        var policy2 = new PhileasPolicy { Name = "test", Identifiers = new Identifiers { Ssn = new Ssn() }, Fpe = new Fpe { Key = key2 } };
+        var policy1 = new PhileasPolicy
+            { Name = "test", Identifiers = new Identifiers { Ssn = new Ssn() }, Fpe = new Fpe { Key = key1 } };
+        var policy2 = new PhileasPolicy
+            { Name = "test", Identifiers = new Identifiers { Ssn = new Ssn() }, Fpe = new Fpe { Key = key2 } };
 
         var result1 = filter1.Filter(policy1, "ctx", 0, "SSN: 123-45-6789");
         var result2 = filter2.Filter(policy2, "ctx", 0, "SSN: 123-45-6789");

@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting phone numbers.
+///     Policy configuration for detecting phone numbers.
 /// </summary>
 public class PhoneNumber : AbstractPolicyFilter
 {

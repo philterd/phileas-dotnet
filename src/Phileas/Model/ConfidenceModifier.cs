@@ -19,23 +19,26 @@ using System.Text.RegularExpressions;
 namespace Phileas.Model;
 
 /// <summary>
-/// Specifies the spatial relationship between a character sequence and a detected entity
-/// that is used when adjusting a match's confidence score.
+///     Specifies the spatial relationship between a character sequence and a detected entity
+///     that is used when adjusting a match's confidence score.
 /// </summary>
 public enum ConfidenceCondition
 {
     /// <summary>The character sequence appears immediately before the entity.</summary>
     CharacterSequenceBefore,
+
     /// <summary>The character sequence appears immediately after the entity.</summary>
     CharacterSequenceAfter,
+
     /// <summary>The character sequence surrounds the entity (both before and after).</summary>
     CharacterSequenceSurrounding,
+
     /// <summary>A regular expression matches the text surrounding the entity.</summary>
     CharacterRegexSurrounding
 }
 
 /// <summary>
-/// Adjusts the confidence score of a match based on surrounding character context.
+///     Adjusts the confidence score of a match based on surrounding character context.
 /// </summary>
 public class ConfidenceModifier
 {
@@ -48,9 +51,15 @@ public class ConfidenceModifier
     /// <summary>Gets or sets the amount added to (or subtracted from) the base confidence when the condition is met.</summary>
     public double ConfidenceDelta { get; set; }
 
-    /// <summary>Gets or sets an absolute confidence value applied when the condition is met (overrides <see cref="ConfidenceDelta"/> when non-zero).</summary>
+    /// <summary>
+    ///     Gets or sets an absolute confidence value applied when the condition is met (overrides
+    ///     <see cref="ConfidenceDelta" /> when non-zero).
+    /// </summary>
     public double Confidence { get; set; }
 
-    /// <summary>Gets or sets the optional regular expression used when <see cref="Condition"/> is <see cref="ConfidenceCondition.CharacterRegexSurrounding"/>.</summary>
+    /// <summary>
+    ///     Gets or sets the optional regular expression used when <see cref="Condition" /> is
+    ///     <see cref="ConfidenceCondition.CharacterRegexSurrounding" />.
+    /// </summary>
     public Regex? MatchingPattern { get; set; }
 }

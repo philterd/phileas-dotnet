@@ -15,13 +15,12 @@
  */
 
 using System.Text.Json.Serialization;
-using Phileas.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Policy configuration for detecting email addresses.
+///     Policy configuration for detecting email addresses.
 /// </summary>
 public class EmailAddress : AbstractPolicyFilter
 {

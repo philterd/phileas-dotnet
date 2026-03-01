@@ -19,9 +19,9 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy;
 
 /// <summary>
-/// Root configuration object for a Phileas policy. A policy defines which entity types to detect,
-/// how to replace each type, which values to ignore, and global settings such as window size and
-/// encryption keys.
+///     Root configuration object for a Phileas policy. A policy defines which entity types to detect,
+///     how to replace each type, which values to ignore, and global settings such as window size and
+///     encryption keys.
 /// </summary>
 public class Policy
 {
@@ -31,7 +31,7 @@ public class Policy
 
     /// <summary>Gets or sets the global configuration settings for the policy.</summary>
     [JsonPropertyName("config")]
-    public Config Config { get; set; } = new Config();
+    public Config Config { get; set; } = new();
 
     /// <summary>Gets or sets the AES encryption settings used by the <c>CRYPTO_REPLACE</c> strategy.</summary>
     [JsonPropertyName("crypto")]
@@ -43,16 +43,15 @@ public class Policy
 
     /// <summary>Gets or sets the collection of filter identifiers that specify which entity types to detect.</summary>
     [JsonPropertyName("identifiers")]
-    public Identifiers Identifiers { get; set; } = new Identifiers();
+    public Identifiers Identifiers { get; set; } = new();
 
     /// <summary>Gets or sets the list of exact values that should not be filtered.</summary>
     [JsonPropertyName("ignored")]
-    public List<Ignored> Ignored { get; set; } = new List<Ignored>();
+    public List<Ignored> Ignored { get; set; } = new();
 
     /// <summary>Gets or sets the list of regex-based patterns for values that should not be filtered.</summary>
     [JsonPropertyName("ignoredPatterns")]
-    public List<IgnoredPattern> IgnoredPatterns { get; set; } = new List<IgnoredPattern>();
+    public List<IgnoredPattern> IgnoredPatterns { get; set; } = new();
 
-    [JsonPropertyName("postFilters")]
-    public PostFilters PostFilters { get; set; } = new PostFilters();
+    [JsonPropertyName("postFilters")] public PostFilters PostFilters { get; set; } = new();
 }

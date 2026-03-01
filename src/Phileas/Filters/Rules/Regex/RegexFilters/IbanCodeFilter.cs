@@ -14,31 +14,30 @@
  * limitations under the License.
  */
 
-using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects IBAN code entities in plain text.
+///     Regex-based filter that detects IBAN code entities in plain text.
 /// </summary>
 public class IbanCodeFilter : RegexFilter
 {
-    private static readonly Analyzer IbanAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}\b").WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer IbanAnalyzer = new(
+        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}\b")
+            .WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="IbanCodeFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="IbanCodeFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public IbanCodeFilter(FilterConfiguration configuration) : base(FilterType.IbanCode, configuration) { }
+    public IbanCodeFilter(FilterConfiguration configuration) : base(FilterType.IbanCode, configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, IbanAnalyzer, input, context, piece);

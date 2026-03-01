@@ -19,7 +19,7 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy.Filters;
 
 /// <summary>
-/// Connection and behavior configuration for the PhEye NLP service.
+///     Connection and behavior configuration for the PhEye NLP service.
 /// </summary>
 public class PhEyeConfiguration
 {
@@ -35,7 +35,10 @@ public class PhEyeConfiguration
     [JsonPropertyName("timeout")]
     public int Timeout { get; set; } = 30;
 
-    /// <summary>Gets or sets the list of entity labels the filter should detect (e.g. <c>"Person"</c>). Defaults to <c>["Person"]</c>.</summary>
+    /// <summary>
+    ///     Gets or sets the list of entity labels the filter should detect (e.g. <c>"Person"</c>). Defaults to
+    ///     <c>["Person"]</c>.
+    /// </summary>
     [JsonPropertyName("labels")]
-    public List<string> Labels { get; set; } = new List<string> { "Person" };
+    public List<string> Labels { get; set; } = new() { "Person" };
 }

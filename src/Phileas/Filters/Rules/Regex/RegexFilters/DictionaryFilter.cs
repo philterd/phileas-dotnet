@@ -1,15 +1,12 @@
 using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Filter that detects entities by matching input tokens against a configurable list of terms,
-/// with optional fuzzy (Levenshtein-distance) matching.
+///     Filter that detects entities by matching input tokens against a configurable list of terms,
+///     with optional fuzzy (Levenshtein-distance) matching.
 /// </summary>
 public class DictionaryFilter : RegexFilter
 {
@@ -19,13 +16,20 @@ public class DictionaryFilter : RegexFilter
     private readonly string[] _terms;
 
     /// <summary>
-    /// Initializes a new <see cref="DictionaryFilter"/>.
+    ///     Initializes a new <see cref="DictionaryFilter" />.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
     /// <param name="terms">The list of terms to detect.</param>
-    /// <param name="fuzzy">When <see langword="true"/>, fuzzy (approximate) matching is enabled in addition to exact matching.</param>
-    /// <param name="level">Fuzzy matching sensitivity: <c>"low"</c> (edit distance 1), <c>"medium"</c> (2), or <c>"high"</c> (3).</param>
-    public DictionaryFilter(FilterConfiguration configuration, IEnumerable<string> terms, bool fuzzy = false, string level = "low")
+    /// <param name="fuzzy">
+    ///     When <see langword="true" />, fuzzy (approximate) matching is enabled in addition to exact
+    ///     matching.
+    /// </param>
+    /// <param name="level">
+    ///     Fuzzy matching sensitivity: <c>"low"</c> (edit distance 1), <c>"medium"</c> (2), or <c>"high"</c>
+    ///     (3).
+    /// </param>
+    public DictionaryFilter(FilterConfiguration configuration, IEnumerable<string> terms, bool fuzzy = false,
+        string level = "low")
         : base(FilterType.Dictionary, configuration)
     {
         _fuzzy = fuzzy;
@@ -44,7 +48,7 @@ public class DictionaryFilter : RegexFilter
         _analyzer = new Analyzer(patterns);
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, _analyzer, input, context, piece);
@@ -57,16 +61,17 @@ public class DictionaryFilter : RegexFilter
         return new Filtered(context, piece, spans);
     }
 
-    private IList<Span> FindFuzzySpans(PhileasPolicy policy, string input, string context, int piece, IList<Span> exactSpans)
+    private IList<Span> FindFuzzySpans(PhileasPolicy policy, string input, string context, int piece,
+        IList<Span> exactSpans)
     {
         var (maxDistance, confidence) = GetFuzzyParameters(_level);
 
         var allSpans = new List<Span>(exactSpans);
 
         // Tokenize the input on non-word characters to find candidate tokens
-        var tokenMatches = System.Text.RegularExpressions.Regex.Matches(input, @"\b\w+\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var tokenMatches = System.Text.RegularExpressions.Regex.Matches(input, @"\b\w+\b", RegexOptions.IgnoreCase);
 
-        foreach (System.Text.RegularExpressions.Match tokenMatch in tokenMatches)
+        foreach (Match tokenMatch in tokenMatches)
         {
             var token = tokenMatch.Value;
             var tokenStart = tokenMatch.Index;
@@ -102,20 +107,25 @@ public class DictionaryFilter : RegexFilter
         return allSpans;
     }
 
-    private static (int maxDistance, double confidence) GetFuzzyParameters(string level) =>
-        level?.ToLowerInvariant() switch
+    private static (int maxDistance, double confidence) GetFuzzyParameters(string level)
+    {
+        return level?.ToLowerInvariant() switch
         {
             "medium" => (2, 0.75),
-            "high"   => (3, 0.6),
-            _        => (1, 0.9)   // "low" or unrecognized
+            "high" => (3, 0.6),
+            _ => (1, 0.9) // "low" or unrecognized
         };
+    }
 
     /// <summary>
-    /// Computes the Levenshtein (edit) distance between two strings using a case-insensitive comparison.
+    ///     Computes the Levenshtein (edit) distance between two strings using a case-insensitive comparison.
     /// </summary>
     /// <param name="s">The first string.</param>
     /// <param name="t">The second string.</param>
-    /// <returns>The minimum number of single-character edits required to transform <paramref name="s"/> into <paramref name="t"/>.</returns>
+    /// <returns>
+    ///     The minimum number of single-character edits required to transform <paramref name="s" /> into
+    ///     <paramref name="t" />.
+    /// </returns>
     internal static int LevenshteinDistance(string s, string t)
     {
         // Case-insensitive comparison
@@ -125,18 +135,16 @@ public class DictionaryFilter : RegexFilter
         int m = s.Length, n = t.Length;
         var d = new int[m + 1, n + 1];
 
-        for (int i = 0; i <= m; i++) d[i, 0] = i;
-        for (int j = 0; j <= n; j++) d[0, j] = j;
+        for (var i = 0; i <= m; i++) d[i, 0] = i;
+        for (var j = 0; j <= n; j++) d[0, j] = j;
 
-        for (int i = 1; i <= m; i++)
+        for (var i = 1; i <= m; i++)
+        for (var j = 1; j <= n; j++)
         {
-            for (int j = 1; j <= n; j++)
-            {
-                int cost = s[i - 1] == t[j - 1] ? 0 : 1;
-                d[i, j] = Math.Min(
-                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
-                    d[i - 1, j - 1] + cost);
-            }
+            var cost = s[i - 1] == t[j - 1] ? 0 : 1;
+            d[i, j] = Math.Min(
+                Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                d[i - 1, j - 1] + cost);
         }
 
         return d[m, n];

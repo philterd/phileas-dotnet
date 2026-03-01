@@ -19,7 +19,7 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy;
 
 /// <summary>
-/// Specifies a named regular-expression pattern whose matches should be excluded from filtering.
+///     Specifies a named regular-expression pattern whose matches should be excluded from filtering.
 /// </summary>
 public class IgnoredPattern
 {
@@ -31,7 +31,10 @@ public class IgnoredPattern
     [JsonPropertyName("pattern")]
     public string? Pattern { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether the pattern matching is case-sensitive. Defaults to <see langword="false"/>.</summary>
+    /// <summary>
+    ///     Gets or sets a value indicating whether the pattern matching is case-sensitive. Defaults to
+    ///     <see langword="false" />.
+    /// </summary>
     [JsonPropertyName("caseSensitive")]
     public bool CaseSensitive { get; set; } = false;
 }

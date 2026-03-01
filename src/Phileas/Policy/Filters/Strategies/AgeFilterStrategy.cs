@@ -17,6 +17,9 @@
 namespace Phileas.Policy.Filters.Strategies;
 
 /// <summary>
-/// Defines the replacement strategy settings for an age expression filter, as deserialized from a policy JSON document.
+///     Defines the replacement strategy settings for an age expression filter, as deserialized from a policy JSON
+///     document.
 /// </summary>
-public class AgeFilterStrategy : AbstractFilterStrategy { }
+public class AgeFilterStrategy : AbstractFilterStrategy
+{
+}

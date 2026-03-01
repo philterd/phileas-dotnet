@@ -17,6 +17,8 @@
 namespace Phileas.Policy.Filters.Strategies;
 
 /// <summary>
-/// Defines the replacement strategy settings for a phone number filter, as deserialized from a policy JSON document.
+///     Defines the replacement strategy settings for a phone number filter, as deserialized from a policy JSON document.
 /// </summary>
-public class PhoneNumberFilterStrategy : AbstractFilterStrategy { }
+public class PhoneNumberFilterStrategy : AbstractFilterStrategy
+{
+}

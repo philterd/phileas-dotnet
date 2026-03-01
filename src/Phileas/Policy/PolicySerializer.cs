@@ -17,6 +17,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -24,21 +25,21 @@ using YamlDotNet.Serialization.NamingConventions;
 namespace Phileas.Policy;
 
 /// <summary>
-/// Provides methods to serialize and deserialize a <see cref="Policy"/> to and from
-/// JSON or YAML format.
+///     Provides methods to serialize and deserialize a <see cref="Policy" /> to and from
+///     JSON or YAML format.
 /// </summary>
 public static class PolicySerializer
 {
-    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
     /// <summary>
-    /// Deserializes a <see cref="Policy"/> from a JSON string.
+    ///     Deserializes a <see cref="Policy" /> from a JSON string.
     /// </summary>
     /// <param name="json">The JSON representation of the policy.</param>
-    /// <returns>The deserialized <see cref="Policy"/>.</returns>
+    /// <returns>The deserialized <see cref="Policy" />.</returns>
     public static Policy DeserializeFromJson(string json)
     {
         return JsonSerializer.Deserialize<Policy>(json, JsonOptions)
@@ -46,11 +47,11 @@ public static class PolicySerializer
     }
 
     /// <summary>
-    /// Deserializes a <see cref="Policy"/> from a YAML string.
-    /// YAML keys should use the same camelCase names as the equivalent JSON representation.
+    ///     Deserializes a <see cref="Policy" /> from a YAML string.
+    ///     YAML keys should use the same camelCase names as the equivalent JSON representation.
     /// </summary>
     /// <param name="yaml">The YAML representation of the policy.</param>
-    /// <returns>The deserialized <see cref="Policy"/>.</returns>
+    /// <returns>The deserialized <see cref="Policy" />.</returns>
     public static Policy DeserializeFromYaml(string yaml)
     {
         var json = ConvertYamlToJson(yaml);
@@ -58,7 +59,7 @@ public static class PolicySerializer
     }
 
     /// <summary>
-    /// Serializes a <see cref="Policy"/> to a JSON string.
+    ///     Serializes a <see cref="Policy" /> to a JSON string.
     /// </summary>
     /// <param name="policy">The policy to serialize.</param>
     /// <returns>The JSON representation of the policy.</returns>
@@ -68,8 +69,8 @@ public static class PolicySerializer
     }
 
     /// <summary>
-    /// Serializes a <see cref="Policy"/> to a YAML string.
-    /// YAML keys will use the same camelCase names as the equivalent JSON representation.
+    ///     Serializes a <see cref="Policy" /> to a YAML string.
+    ///     YAML keys will use the same camelCase names as the equivalent JSON representation.
     /// </summary>
     /// <param name="policy">The policy to serialize.</param>
     /// <returns>The YAML representation of the policy.</returns>
@@ -81,7 +82,7 @@ public static class PolicySerializer
     }
 
     /// <summary>
-    /// Converts a JSON string to YAML format, preserving key names and value types.
+    ///     Converts a JSON string to YAML format, preserving key names and value types.
     /// </summary>
     private static string ConvertJsonToYaml(string json)
     {
@@ -101,7 +102,7 @@ public static class PolicySerializer
     }
 
     /// <summary>
-    /// Converts a YAML string to a JSON string, correctly inferring scalar types.
+    ///     Converts a YAML string to a JSON string, correctly inferring scalar types.
     /// </summary>
     private static string ConvertYamlToJson(string yaml)
     {
@@ -123,7 +124,7 @@ public static class PolicySerializer
         {
             case YamlMappingNode mapping:
                 sb.Append('{');
-                bool firstEntry = true;
+                var firstEntry = true;
                 foreach (var (key, value) in mapping)
                 {
                     if (!firstEntry) sb.Append(',');
@@ -132,18 +133,20 @@ public static class PolicySerializer
                     ConvertNodeToJson(value, sb);
                     firstEntry = false;
                 }
+
                 sb.Append('}');
                 break;
 
             case YamlSequenceNode sequence:
                 sb.Append('[');
-                bool firstItem = true;
+                var firstItem = true;
                 foreach (var item in sequence)
                 {
                     if (!firstItem) sb.Append(',');
                     ConvertNodeToJson(item, sb);
                     firstItem = false;
                 }
+
                 sb.Append(']');
                 break;
 
@@ -161,13 +164,11 @@ public static class PolicySerializer
         var value = scalar.Value;
 
         // Explicitly quoted strings stay as strings.
-        if (scalar.Style is YamlDotNet.Core.ScalarStyle.SingleQuoted
-                          or YamlDotNet.Core.ScalarStyle.DoubleQuoted
-                          or YamlDotNet.Core.ScalarStyle.Literal
-                          or YamlDotNet.Core.ScalarStyle.Folded)
-        {
+        if (scalar.Style is ScalarStyle.SingleQuoted
+            or ScalarStyle.DoubleQuoted
+            or ScalarStyle.Literal
+            or ScalarStyle.Folded)
             return JsonSerializer.Serialize(value);
-        }
 
         if (value is null or "null" or "~")
             return "null";

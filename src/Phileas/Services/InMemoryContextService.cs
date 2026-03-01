@@ -17,16 +17,16 @@
 namespace Phileas.Services;
 
 /// <summary>
-/// Default in-memory implementation of <see cref="IContextService"/>.
-/// Stores PII token → replacement value mappings in a thread-safe, in-memory dictionary
-/// keyed by context name.
+///     Default in-memory implementation of <see cref="IContextService" />.
+///     Stores PII token → replacement value mappings in a thread-safe, in-memory dictionary
+///     keyed by context name.
 /// </summary>
 public class InMemoryContextService : IContextService
 {
     private readonly Dictionary<string, Dictionary<string, string>> _contexts = new();
     private readonly object _lock = new();
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public string? Get(string contextName, string token)
     {
         lock (_lock)
@@ -38,7 +38,7 @@ public class InMemoryContextService : IContextService
         }
     }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public void Put(string contextName, string token, string replacement)
     {
         lock (_lock)
@@ -48,6 +48,7 @@ public class InMemoryContextService : IContextService
                 ctx = new Dictionary<string, string>();
                 _contexts[contextName] = ctx;
             }
+
             ctx[token] = replacement;
         }
     }

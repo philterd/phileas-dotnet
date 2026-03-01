@@ -17,6 +17,8 @@
 namespace Phileas.Policy.Filters.Strategies;
 
 /// <summary>
-/// Defines the replacement strategy settings for a URL filter, as deserialized from a policy JSON document.
+///     Defines the replacement strategy settings for a URL filter, as deserialized from a policy JSON document.
 /// </summary>
-public class UrlFilterStrategy : AbstractFilterStrategy { }
+public class UrlFilterStrategy : AbstractFilterStrategy
+{
+}

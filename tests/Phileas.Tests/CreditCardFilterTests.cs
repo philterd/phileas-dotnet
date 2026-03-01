@@ -16,13 +16,13 @@
 
 using Phileas.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters;
-using Phileas.Filters.Strategies.Rules;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,10 +48,10 @@ public class CreditCardFilterTests
     }
 
     [Theory]
-    [InlineData("Visa: 4111111111111111")]        // Visa 16-digit
-    [InlineData("MC: 5500005555555559")]           // Mastercard
-    [InlineData("Amex: 378282246310005")]          // Amex 15-digit
-    [InlineData("Discover: 6011111111111117")]     // Discover
+    [InlineData("Visa: 4111111111111111")] // Visa 16-digit
+    [InlineData("MC: 5500005555555559")] // Mastercard
+    [InlineData("Amex: 378282246310005")] // Amex 15-digit
+    [InlineData("Discover: 6011111111111117")] // Discover
     public void Filter_DetectsCreditCardNumber(string input)
     {
         var filter = CreateFilter();
@@ -62,8 +62,8 @@ public class CreditCardFilterTests
     }
 
     [Theory]
-    [InlineData("Card: 1234 5678 9012 3456")]     // formatted with spaces
-    [InlineData("Card: 1234-5678-9012-3456")]     // formatted with hyphens
+    [InlineData("Card: 1234 5678 9012 3456")] // formatted with spaces
+    [InlineData("Card: 1234-5678-9012-3456")] // formatted with hyphens
     public void Filter_DetectsFormattedCreditCard(string input)
     {
         var filter = CreateFilter();

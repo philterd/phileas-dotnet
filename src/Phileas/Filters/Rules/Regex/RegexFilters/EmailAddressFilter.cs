@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects email address entities in plain text.
+///     Regex-based filter that detects email address entities in plain text.
 /// </summary>
 public class EmailAddressFilter : RegexFilter
 {
-    private static readonly Analyzer EmailAnalyzer = new Analyzer(
+    private static readonly Analyzer EmailAnalyzer = new(
         new FilterPattern.Builder()
             .WithPattern(@"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
             .WithInitialConfidence(0.99)
@@ -36,12 +32,14 @@ public class EmailAddressFilter : RegexFilter
     );
 
     /// <summary>
-    /// Initializes a new <see cref="EmailAddressFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="EmailAddressFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public EmailAddressFilter(FilterConfiguration configuration) : base(FilterType.EmailAddress, configuration) { }
+    public EmailAddressFilter(FilterConfiguration configuration) : base(FilterType.EmailAddress, configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, EmailAnalyzer, input, context, piece);

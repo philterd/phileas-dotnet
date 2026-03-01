@@ -28,7 +28,7 @@ public class ConditionIntegrationTests
     public void EmailAddressFilter_WithConfidenceCondition_OnlyFiltersHighConfidence()
     {
         // Only redact emails with confidence > 0.5
-        var policy = new Phileas.Policy.Policy
+        var policy = new Policy.Policy
         {
             Name = "conditional-policy",
             Identifiers = new Identifiers
@@ -37,7 +37,7 @@ public class ConditionIntegrationTests
                 {
                     Strategies = new List<EmailAddressFilterStrategy>
                     {
-                        new EmailAddressFilterStrategy
+                        new()
                         {
                             Strategy = "REDACT",
                             Condition = "confidence > 0.5"
@@ -57,7 +57,7 @@ public class ConditionIntegrationTests
     public void SsnFilter_WithTokenCondition_OnlyRedactsSpecificPattern()
     {
         // Redact SSNs that start with "123", leave others as SAME
-        var policy = new Phileas.Policy.Policy
+        var policy = new Policy.Policy
         {
             Name = "conditional-ssn",
             Identifiers = new Identifiers
@@ -66,14 +66,14 @@ public class ConditionIntegrationTests
                 {
                     Strategies = new List<SsnFilterStrategy>
                     {
-                        new SsnFilterStrategy
+                        new()
                         {
                             Strategy = "REDACT",
                             Condition = "token startswith \"123\""
                         },
-                        new SsnFilterStrategy
+                        new()
                         {
-                            Strategy = "SAME"  // Default: leave unchanged
+                            Strategy = "SAME" // Default: leave unchanged
                         }
                     }
                 }
@@ -91,7 +91,7 @@ public class ConditionIntegrationTests
     [Fact]
     public void EmailFilter_WithContextCondition_FiltersOnlySpecificContext()
     {
-        var policy = new Phileas.Policy.Policy
+        var policy = new Policy.Policy
         {
             Name = "context-specific",
             Identifiers = new Identifiers
@@ -100,14 +100,14 @@ public class ConditionIntegrationTests
                 {
                     Strategies = new List<EmailAddressFilterStrategy>
                     {
-                        new EmailAddressFilterStrategy
+                        new()
                         {
                             Strategy = "MASK",
                             Condition = "context == \"sensitive-context\""
                         },
-                        new EmailAddressFilterStrategy
+                        new()
                         {
-                            Strategy = "SAME"  // Default: leave unchanged
+                            Strategy = "SAME" // Default: leave unchanged
                         }
                     }
                 }
@@ -127,7 +127,7 @@ public class ConditionIntegrationTests
     public void MultipleStrategies_WithDifferentConditions_AppliesFirstMatch()
     {
         // Apply different strategies based on confidence
-        var policy = new Phileas.Policy.Policy
+        var policy = new Policy.Policy
         {
             Name = "multi-strategy",
             Identifiers = new Identifiers
@@ -137,19 +137,19 @@ public class ConditionIntegrationTests
                     Strategies = new List<PhoneNumberFilterStrategy>
                     {
                         // High confidence (>=0.95): full redaction
-                        new PhoneNumberFilterStrategy
+                        new()
                         {
                             Strategy = "REDACT",
                             Condition = "confidence >= 0.95"
                         },
                         // Medium confidence (>=0.8): mask
-                        new PhoneNumberFilterStrategy
+                        new()
                         {
                             Strategy = "MASK",
                             Condition = "confidence >= 0.8"
                         },
                         // Low confidence: last 4
-                        new PhoneNumberFilterStrategy
+                        new()
                         {
                             Strategy = "LAST_4"
                         }
@@ -170,7 +170,7 @@ public class ConditionIntegrationTests
     [Fact]
     public void CombinedConditions_WithAnd_EvaluatesCorrectly()
     {
-        var policy = new Phileas.Policy.Policy
+        var policy = new Policy.Policy
         {
             Name = "combined-conditions",
             Identifiers = new Identifiers
@@ -179,15 +179,15 @@ public class ConditionIntegrationTests
                 {
                     Strategies = new List<ZipCodeFilterStrategy>
                     {
-                        new ZipCodeFilterStrategy
+                        new()
                         {
                             Strategy = "STATIC_REPLACE",
                             StaticReplacement = "00000",
-                            Condition = "context == \"medical\""  // Simplified condition
+                            Condition = "context == \"medical\"" // Simplified condition
                         },
-                        new ZipCodeFilterStrategy
+                        new()
                         {
-                            Strategy = "SAME"  // Default: leave unchanged
+                            Strategy = "SAME" // Default: leave unchanged
                         }
                     }
                 }
@@ -208,7 +208,7 @@ public class ConditionIntegrationTests
     [Fact]
     public void NoCondition_AlwaysAppliesStrategy()
     {
-        var policy = new Phileas.Policy.Policy
+        var policy = new Policy.Policy
         {
             Name = "no-condition",
             Identifiers = new Identifiers
@@ -226,7 +226,7 @@ public class ConditionIntegrationTests
     [Fact]
     public void InvalidCondition_DefaultsToTrue_AppliesStrategy()
     {
-        var policy = new Phileas.Policy.Policy
+        var policy = new Policy.Policy
         {
             Name = "invalid-condition",
             Identifiers = new Identifiers
@@ -235,7 +235,7 @@ public class ConditionIntegrationTests
                 {
                     Strategies = new List<EmailAddressFilterStrategy>
                     {
-                        new EmailAddressFilterStrategy
+                        new()
                         {
                             Strategy = "REDACT",
                             Condition = "this is not a valid condition"

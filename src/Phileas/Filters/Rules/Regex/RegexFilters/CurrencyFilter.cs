@@ -15,31 +15,33 @@
  */
 
 using System.Text.RegularExpressions;
-using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model;
-using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-/// Regex-based filter that detects currency amount entities in plain text.
+///     Regex-based filter that detects currency amount entities in plain text.
 /// </summary>
 public class CurrencyFilter : RegexFilter
 {
-    private static readonly Analyzer CurrencyAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\$\s?[0-9,]+(\.[0-9]{1,2})?(?:\s?(million|billion|trillion|thousand))?", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b[0-9,]+(\.[0-9]{1,2})?\s?(USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY)\b").WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer CurrencyAnalyzer = new(
+        new FilterPattern.Builder()
+            .WithPattern(@"\$\s?[0-9,]+(\.[0-9]{1,2})?(?:\s?(million|billion|trillion|thousand))?",
+                RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b[0-9,]+(\.[0-9]{1,2})?\s?(USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY)\b")
+            .WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="CurrencyFilter"/> with the given configuration.
+    ///     Initializes a new <see cref="CurrencyFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public CurrencyFilter(FilterConfiguration configuration) : base(FilterType.Currency, configuration) { }
+    public CurrencyFilter(FilterConfiguration configuration) : base(FilterType.Currency, configuration)
+    {
+    }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, CurrencyAnalyzer, input, context, piece);

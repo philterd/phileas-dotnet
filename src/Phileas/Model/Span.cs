@@ -19,8 +19,8 @@ using System.Text.Json.Serialization;
 namespace Phileas.Model;
 
 /// <summary>
-/// Represents a detected entity within a piece of text, including its character offsets,
-/// filter type, replacement value, and associated metadata.
+///     Represents a detected entity within a piece of text, including its character offsets,
+///     filter type, replacement value, and associated metadata.
 /// </summary>
 public class Span
 {
@@ -80,12 +80,15 @@ public class Span
     [JsonIgnore]
     public string[]? Window { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether this span is always treated as valid regardless of confidence. Not serialized.</summary>
+    /// <summary>
+    ///     Gets or sets a value indicating whether this span is always treated as valid regardless of confidence. Not
+    ///     serialized.
+    /// </summary>
     [JsonIgnore]
     public bool AlwaysValid { get; set; }
 
     /// <summary>
-    /// Creates a new <see cref="Span"/> with the specified values.
+    ///     Creates a new <see cref="Span" /> with the specified values.
     /// </summary>
     /// <param name="characterStart">Zero-based start index of the entity in the input text.</param>
     /// <param name="characterEnd">Zero-based exclusive end index of the entity in the input text.</param>
@@ -99,7 +102,7 @@ public class Span
     /// <param name="applied">Whether the replacement was applied.</param>
     /// <param name="window">Surrounding context words.</param>
     /// <param name="priority">Priority of the producing filter.</param>
-    /// <returns>A fully initialized <see cref="Span"/>.</returns>
+    /// <returns>A fully initialized <see cref="Span" />.</returns>
     public static Span Make(
         int characterStart,
         int characterEnd,
@@ -132,21 +135,21 @@ public class Span
     }
 
     /// <summary>
-    /// Determines whether a span with the given character offsets already exists in the provided list.
+    ///     Determines whether a span with the given character offsets already exists in the provided list.
     /// </summary>
     /// <param name="characterStart">Start offset to check.</param>
     /// <param name="characterEnd">Exclusive end offset to check.</param>
     /// <param name="spans">The list of spans to search.</param>
-    /// <returns><see langword="true"/> if a matching span already exists; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true" /> if a matching span already exists; otherwise <see langword="false" />.</returns>
     public static bool DoesSpanExist(int characterStart, int characterEnd, IList<Span> spans)
     {
         return spans.Any(s => s.CharacterStart == characterStart && s.CharacterEnd == characterEnd);
     }
 
     /// <summary>
-    /// Removes overlapping spans from the list, keeping the span with the highest confidence
-    /// when two spans cover overlapping character ranges.
-    /// The returned list is ordered by <see cref="CharacterStart"/>.
+    ///     Removes overlapping spans from the list, keeping the span with the highest confidence
+    ///     when two spans cover overlapping character ranges.
+    ///     The returned list is ordered by <see cref="CharacterStart" />.
     /// </summary>
     /// <param name="spans">The unfiltered collection of spans, potentially containing overlaps.</param>
     /// <returns>A new list of non-overlapping spans ordered by character position.</returns>
@@ -157,7 +160,7 @@ public class Span
 
         foreach (var span in sorted)
         {
-            bool overlaps = result.Any(existing =>
+            var overlaps = result.Any(existing =>
                 span.CharacterStart < existing.CharacterEnd &&
                 span.CharacterEnd > existing.CharacterStart);
 

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Text.Json;
 using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
@@ -24,8 +25,8 @@ using PhileasPolicy = Phileas.Policy.Policy;
 namespace Phileas.Tests;
 
 /// <summary>
-/// End-to-end tests that build a policy with various filters, apply the policy to text
-/// paragraphs containing fake PII, and assert that the expected redactions occur.
+///     End-to-end tests that build a policy with various filters, apply the policy to text
+///     paragraphs containing fake PII, and assert that the expected redactions occur.
 /// </summary>
 public class EndToEndTests
 {
@@ -33,8 +34,9 @@ public class EndToEndTests
     // Multi-filter policy
     // -------------------------------------------------------------------------
 
-    private static PhileasPolicy BuildMultiFilterPolicy() =>
-        new PhileasPolicy
+    private static PhileasPolicy BuildMultiFilterPolicy()
+    {
+        return new PhileasPolicy
         {
             Name = "e2e-multi",
             Identifiers = new Identifiers
@@ -47,6 +49,7 @@ public class EndToEndTests
                 ZipCode = new ZipCode()
             }
         };
+    }
 
     [Fact]
     public void EndToEnd_MultiFilter_RedactsEmailInParagraph()
@@ -285,16 +288,16 @@ public class EndToEndTests
     public void EndToEnd_PolicyFromJson_RedactsExpectedPii()
     {
         const string json = """
-        {
-            "name": "json-policy",
-            "identifiers": {
-                "emailAddress": {},
-                "ssn": {}
-            }
-        }
-        """;
+                            {
+                                "name": "json-policy",
+                                "identifiers": {
+                                    "emailAddress": {},
+                                    "ssn": {}
+                                }
+                            }
+                            """;
 
-        var policy = System.Text.Json.JsonSerializer.Deserialize<PhileasPolicy>(json)!;
+        var policy = JsonSerializer.Deserialize<PhileasPolicy>(json)!;
 
         const string input = "Reach Jane at jane.doe@example.com. Her SSN is 123-45-6789.";
 

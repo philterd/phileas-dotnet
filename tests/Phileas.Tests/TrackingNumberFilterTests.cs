@@ -15,14 +15,14 @@
  */
 
 using Phileas.Filters;
-using Phileas.Model;
-using Phileas.Policy;
-using PhileasPolicy = Phileas.Policy.Policy;
-using Phileas.Policy.Filters;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
+using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Policy.Filters;
 using Phileas.Services;
 using Xunit;
+using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
 
@@ -48,7 +48,7 @@ public class TrackingNumberFilterTests
     }
 
     [Theory]
-    [InlineData("UPS: 1Z12345E0205271688")]      // UPS (1Z + 16 alphanumeric)
+    [InlineData("UPS: 1Z12345E0205271688")] // UPS (1Z + 16 alphanumeric)
     [InlineData("Shipment 1Z999AA10123456784")]
     public void Filter_DetectsUpsTrackingNumber(string input)
     {
@@ -60,8 +60,8 @@ public class TrackingNumberFilterTests
     }
 
     [Theory]
-    [InlineData("FedEx: 449044304137821")]        // FedEx 15-digit
-    [InlineData("Package: 798429808620")]          // 12-digit numeric tracking
+    [InlineData("FedEx: 449044304137821")] // FedEx 15-digit
+    [InlineData("Package: 798429808620")] // 12-digit numeric tracking
     public void Filter_DetectsNumericTrackingNumber(string input)
     {
         var filter = CreateFilter();
