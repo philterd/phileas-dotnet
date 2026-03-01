@@ -40,6 +40,77 @@ var result = FilterPolicyLoader.Filter(
 
 ---
 
+### Evaluate
+
+```csharp
+public static EvaluationResult Evaluate(
+    Policy policy,
+    string context,
+    int piece,
+    string input,
+    IList<Span> groundTruthSpans,
+    IContextService? contextService = null)
+```
+
+Filters `input` using the policy, then compares the detected [`Span`](#span) objects against `groundTruthSpans` and returns precision, recall, and F1 metrics.
+
+A detected span is counted as a **true positive** when its `CharacterStart` and `CharacterEnd` exactly match those of a ground-truth span. Spans that are detected but not in the ground truth are **false positives**; ground-truth spans that were not detected are **false negatives**.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `policy` | `Policy` | The policy defining which identifiers to detect and how to replace them. |
+| `context` | `string` | A named scope used by `RANDOM_REPLACE` to maintain referential integrity. |
+| `piece` | `int` | Zero-based index of the text fragment within a larger document. |
+| `input` | `string` | The text to filter and evaluate against. |
+| `groundTruthSpans` | `IList<Span>` | The expected set of spans (ground truth). Only `CharacterStart` and `CharacterEnd` are used for matching. |
+| `contextService` | `IContextService?` | Optional context service. Defaults to `InMemoryContextService` when `null`. |
+
+**Returns:** [`EvaluationResult`](#evaluationresult)
+
+**Example:**
+
+```csharp
+var groundTruth = new List<Span>
+{
+    new Span { CharacterStart = 8, CharacterEnd = 28 }  // position of "john.doe@example.com"
+};
+
+var evaluation = FilterPolicyLoader.Evaluate(
+    policy,
+    context: "default",
+    piece: 0,
+    input: "Contact john.doe@example.com for help.",
+    groundTruthSpans: groundTruth
+);
+
+Console.WriteLine($"Precision: {evaluation.Precision:F2}");
+Console.WriteLine($"Recall:    {evaluation.Recall:F2}");
+Console.WriteLine($"F1:        {evaluation.F1:F2}");
+```
+
+---
+
+## EvaluationResult
+
+```csharp
+public class EvaluationResult
+{
+    public double Precision { get; }
+    public double Recall { get; }
+    public double F1 { get; }
+}
+```
+
+Returned by [`FilterPolicyLoader.Evaluate`](#evaluate). All values are in the range [0, 1].
+
+| Property | Type | Description |
+|---|---|---|
+| `Precision` | `double` | Fraction of detected spans that are correct: `TP / (TP + FP)`. Returns `0` when no spans were detected. |
+| `Recall` | `double` | Fraction of ground-truth spans that were detected: `TP / (TP + FN)`. Returns `0` when ground truth is empty. |
+| `F1` | `double` | Harmonic mean of precision and recall: `2 × Precision × Recall / (Precision + Recall)`. Returns `0` when both are zero. |
+
+---
+
 ## TextFilterResult
 
 ```csharp
