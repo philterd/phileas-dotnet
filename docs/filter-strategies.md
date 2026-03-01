@@ -219,7 +219,28 @@ new SsnFilterStrategy
 
 ## Strategy Conditions
 
-The `condition` property is reserved for future use. At present all strategies evaluate their condition as `true`.
+Strategies can include a `condition` property that controls when they are applied. When multiple strategies are defined, phileas-net evaluates their conditions in order and applies the first strategy whose condition evaluates to `true`.
+
+```csharp
+new EmailAddressFilterStrategy
+{
+    Strategy = "MASK",
+    Condition = "confidence > 0.8 and context == \"internal\""
+}
+```
+
+**Supported condition fields:**
+- `confidence` - Detection confidence (0.0 to 1.0)
+- `context` - Context name passed to `FilterService.Filter()`
+- `token` - The detected text value
+- `type` - Classification type (e.g., "PER", "LOC")
+
+**Supported operators:**
+- Comparison: `==`, `!=`, `>`, `<`, `>=`, `<=`, `is`, `is not`
+- String: `startswith`
+- Logical: `and`
+
+See [Filter Conditions](filter-conditions.md) for detailed examples and usage patterns.
 
 ---
 

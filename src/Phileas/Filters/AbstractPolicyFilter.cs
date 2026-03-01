@@ -15,8 +15,9 @@
  */
 
 using System.Text.Json.Serialization;
+using Phileas.Policy;
 
-namespace Phileas.Policy.Filters;
+namespace Phileas.Filters;
 
 public abstract class AbstractPolicyFilter
 {

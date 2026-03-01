@@ -117,6 +117,49 @@ const string json = """
 var policy = JsonSerializer.Deserialize<Policy>(json)!;
 ```
 
+## Using Conditional Strategies
+
+Apply different strategies based on context, confidence, or the detected token value:
+
+```csharp
+using Phileas.Policy.Filters.Strategies;
+
+var policy = new Policy
+{
+    Name = "conditional-policy",
+    Identifiers = new Identifiers
+    {
+        EmailAddress = new EmailAddress
+        {
+            Strategies = new List<EmailAddressFilterStrategy>
+            {
+                // Fully redact emails in medical context
+                new EmailAddressFilterStrategy
+                {
+                    Strategy = "REDACT",
+                    Condition = "context == \"medical\""
+                },
+                // Mask emails in other contexts
+                new EmailAddressFilterStrategy
+                {
+                    Strategy = "MASK"
+                }
+            }
+        }
+    }
+};
+
+// Medical context - email will be redacted
+var medicalResult = FilterService.Filter(policy, "medical", 0, "Contact: john@example.com");
+// Output: "Contact: {{{REDACTED-email-address}}}"
+
+// Other context - email will be masked
+var defaultResult = FilterService.Filter(policy, "default", 0, "Contact: john@example.com");
+// Output: "Contact: ****************"
+```
+
+See [Filter Conditions](filter-conditions.md) for detailed examples and advanced usage.
+
 ## Running the Tests
 
 ```bash
@@ -128,4 +171,5 @@ dotnet test tests/Phileas.Tests/Phileas.Tests.csproj
 - [Policies](policies.md) — configure policy options such as window size and ignored values
 - [Supported Identifiers](supported-identifiers.md) — full list of built-in PII types
 - [Filter Strategies](filter-strategies.md) — choose how PII is replaced
+- [Filter Conditions](filter-conditions.md) — apply strategies conditionally
 - [Context Service](context-service.md) — keep random replacements consistent across calls

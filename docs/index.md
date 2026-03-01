@@ -44,5 +44,6 @@ Console.WriteLine(result.FilteredText);
 - [Policies](policies.md) — understand how to configure policies
 - [Supported Identifiers](supported-identifiers.md) — all 21 built-in PII types
 - [Filter Strategies](filter-strategies.md) — control how detected PII is replaced
+- [Filter Conditions](filter-conditions.md) — apply strategies conditionally based on context, confidence, or token
 - [Context Service](context-service.md) — maintain referential integrity across documents
 - [API Reference](api-reference.md) — detailed API documentation

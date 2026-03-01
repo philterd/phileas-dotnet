@@ -205,7 +205,7 @@ public static class FilterService
     }
 
     private static TFilter BuildFilter<TFilter, TStrategy>(
-        Phileas.Policy.Filters.AbstractPolicyFilter policyFilter, PhileasPolicy policy, IContextService contextService)
+        AbstractPolicyFilter policyFilter, PhileasPolicy policy, IContextService contextService)
         where TFilter : RegexFilter
         where TStrategy : AbstractFilterStrategy, new()
     {
