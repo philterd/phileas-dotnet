@@ -30,6 +30,7 @@ public abstract class AbstractFilter
     protected int WindowSize;
     protected int Priority;
     protected string? Classification;
+    protected readonly Phileas.Policy.PostFilters PostFiltersConfig;
 
     protected AbstractFilter(FilterType filterType, FilterConfiguration configuration)
     {
@@ -41,6 +42,7 @@ public abstract class AbstractFilter
         Fpe = configuration.Fpe;
         WindowSize = configuration.WindowSize;
         Priority = configuration.Priority;
+        PostFiltersConfig = configuration.PostFilters ?? new Phileas.Policy.PostFilters();
     }
 
     public abstract Filtered Filter(Phileas.Policy.Policy policy, string context, int piece, string input);

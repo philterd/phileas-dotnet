@@ -28,6 +28,7 @@ public class FilterConfiguration
     public Fpe? Fpe { get; private set; }
     public int WindowSize { get; private set; } = 5;
     public int Priority { get; private set; } = 0;
+    public Phileas.Policy.PostFilters? PostFilters { get; private set; }
 
     private FilterConfiguration() { }
 
@@ -43,6 +44,7 @@ public class FilterConfiguration
         public Builder WithFpe(Fpe fpe) { _config.Fpe = fpe; return this; }
         public Builder WithWindowSize(int windowSize) { _config.WindowSize = windowSize; return this; }
         public Builder WithPriority(int priority) { _config.Priority = priority; return this; }
+        public Builder WithPostFilters(Phileas.Policy.PostFilters? postFilters) { _config.PostFilters = postFilters; return this; }
         public FilterConfiguration Build() => _config;
     }
 }

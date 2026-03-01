@@ -43,4 +43,7 @@ public class Policy
 
     [JsonPropertyName("graphical")]
     public Graphical Graphical { get; set; } = new Graphical();
+
+    [JsonPropertyName("postFilters")]
+    public PostFilters PostFilters { get; set; } = new PostFilters();
 }
