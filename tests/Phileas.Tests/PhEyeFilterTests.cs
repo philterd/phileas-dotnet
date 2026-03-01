@@ -197,7 +197,7 @@ public class PhEyeFilterTests
     }
 
     [Fact]
-    public void PhEyeFilter_MultiplePheyes_UsedByFilterPolicyLoader()
+    public void PhEyeFilter_MultiplePheyes_UsedByFilterService()
     {
         var policy = new PhileasPolicy
         {

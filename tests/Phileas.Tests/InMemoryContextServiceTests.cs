@@ -132,7 +132,7 @@ public class InMemoryContextServiceTests
     }
 
     [Fact]
-    public void FilterPolicyLoader_UsesProvidedContextService()
+    public void FilterService_UsesProvidedContextService()
     {
         var policy = new PhileasPolicy
         {
@@ -160,7 +160,7 @@ public class InMemoryContextServiceTests
     }
 
     [Fact]
-    public void FilterPolicyLoader_DefaultsToInMemoryContextService_AndProducesConsistentReplacements()
+    public void FilterService_DefaultsToInMemoryContextService_AndProducesConsistentReplacements()
     {
         var policy = new PhileasPolicy
         {
@@ -168,10 +168,10 @@ public class InMemoryContextServiceTests
             Identifiers = new Identifiers { Ssn = new Ssn() }
         };
 
-        // When no context service is provided, FilterPolicyLoader should default to
+        // When no context service is provided, FilterService should default to
         // InMemoryContextService. The same SSN filtered twice in the same call produces a span.
-        var result1 = FilterPolicyLoader.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
-        var result2 = FilterPolicyLoader.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var result1 = FilterService.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var result2 = FilterService.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
         Assert.NotEmpty(result1.Spans);
         Assert.NotEmpty(result2.Spans);
     }

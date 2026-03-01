@@ -12,7 +12,7 @@ phileas-net is a .NET library for detecting and filtering Personally Identifiabl
 
 ## Project
 
-`Phileas.Services` is a single library containing all filter types, policy configuration, and the `FilterPolicyLoader` entry point.
+`Phileas.Services` is a single library containing all filter types, policy configuration, and the `FilterService` entry point.
 
 ## Quick Example
 
@@ -31,7 +31,7 @@ var policy = new Policy
     }
 };
 
-var result = FilterPolicyLoader.Filter(policy, context: "default", piece: 0,
+var result = FilterService.Filter(policy, context: "default", piece: 0,
     input: "Patient SSN 123-45-6789, contact admin@example.com");
 
 Console.WriteLine(result.FilteredText);

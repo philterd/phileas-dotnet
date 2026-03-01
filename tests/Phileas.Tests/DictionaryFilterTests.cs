@@ -93,7 +93,7 @@ public class DictionaryFilterTests
     }
 
     [Fact]
-    public void FilterPolicyLoader_RedactsDictionaryTerms()
+    public void FilterService_RedactsDictionaryTerms()
     {
         var policy = new PhileasPolicy
         {
@@ -111,14 +111,14 @@ public class DictionaryFilterTests
             }
         };
 
-        var result = FilterPolicyLoader.Filter(policy, "test", 0, "The patient has diabetes and hypertension.");
+        var result = FilterService.Filter(policy, "test", 0, "The patient has diabetes and hypertension.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("diabetes", result.FilteredText);
         Assert.DoesNotContain("hypertension", result.FilteredText);
     }
 
     [Fact]
-    public void FilterPolicyLoader_SupportsMultipleDictionaries()
+    public void FilterService_SupportsMultipleDictionaries()
     {
         var policy = new PhileasPolicy
         {
@@ -141,7 +141,7 @@ public class DictionaryFilterTests
             }
         };
 
-        var result = FilterPolicyLoader.Filter(policy, "test", 0, "Patient with diabetes takes metformin daily.");
+        var result = FilterService.Filter(policy, "test", 0, "Patient with diabetes takes metformin daily.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("diabetes", result.FilteredText);
         Assert.DoesNotContain("metformin", result.FilteredText);
@@ -221,7 +221,7 @@ public class DictionaryFilterTests
     }
 
     [Fact]
-    public void FilterPolicyLoader_FuzzyDictionaryDetectsNearMatch()
+    public void FilterService_FuzzyDictionaryDetectsNearMatch()
     {
         var policy = new PhileasPolicy
         {
@@ -241,7 +241,7 @@ public class DictionaryFilterTests
             }
         };
 
-        var result = FilterPolicyLoader.Filter(policy, "test", 0, "The patient has diabtes.");
+        var result = FilterService.Filter(policy, "test", 0, "The patient has diabtes.");
         Assert.Contains("REDACTED", result.FilteredText);
     }
 }

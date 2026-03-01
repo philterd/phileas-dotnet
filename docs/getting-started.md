@@ -41,12 +41,12 @@ By default, all detected PII is **redacted** (replaced with `{{{REDACTED-<type>}
 
 ### 2. Filter Text
 
-Call `FilterPolicyLoader.Filter` with the policy, a context name, a piece index, and the input text:
+Call `FilterService.Filter` with the policy, a context name, a piece index, and the input text:
 
 ```csharp
 using Phileas.Services;
 
-var result = FilterPolicyLoader.Filter(
+var result = FilterService.Filter(
     policy,
     context: "session-1",
     piece: 0,
@@ -59,7 +59,7 @@ Console.WriteLine(result.FilteredText);
 
 ### 3. Inspect the Results
 
-`FilterPolicyLoader.Filter` returns a [`TextFilterResult`](api-reference.md#textfilterresult) that contains the filtered text and a list of [`Span`](api-reference.md#span) objects describing each detected PII occurrence:
+`FilterService.Filter` returns a [`TextFilterResult`](api-reference.md#textfilterresult) that contains the filtered text and a list of [`Span`](api-reference.md#span) objects describing each detected PII occurrence:
 
 ```csharp
 foreach (var span in result.Spans)

@@ -42,7 +42,7 @@ Implementations are free to persist the context map anywhere (in-memory, a datab
 var contextService = new InMemoryContextService();
 ```
 
-This is the implementation used automatically by `FilterPolicyLoader` when no `IContextService` is supplied.
+This is the implementation used automatically by `FilterService` when no `IContextService` is supplied.
 
 ## Usage
 
@@ -59,8 +59,8 @@ var policy = new Policy
 };
 
 // RANDOM_REPLACE strategy is set on the policy filter strategy.
-// FilterPolicyLoader defaults to InMemoryContextService.
-var result = FilterPolicyLoader.Filter(
+// FilterService defaults to InMemoryContextService.
+var result = FilterService.Filter(
     new List<Policy> { policy },
     context: "patient-123",
     piece: 0,
@@ -73,7 +73,7 @@ var result = FilterPolicyLoader.Filter(
 ```csharp
 IContextService myContextService = new MyDatabaseContextService(connectionString);
 
-var result = FilterPolicyLoader.Filter(
+var result = FilterService.Filter(
     new List<Policy> { policy },
     context: "patient-123",
     piece: 0,
@@ -100,7 +100,7 @@ var strategy = new SsnFilterStrategy
 2. If a `ContextService` is set, the method calls `ContextService.Get(context, token)`.
    - **Hit**: the previously stored random value is returned unchanged.
    - **Miss**: a new `Guid` is generated, stored via `ContextService.Put(context, token, guid)`, and returned.
-3. If no `ContextService` is set (strategy used outside of `FilterPolicyLoader`), a fresh `Guid` is generated each time with no persistence.
+3. If no `ContextService` is set (strategy used outside of `FilterService`), a fresh `Guid` is generated each time with no persistence.
 
 ## Implementing a Custom Context Service
 
@@ -129,4 +129,4 @@ public class RedisContextService : IContextService
 }
 ```
 
-Pass an instance of your implementation to `FilterPolicyLoader.Filter` via the `contextService` parameter.
+Pass an instance of your implementation to `FilterService.Filter` via the `contextService` parameter.

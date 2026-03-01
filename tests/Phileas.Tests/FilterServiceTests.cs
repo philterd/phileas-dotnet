@@ -36,7 +36,7 @@ public class FilterServiceTests
             }
         };
 
-        var result = FilterPolicyLoader.Filter(policy, "test", 0, "Contact john.doe@example.com for help.");
+        var result = FilterService.Filter(policy, "test", 0, "Contact john.doe@example.com for help.");
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("john.doe@example.com", result.FilteredText);
     }
@@ -53,7 +53,7 @@ public class FilterServiceTests
             }
         };
 
-        var result = FilterPolicyLoader.Filter(policy, "test", 0, "SSN: 123-45-6789");
+        var result = FilterService.Filter(policy, "test", 0, "SSN: 123-45-6789");
         Assert.Contains("REDACTED", result.FilteredText);
     }
 
@@ -70,7 +70,7 @@ public class FilterServiceTests
         };
 
         const string input = "No PII here.";
-        var result = FilterPolicyLoader.Filter(policy, "test", 0, input);
+        var result = FilterService.Filter(policy, "test", 0, input);
         Assert.Equal(input, result.FilteredText);
     }
 
@@ -86,7 +86,7 @@ public class FilterServiceTests
             }
         };
 
-        var result = FilterPolicyLoader.Filter(policy, "test", 0, "Email: user@example.com");
+        var result = FilterService.Filter(policy, "test", 0, "Email: user@example.com");
         Assert.NotEmpty(result.Spans);
         Assert.Equal(Phileas.Model.Filtering.FilterType.EmailAddress, result.Spans[0].FilterType);
         Assert.Equal("user@example.com", result.Spans[0].Text);

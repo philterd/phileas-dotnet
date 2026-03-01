@@ -63,7 +63,7 @@ var policy = new PhileasPolicy
     }
 };
 
-var result = FilterPolicyLoader.Filter(
+var result = FilterService.Filter(
     policies: new List<PhileasPolicy> { policy },
     context: "default",
     piece: 0,
@@ -90,7 +90,7 @@ var policy = new PhileasPolicy
     }
 };
 
-var result = FilterPolicyLoader.Filter(
+var result = FilterService.Filter(
     policies: new List<PhileasPolicy> { policy },
     context: "default",
     piece: 0,
@@ -163,11 +163,11 @@ var emailStrategy = new EmailAddressFilterStrategy
 When using `RANDOM_REPLACE`, the Context Service ensures the same PII token always maps to the same replacement value within a named *context*. This preserves referential integrity across documents that reference the same identity.
 
 ```csharp
-// FilterPolicyLoader uses InMemoryContextService automatically,
+// FilterService uses InMemoryContextService automatically,
 // but you can supply your own implementation.
 IContextService contextService = new InMemoryContextService();
 
-var result = FilterPolicyLoader.Filter(
+var result = FilterService.Filter(
     policies: new List<PhileasPolicy> { policy },
     context: "patient-123",   // all calls sharing this name reuse the same mappings
     piece: 0,
@@ -202,7 +202,7 @@ See [docs/context-service.md](docs/context-service.md) for a full walkthrough.
 
 ```
 src/
-  Phileas            – All filter types, policy configuration, and the FilterPolicyLoader entry point
+  Phileas            – All filter types, policy configuration, and the FilterService entry point
 tests/
   Phileas.Tests      – xUnit test suite
 ```

@@ -24,7 +24,7 @@ using Phileas.Strategies.Rules;
 
 namespace Phileas;
 
-public static class FilterPolicyLoader
+public static class FilterService
 {
     public static TextFilterResult Filter(PhileasPolicy policy, string context, int piece, string input, IContextService? contextService = null)
     {

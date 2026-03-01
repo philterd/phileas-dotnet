@@ -1,8 +1,8 @@
 # API Reference
 
-## FilterPolicyLoader
+## FilterService
 
-`FilterPolicyLoader` (in `Phileas.Services`) is the main entry point. It is a static class.
+`FilterService` (in `Phileas.Services`) is the main entry point. It is a static class.
 
 ### Filter
 
@@ -30,7 +30,7 @@ Applies the policy to `input` and returns a [`TextFilterResult`](#textfilterresu
 **Example:**
 
 ```csharp
-var result = FilterPolicyLoader.Filter(
+var result = FilterService.Filter(
     policy,
     context: "patient-123",
     piece: 0,
@@ -75,7 +75,7 @@ var groundTruth = new List<Span>
     new Span { CharacterStart = 8, CharacterEnd = 28 }  // position of "john.doe@example.com"
 };
 
-var evaluation = FilterPolicyLoader.Evaluate(
+var evaluation = FilterService.Evaluate(
     policy,
     context: "default",
     piece: 0,
@@ -101,7 +101,7 @@ public class EvaluationResult
 }
 ```
 
-Returned by [`FilterPolicyLoader.Evaluate`](#evaluate). All values are in the range [0, 1].
+Returned by [`FilterService.Evaluate`](#evaluate). All values are in the range [0, 1].
 
 | Property | Type | Description |
 |---|---|---|
@@ -155,7 +155,7 @@ public class Span
 | `CharacterStart` | `int` | Zero-based index of the first character of the detected token in the original input. |
 | `CharacterEnd` | `int` | Zero-based index of the character immediately after the detected token. |
 | `FilterType` | `FilterType` | The type of PII detected (e.g. `FilterType.Ssn`, `FilterType.EmailAddress`). |
-| `Context` | `string` | The context name passed to `FilterPolicyLoader.Filter`. |
+| `Context` | `string` | The context name passed to `FilterService.Filter`. |
 | `Classification` | `string?` | Optional sub-classification for the token (filter-type specific). |
 | `Confidence` | `double` | Confidence score (0–1) assigned by the detection pattern. |
 | `Text` | `string` | The original detected token text. |
@@ -183,7 +183,7 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 
 ## FilterType
 
-`FilterType` (in `Phileas.Model`) is an enum that identifies the category of detected PII. The values below are the types supported by `FilterPolicyLoader` through the standard filtering pipeline:
+`FilterType` (in `Phileas.Model`) is an enum that identifies the category of detected PII. The values below are the types supported by `FilterService` through the standard filtering pipeline:
 
 | Value | `GetFilterTypeName()` |
 |---|---|
@@ -261,7 +261,7 @@ See [Policies](policies.md) for full documentation.
 
 ## FilterConfiguration and Builder
 
-`FilterConfiguration` carries the settings used to construct an individual filter. Use `FilterConfiguration.Builder` when building filters outside of `FilterPolicyLoader`:
+`FilterConfiguration` carries the settings used to construct an individual filter. Use `FilterConfiguration.Builder` when building filters outside of `FilterService`:
 
 ```csharp
 var config = new FilterConfiguration.Builder()
