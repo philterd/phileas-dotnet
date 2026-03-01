@@ -2,7 +2,7 @@ using Phileas.Filters;
 using Phileas.Policy.Filters.Regex;
 using Phileas.Model;
 using Phileas.Policy;
-using Phileas.Policy.Filters;
+using Phileas.Services;
 using Phileas.Filters.Strategies.Rules;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;

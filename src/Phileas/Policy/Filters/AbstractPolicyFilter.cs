@@ -17,7 +17,7 @@
 using System.Text.Json.Serialization;
 using Phileas.Policy;
 
-namespace Phileas.Filters;
+namespace Phileas.Policy.Filters;
 
 /// <summary>
 /// Base class for all policy-level filter configuration objects that are deserialized from a

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-using Phileas.Model;
-
-namespace Phileas;
+namespace Phileas.Model;
 
 /// <summary>
 /// The result produced by <see cref="FilterService.Filter"/> containing the redacted text

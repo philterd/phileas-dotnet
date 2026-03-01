@@ -16,12 +16,11 @@
 
 using System.Security.Cryptography;
 using System.Text;
-using Phileas.Conditions;
-using Phileas.Filters;
+using Phileas.Filters.Conditions;
 using Phileas.Model;
 using Phileas.Policy;
 
-namespace Phileas.Strategies;
+namespace Phileas.Filters.Strategies;
 
 /// <summary>
 /// Concrete base strategy that implements <see cref="EvaluateCondition"/> using

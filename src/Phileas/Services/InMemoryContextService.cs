@@ -16,7 +16,7 @@
 
 using Phileas.Filters;
 
-namespace Phileas;
+namespace Phileas.Services;
 
 /// <summary>
 /// Default in-memory implementation of <see cref="IContextService"/>.

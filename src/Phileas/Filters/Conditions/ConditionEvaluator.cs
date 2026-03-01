@@ -16,7 +16,7 @@
 
 using System.Text.RegularExpressions;
 
-namespace Phileas.Conditions;
+namespace Phileas.Filters.Conditions;
 
 /// <summary>
 /// Evaluates filter strategy conditions based on the grammar defined in FilterCondition.g4

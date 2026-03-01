@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-using Phileas.Conditions;
+using Phileas.Filters.Conditions;
+using Phileas.Services;
 using Xunit;
 
 namespace Phileas.Tests;

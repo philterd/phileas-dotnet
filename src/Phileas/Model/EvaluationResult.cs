@@ -1,4 +1,4 @@
-namespace Phileas;
+namespace Phileas.Model;
 
 /// <summary>
 /// Holds the precision, recall, and F1 score produced by evaluating filter output

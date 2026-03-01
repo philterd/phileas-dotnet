@@ -21,6 +21,7 @@ using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Regex;
+using Phileas.Services;
 using Xunit;
 
 namespace Phileas.Tests;

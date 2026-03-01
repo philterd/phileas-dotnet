@@ -18,11 +18,12 @@ using Phileas.Filters;
 using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
+using Phileas.Policy.Filters;
 using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Policy.Filters.Regex;
 using Phileas.Rules.Regex;
 
-namespace Phileas;
+namespace Phileas.Services;
 
 /// <summary>
 /// Entry-point service for applying a <see cref="Phileas.Policy.Policy"/> to a piece of plain text.

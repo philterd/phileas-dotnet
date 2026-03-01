@@ -17,6 +17,7 @@
 using Phileas.Policy;
 using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Strategies;
+using Phileas.Services;
 using Xunit;
 
 namespace Phileas.Tests;
