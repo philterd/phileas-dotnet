@@ -58,4 +58,43 @@ public class PhoneNumberFilterTests
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
     }
+
+    [Theory]
+    [InlineData("No phone here.")]
+    [InlineData("Just a number: 123")]
+    [InlineData("ZIP code: 12345")]
+    public void Filter_DoesNotDetectNonPhoneNumber(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_EmptyInput_ReturnsNoSpans()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, string.Empty);
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_ReturnsCorrectFilterType()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, "Call 555-867-5309");
+        Assert.Equal(FilterType.PhoneNumber, result.Spans[0].FilterType);
+    }
+
+    [Fact]
+    public void Filter_DetectsMultiplePhoneNumbers()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, "Call 555-867-5309 or 555-123-4567");
+        Assert.Equal(2, result.Spans.Count);
+    }
 }

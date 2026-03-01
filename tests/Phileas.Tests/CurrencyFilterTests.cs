@@ -25,16 +25,16 @@ using Xunit;
 
 namespace Phileas.Tests;
 
-public class AgeFilterTests
+public class CurrencyFilterTests
 {
-    private static AgeFilter CreateFilter()
+    private static CurrencyFilter CreateFilter()
     {
         var config = new FilterConfiguration.Builder()
-            .WithStrategies(new List<AbstractFilterStrategy> { new AgeFilterStrategy() })
+            .WithStrategies(new List<AbstractFilterStrategy> { new CurrencyFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new AgeFilter(config);
+        return new CurrencyFilter(config);
     }
 
     private static PhileasPolicy CreatePolicy()
@@ -42,37 +42,42 @@ public class AgeFilterTests
         return new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { Currency = new Currency() }
         };
     }
 
     [Theory]
-    [InlineData("The patient is 45 years old.")]
-    [InlineData("He is 30 yo.")]
-    [InlineData("age 25")]
-    [InlineData("aged 65")]
-    [InlineData("She is 22 y/o.")]
-    public void Filter_DetectsAge(string input)
+    [InlineData("Total: $1,200.50")]
+    [InlineData("Price: $99")]
+    [InlineData("Revenue: $5 million")]
+    [InlineData("Cost: $1.5 billion")]
+    public void Filter_DetectsDollarAmount(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
-    }
-
-    [Fact]
-    public void Filter_ReplacesAgeWithRedaction()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.All(result.Spans, span => Assert.Contains("REDACTED", span.Replacement));
+        Assert.Equal(FilterType.Currency, result.Spans[0].FilterType);
     }
 
     [Theory]
-    [InlineData("No age mentioned here.")]
-    [InlineData("The year is 2024.")]
-    public void Filter_DoesNotDetectNonAge(string input)
+    [InlineData("Amount: 1000 USD")]
+    [InlineData("Cost: 500 EUR")]
+    [InlineData("Transfer: 250 GBP")]
+    [InlineData("Price: 1500 JPY")]
+    public void Filter_DetectsIsoCurrencyCode(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.Currency, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("No money here.")]
+    [InlineData("Just a number: 12345")]
+    public void Filter_DoesNotDetectNonCurrency(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
@@ -90,25 +95,15 @@ public class AgeFilterTests
     }
 
     [Fact]
-    public void Filter_ReturnsCorrectFilterType()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.NotEmpty(result.Spans);
-        Assert.Equal(FilterType.Age, result.Spans[0].FilterType);
-    }
-
-    [Fact]
-    public void FilterService_RedactsAge()
+    public void FilterService_RedactsCurrency()
     {
         var policy = new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { Currency = new Currency() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "The patient is 45 years old.");
+        var result = FilterService.Filter(policy, "test", 0, "Salary: $75,000.00 per year.");
         Assert.Contains("REDACTED", result.FilteredText);
-        Assert.DoesNotContain("45 years old", result.FilteredText);
+        Assert.DoesNotContain("$75,000.00", result.FilteredText);
     }
 }

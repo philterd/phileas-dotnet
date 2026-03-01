@@ -25,16 +25,16 @@ using Xunit;
 
 namespace Phileas.Tests;
 
-public class AgeFilterTests
+public class UrlFilterTests
 {
-    private static AgeFilter CreateFilter()
+    private static UrlFilter CreateFilter()
     {
         var config = new FilterConfiguration.Builder()
-            .WithStrategies(new List<AbstractFilterStrategy> { new AgeFilterStrategy() })
+            .WithStrategies(new List<AbstractFilterStrategy> { new UrlFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new AgeFilter(config);
+        return new UrlFilter(config);
     }
 
     private static PhileasPolicy CreatePolicy()
@@ -42,42 +42,54 @@ public class AgeFilterTests
         return new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { Url = new Url() }
         };
     }
 
     [Theory]
-    [InlineData("The patient is 45 years old.")]
-    [InlineData("He is 30 yo.")]
-    [InlineData("age 25")]
-    [InlineData("aged 65")]
-    [InlineData("She is 22 y/o.")]
-    public void Filter_DetectsAge(string input)
+    [InlineData("Visit https://www.example.com for details.")]
+    [InlineData("See http://example.org/page")]
+    [InlineData("Download via ftp://files.example.com/data")]
+    public void Filter_DetectsHttpAndFtpUrl(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
-    }
-
-    [Fact]
-    public void Filter_ReplacesAgeWithRedaction()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.All(result.Spans, span => Assert.Contains("REDACTED", span.Replacement));
+        Assert.Equal(FilterType.Url, result.Spans[0].FilterType);
     }
 
     [Theory]
-    [InlineData("No age mentioned here.")]
-    [InlineData("The year is 2024.")]
-    public void Filter_DoesNotDetectNonAge(string input)
+    [InlineData("Go to www.example.com")]
+    [InlineData("Check www.docs.example.org/api")]
+    public void Filter_DetectsWwwUrl(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.Url, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("No URL here.")]
+    [InlineData("example dot com")]
+    [InlineData("Call us at 555-867-5309")]
+    public void Filter_DoesNotDetectNonUrl(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_DetectsMultipleUrls()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, "Visit https://a.com and https://b.com");
+        Assert.Equal(2, result.Spans.Count);
     }
 
     [Fact]
@@ -90,25 +102,15 @@ public class AgeFilterTests
     }
 
     [Fact]
-    public void Filter_ReturnsCorrectFilterType()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.NotEmpty(result.Spans);
-        Assert.Equal(FilterType.Age, result.Spans[0].FilterType);
-    }
-
-    [Fact]
-    public void FilterService_RedactsAge()
+    public void FilterService_RedactsUrl()
     {
         var policy = new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { Url = new Url() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "The patient is 45 years old.");
+        var result = FilterService.Filter(policy, "test", 0, "See https://example.com for details.");
         Assert.Contains("REDACTED", result.FilteredText);
-        Assert.DoesNotContain("45 years old", result.FilteredText);
+        Assert.DoesNotContain("https://example.com", result.FilteredText);
     }
 }

@@ -56,4 +56,43 @@ public class ZipCodeFilterTests
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
     }
+
+    [Theory]
+    [InlineData("No zip here.")]
+    [InlineData("Short: 1234")]           // Only 4 digits
+    public void Filter_DoesNotDetectNonZipCode(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_EmptyInput_ReturnsNoSpans()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, string.Empty);
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_ReturnsCorrectFilterType()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, "ZIP: 90210");
+        Assert.Equal(FilterType.ZipCode, result.Spans[0].FilterType);
+    }
+
+    [Fact]
+    public void Filter_DetectsZipPlusFourCorrectly()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, "Zip+4: 90210-1234");
+        Assert.Single(result.Spans);
+        Assert.Equal("90210-1234", result.Spans[0].Text);
+    }
 }

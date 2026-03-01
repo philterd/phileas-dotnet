@@ -25,16 +25,16 @@ using Xunit;
 
 namespace Phileas.Tests;
 
-public class AgeFilterTests
+public class StateAbbreviationFilterTests
 {
-    private static AgeFilter CreateFilter()
+    private static StateAbbreviationFilter CreateFilter()
     {
         var config = new FilterConfiguration.Builder()
-            .WithStrategies(new List<AbstractFilterStrategy> { new AgeFilterStrategy() })
+            .WithStrategies(new List<AbstractFilterStrategy> { new StateAbbreviationFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new AgeFilter(config);
+        return new StateAbbreviationFilter(config);
     }
 
     private static PhileasPolicy CreatePolicy()
@@ -42,42 +42,35 @@ public class AgeFilterTests
         return new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { StateAbbreviation = new StateAbbreviation() }
         };
     }
 
     [Theory]
-    [InlineData("The patient is 45 years old.")]
-    [InlineData("He is 30 yo.")]
-    [InlineData("age 25")]
-    [InlineData("aged 65")]
-    [InlineData("She is 22 y/o.")]
-    public void Filter_DetectsAge(string input)
+    [InlineData("City, CA 90210")]
+    [InlineData("Austin, TX")]
+    [InlineData("Boston, MA")]
+    [InlineData("Miami, FL")]
+    [InlineData("Seattle, WA")]
+    public void Filter_DetectsStateAbbreviation(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
-    }
-
-    [Fact]
-    public void Filter_ReplacesAgeWithRedaction()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.All(result.Spans, span => Assert.Contains("REDACTED", span.Replacement));
+        Assert.Equal(FilterType.StateAbbreviation, result.Spans[0].FilterType);
     }
 
     [Theory]
-    [InlineData("No age mentioned here.")]
-    [InlineData("The year is 2024.")]
-    public void Filter_DoesNotDetectNonAge(string input)
+    [InlineData("Washington DC")]
+    [InlineData("Puerto Rico PR")]
+    public void Filter_DetectsTerritoriesAndDC(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
-        Assert.Empty(result.Spans);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.StateAbbreviation, result.Spans[0].FilterType);
     }
 
     [Fact]
@@ -90,25 +83,14 @@ public class AgeFilterTests
     }
 
     [Fact]
-    public void Filter_ReturnsCorrectFilterType()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.NotEmpty(result.Spans);
-        Assert.Equal(FilterType.Age, result.Spans[0].FilterType);
-    }
-
-    [Fact]
-    public void FilterService_RedactsAge()
+    public void FilterService_RedactsStateAbbreviation()
     {
         var policy = new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { StateAbbreviation = new StateAbbreviation() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "The patient is 45 years old.");
+        var result = FilterService.Filter(policy, "test", 0, "Address: 123 Main St, Springfield, IL 62701");
         Assert.Contains("REDACTED", result.FilteredText);
-        Assert.DoesNotContain("45 years old", result.FilteredText);
     }
 }

@@ -69,4 +69,36 @@ public class EmailAddressFilterTests
         var result = filter.Filter(policy, "test", 0, input);
         Assert.Empty(result.Spans);
     }
+
+    [Fact]
+    public void Filter_EmptyInput_ReturnsNoSpans()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, string.Empty);
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_DetectsMultipleEmailsInText()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, "Contact a@a.com or b@b.com for help.");
+        Assert.Equal(2, result.Spans.Count);
+        Assert.All(result.Spans, span => Assert.Equal(FilterType.EmailAddress, span.FilterType));
+    }
+
+    [Fact]
+    public void Filter_ReturnsCorrectSpanPositions()
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        const string input = "Email: user@example.com end";
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.Single(result.Spans);
+        Assert.Equal("user@example.com", result.Spans[0].Text);
+        Assert.Equal(7, result.Spans[0].CharacterStart);
+        Assert.Equal(23, result.Spans[0].CharacterEnd);
+    }
 }

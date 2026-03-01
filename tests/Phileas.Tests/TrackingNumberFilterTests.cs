@@ -25,16 +25,16 @@ using Xunit;
 
 namespace Phileas.Tests;
 
-public class AgeFilterTests
+public class TrackingNumberFilterTests
 {
-    private static AgeFilter CreateFilter()
+    private static TrackingNumberFilter CreateFilter()
     {
         var config = new FilterConfiguration.Builder()
-            .WithStrategies(new List<AbstractFilterStrategy> { new AgeFilterStrategy() })
+            .WithStrategies(new List<AbstractFilterStrategy> { new TrackingNumberFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new AgeFilter(config);
+        return new TrackingNumberFilter(config);
     }
 
     private static PhileasPolicy CreatePolicy()
@@ -42,37 +42,38 @@ public class AgeFilterTests
         return new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
         };
     }
 
     [Theory]
-    [InlineData("The patient is 45 years old.")]
-    [InlineData("He is 30 yo.")]
-    [InlineData("age 25")]
-    [InlineData("aged 65")]
-    [InlineData("She is 22 y/o.")]
-    public void Filter_DetectsAge(string input)
+    [InlineData("UPS: 1Z12345E0205271688")]      // UPS (1Z + 16 alphanumeric)
+    [InlineData("Shipment 1Z999AA10123456784")]
+    public void Filter_DetectsUpsTrackingNumber(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
-    }
-
-    [Fact]
-    public void Filter_ReplacesAgeWithRedaction()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.All(result.Spans, span => Assert.Contains("REDACTED", span.Replacement));
+        Assert.Equal(FilterType.TrackingNumber, result.Spans[0].FilterType);
     }
 
     [Theory]
-    [InlineData("No age mentioned here.")]
-    [InlineData("The year is 2024.")]
-    public void Filter_DoesNotDetectNonAge(string input)
+    [InlineData("FedEx: 449044304137821")]        // FedEx 15-digit
+    [InlineData("Package: 798429808620")]          // 12-digit numeric tracking
+    public void Filter_DetectsNumericTrackingNumber(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.TrackingNumber, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("No tracking here.")]
+    [InlineData("SSN: 123-45-6789")]
+    public void Filter_DoesNotDetectNonTrackingNumber(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
@@ -90,25 +91,15 @@ public class AgeFilterTests
     }
 
     [Fact]
-    public void Filter_ReturnsCorrectFilterType()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.NotEmpty(result.Spans);
-        Assert.Equal(FilterType.Age, result.Spans[0].FilterType);
-    }
-
-    [Fact]
-    public void FilterService_RedactsAge()
+    public void FilterService_RedactsTrackingNumber()
     {
         var policy = new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "The patient is 45 years old.");
+        var result = FilterService.Filter(policy, "test", 0, "Package UPS: 1Z12345E0205271688 has shipped.");
         Assert.Contains("REDACTED", result.FilteredText);
-        Assert.DoesNotContain("45 years old", result.FilteredText);
+        Assert.DoesNotContain("1Z12345E0205271688", result.FilteredText);
     }
 }

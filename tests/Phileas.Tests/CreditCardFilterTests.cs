@@ -25,16 +25,16 @@ using Xunit;
 
 namespace Phileas.Tests;
 
-public class AgeFilterTests
+public class CreditCardFilterTests
 {
-    private static AgeFilter CreateFilter()
+    private static CreditCardFilter CreateFilter()
     {
         var config = new FilterConfiguration.Builder()
-            .WithStrategies(new List<AbstractFilterStrategy> { new AgeFilterStrategy() })
+            .WithStrategies(new List<AbstractFilterStrategy> { new CreditCardFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new AgeFilter(config);
+        return new CreditCardFilter(config);
     }
 
     private static PhileasPolicy CreatePolicy()
@@ -42,37 +42,41 @@ public class AgeFilterTests
         return new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { CreditCard = new CreditCard() }
         };
     }
 
     [Theory]
-    [InlineData("The patient is 45 years old.")]
-    [InlineData("He is 30 yo.")]
-    [InlineData("age 25")]
-    [InlineData("aged 65")]
-    [InlineData("She is 22 y/o.")]
-    public void Filter_DetectsAge(string input)
+    [InlineData("Visa: 4111111111111111")]        // Visa 16-digit
+    [InlineData("MC: 5500005555555559")]           // Mastercard
+    [InlineData("Amex: 378282246310005")]          // Amex 15-digit
+    [InlineData("Discover: 6011111111111117")]     // Discover
+    public void Filter_DetectsCreditCardNumber(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
-    }
-
-    [Fact]
-    public void Filter_ReplacesAgeWithRedaction()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.All(result.Spans, span => Assert.Contains("REDACTED", span.Replacement));
+        Assert.Equal(FilterType.CreditCard, result.Spans[0].FilterType);
     }
 
     [Theory]
-    [InlineData("No age mentioned here.")]
-    [InlineData("The year is 2024.")]
-    public void Filter_DoesNotDetectNonAge(string input)
+    [InlineData("Card: 1234 5678 9012 3456")]     // formatted with spaces
+    [InlineData("Card: 1234-5678-9012-3456")]     // formatted with hyphens
+    public void Filter_DetectsFormattedCreditCard(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.CreditCard, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("No card here.")]
+    [InlineData("Invoice #12345")]
+    [InlineData("ZIP: 12345")]
+    public void Filter_DoesNotDetectNonCreditCard(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
@@ -90,25 +94,15 @@ public class AgeFilterTests
     }
 
     [Fact]
-    public void Filter_ReturnsCorrectFilterType()
-    {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, "The patient is 45 years old.");
-        Assert.NotEmpty(result.Spans);
-        Assert.Equal(FilterType.Age, result.Spans[0].FilterType);
-    }
-
-    [Fact]
-    public void FilterService_RedactsAge()
+    public void FilterService_RedactsCreditCard()
     {
         var policy = new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { Age = new Age() }
+            Identifiers = new Identifiers { CreditCard = new CreditCard() }
         };
-        var result = FilterService.Filter(policy, "test", 0, "The patient is 45 years old.");
+        var result = FilterService.Filter(policy, "test", 0, "Card: 4111111111111111 is on file.");
         Assert.Contains("REDACTED", result.FilteredText);
-        Assert.DoesNotContain("45 years old", result.FilteredText);
+        Assert.DoesNotContain("4111111111111111", result.FilteredText);
     }
 }
