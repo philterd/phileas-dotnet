@@ -1,10 +1,47 @@
 site_name: phileas-net
 site_description: Developer documentation for phileas-net, a .NET PII filtering library
 site_url: https://philterd.github.io/phileas-net/
+repo_url: https://github.com/philterd/phileas-net
+edit_uri: tree/main/docs
+copyright: Copyright 2026 Philterd, LLC
+site_author: philterd
 
+plugins:
+  - markdownextradata:
+      jinja_options:
+        variable_start_string: "{$"
+        variable_end_string: "}"
+        
 theme:
   name: material
+  logo: img/philterd.png
+  locale: en
+  palette:
+    primary: red
+  features:
+    #- navigation.tabs
+    - navigation.expand
+    - navigation.footer
 
+extra:
+  version: 3.0.0
+  homepage: https://www.philterd.ai
+  social:
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/philterd/
+    - icon: fontawesome/brands/github
+      link: https://www.github.com/philterd/
+  analytics:
+    provider: google
+    property: G-SQ49ZGCWT2
+  consent:
+    title: Cookie consent
+    description: >-
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+      
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
