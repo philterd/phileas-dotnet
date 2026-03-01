@@ -1,0 +1,15 @@
+site_name: phileas-net
+site_description: Developer documentation for phileas-net, a .NET PII filtering library
+site_url: https://philterd.github.io/phileas-net/
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Policies: policies.md
+  - Supported Identifiers: supported-identifiers.md
+  - Filter Strategies: filter-strategies.md
+  - Context Service: context-service.md
+  - API Reference: api-reference.md
