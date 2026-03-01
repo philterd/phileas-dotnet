@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model.Filtering;
 using Phileas.Policy;
+using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;

@@ -1,8 +1,9 @@
+using Phileas.Filters;
 using Phileas.Model.Filtering;
 
-namespace Phileas.Filters.Rules.Regex;
+namespace Phileas.Rules.Regex;
 
-public abstract class RegexFilter : Rules.RulesFilter
+public abstract class RegexFilter : RulesFilter
 {
     protected Analyzer? Analyzer { get; set; }
 

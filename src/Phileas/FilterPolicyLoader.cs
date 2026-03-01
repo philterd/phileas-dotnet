@@ -1,9 +1,9 @@
 using Phileas.Filters;
-using Phileas.Filters.Rules.Regex;
 using Phileas.Model.Filtering;
 using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
 using Phileas.Filters.Regex;
+using Phileas.Rules.Regex;
 using Phileas.Strategies.Rules;
 
 namespace Phileas;

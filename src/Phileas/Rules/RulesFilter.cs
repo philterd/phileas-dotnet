@@ -1,7 +1,7 @@
+using Phileas.Filters;
 using Phileas.Model.Filtering;
-using Phileas.Policy;
 
-namespace Phileas.Filters.Rules;
+namespace Phileas.Rules;
 
 public abstract class RulesFilter : AbstractFilter
 {
