@@ -21,27 +21,28 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects US Social Security Number (SSN) entities in plain text.
+/// Regex-based filter that detects phone number entities in plain text.
 /// </summary>
-public class SsnFilter : RegexFilter
+public class PhoneNumberFilter : RegexFilter
 {
-    private static readonly Analyzer SsnAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b").WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer PhoneAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b").WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b").WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="SsnFilter"/> with the given configuration.
+    /// Initializes a new <see cref="PhoneNumberFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public SsnFilter(FilterConfiguration configuration) : base(FilterType.Ssn, configuration) { }
+    public PhoneNumberFilter(FilterConfiguration configuration) : base(FilterType.PhoneNumber, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, SsnAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, PhoneAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

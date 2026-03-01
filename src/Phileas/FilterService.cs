@@ -18,7 +18,7 @@ using Phileas.Filters;
 using Phileas.Model.Filtering;
 using Phileas.Policy;
 using PhileasPolicy = Phileas.Policy.Policy;
-using Phileas.Filters.Regex;
+using Phileas.Policy.Filters.Regex;
 using Phileas.Rules.Regex;
 using Phileas.Strategies.Rules;
 

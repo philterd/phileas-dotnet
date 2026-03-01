@@ -21,27 +21,30 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects Vehicle Identification Number (VIN) entities in plain text.
+/// Regex-based filter that detects US state abbreviation entities in plain text.
 /// </summary>
-public class VinFilter : RegexFilter
+public class StateAbbreviationFilter : RegexFilter
 {
-    private static readonly Analyzer VinAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b[A-HJ-NPR-Z0-9]{17}\b").WithInitialConfidence(0.80).Build()
+    private static readonly Analyzer StateAnalyzer = new Analyzer(
+        new FilterPattern.Builder()
+            .WithPattern(@"\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|AS|GU|MP|PR|VI)\b")
+            .WithInitialConfidence(0.60)
+            .Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="VinFilter"/> with the given configuration.
+    /// Initializes a new <see cref="StateAbbreviationFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public VinFilter(FilterConfiguration configuration) : base(FilterType.Vin, configuration) { }
+    public StateAbbreviationFilter(FilterConfiguration configuration) : base(FilterType.StateAbbreviation, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, VinAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, StateAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

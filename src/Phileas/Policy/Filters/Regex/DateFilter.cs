@@ -21,7 +21,7 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
 /// Regex-based filter that detects date expression entities in plain text.

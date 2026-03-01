@@ -21,27 +21,30 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects passport number entities in plain text.
+/// Regex-based filter that detects street address entities in plain text.
 /// </summary>
-public class PassportNumberFilter : RegexFilter
+public class StreetAddressFilter : RegexFilter
 {
-    private static readonly Analyzer PassportAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).Build()
+    private static readonly Analyzer StreetAddressAnalyzer = new Analyzer(
+        new FilterPattern.Builder()
+            .WithPattern(@"\b\d{1,5}\s+([A-Za-z]+\s?){1,5}(Street|St|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Road|Rd|Lane|Ln|Way|Court|Ct|Place|Pl|Circle|Cir|Highway|Hwy|Parkway|Pkwy|Square|Sq|Trail|Trl|Terrace|Ter)\b\.?", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.85)
+            .Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="PassportNumberFilter"/> with the given configuration.
+    /// Initializes a new <see cref="StreetAddressFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public PassportNumberFilter(FilterConfiguration configuration) : base(FilterType.PassportNumber, configuration) { }
+    public StreetAddressFilter(FilterConfiguration configuration) : base(FilterType.StreetAddress, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, PassportAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, StreetAddressAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

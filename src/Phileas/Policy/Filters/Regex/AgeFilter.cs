@@ -17,34 +17,33 @@
 using System.Text.RegularExpressions;
 using Phileas.Filters;
 using Phileas.Model.Filtering;
-using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects US state abbreviation entities in plain text.
+/// Regex-based filter that detects age expression entities in plain text.
 /// </summary>
-public class StateAbbreviationFilter : RegexFilter
+public class AgeFilter : RegexFilter
 {
-    private static readonly Analyzer StateAnalyzer = new Analyzer(
-        new FilterPattern.Builder()
-            .WithPattern(@"\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|AS|GU|MP|PR|VI)\b")
-            .WithInitialConfidence(0.60)
-            .Build()
+    private static readonly Analyzer AgeAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b[0-9.]+[\s]*(year|years|yrs|yr|yo)(\.?)(\s)*(old)?\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b(age)(d)?(\s)*[0-9.]+\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b[0-9.]+[-]*(year|years|yrs|yr|yo)(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b([0-9]{1,3}) (y\/o)\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="StateAbbreviationFilter"/> with the given configuration.
+    /// Initializes a new <see cref="AgeFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public StateAbbreviationFilter(FilterConfiguration configuration) : base(FilterType.StateAbbreviation, configuration) { }
+    public AgeFilter(FilterConfiguration configuration) : base(FilterType.Age, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, StateAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, AgeAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

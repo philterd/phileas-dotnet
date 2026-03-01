@@ -19,7 +19,7 @@ using Phileas.Model.Filtering;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
 using Phileas;
-using Phileas.Filters.Regex;
+using Phileas.Policy.Filters.Regex;
 using Phileas.Strategies;
 using Phileas.Strategies.Rules;
 using Xunit;

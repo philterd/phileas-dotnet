@@ -5,7 +5,7 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
 /// Filter that detects entities by matching input tokens against a configurable list of terms,

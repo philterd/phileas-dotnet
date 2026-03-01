@@ -21,27 +21,27 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects phone number extension entities in plain text.
+/// Regex-based filter that detects MAC address entities in plain text.
 /// </summary>
-public class PhoneNumberExtensionFilter : RegexFilter
+public class MacAddressFilter : RegexFilter
 {
-    private static readonly Analyzer PhoneExtAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b(?:ext|x|extension)\.?\s*[0-9]{1,6}\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.80).Build()
+    private static readonly Analyzer MacAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b([0-9A-Fa-f]{2}[:\-]){5}([0-9A-Fa-f]{2})\b").WithInitialConfidence(0.95).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="PhoneNumberExtensionFilter"/> with the given configuration.
+    /// Initializes a new <see cref="MacAddressFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public PhoneNumberExtensionFilter(FilterConfiguration configuration) : base(FilterType.PhoneNumberExtension, configuration) { }
+    public MacAddressFilter(FilterConfiguration configuration) : base(FilterType.MacAddress, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, PhoneExtAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, MacAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

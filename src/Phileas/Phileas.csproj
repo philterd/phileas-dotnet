@@ -5,7 +5,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Phileas</RootNamespace>
   </PropertyGroup>
-  <ItemGroup>
-    <Folder Include="Policy\" />
-  </ItemGroup>
 </Project>

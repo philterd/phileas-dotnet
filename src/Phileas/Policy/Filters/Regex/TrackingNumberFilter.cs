@@ -21,30 +21,29 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects age expression entities in plain text.
+/// Regex-based filter that detects package tracking number entities in plain text.
 /// </summary>
-public class AgeFilter : RegexFilter
+public class TrackingNumberFilter : RegexFilter
 {
-    private static readonly Analyzer AgeAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b[0-9.]+[\s]*(year|years|yrs|yr|yo)(\.?)(\s)*(old)?\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b(age)(d)?(\s)*[0-9.]+\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b[0-9.]+[-]*(year|years|yrs|yr|yo)(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b([0-9]{1,3}) (y\/o)\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer TrackingAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b1Z[0-9A-Z]{16}\b").WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{20,22}\b").WithInitialConfidence(0.70).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{12,15}\b").WithInitialConfidence(0.60).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="AgeFilter"/> with the given configuration.
+    /// Initializes a new <see cref="TrackingNumberFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public AgeFilter(FilterConfiguration configuration) : base(FilterType.Age, configuration) { }
+    public TrackingNumberFilter(FilterConfiguration configuration) : base(FilterType.TrackingNumber, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, AgeAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, TrackingAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

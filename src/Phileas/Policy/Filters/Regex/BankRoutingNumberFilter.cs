@@ -21,28 +21,27 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects URL entities in plain text.
+/// Regex-based filter that detects US bank routing (ABA) number entities in plain text.
 /// </summary>
-public class UrlFilter : RegexFilter
+public class BankRoutingNumberFilter : RegexFilter
 {
-    private static readonly Analyzer UrlAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.95).Build(),
-        new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build()
+    private static readonly Analyzer BankRoutingAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.50).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="UrlFilter"/> with the given configuration.
+    /// Initializes a new <see cref="BankRoutingNumberFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public UrlFilter(FilterConfiguration configuration) : base(FilterType.Url, configuration) { }
+    public BankRoutingNumberFilter(FilterConfiguration configuration) : base(FilterType.BankRoutingNumber, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, UrlAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, BankRoutingAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

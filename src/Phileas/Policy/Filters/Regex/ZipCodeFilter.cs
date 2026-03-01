@@ -21,29 +21,27 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects package tracking number entities in plain text.
+/// Regex-based filter that detects US ZIP code entities in plain text.
 /// </summary>
-public class TrackingNumberFilter : RegexFilter
+public class ZipCodeFilter : RegexFilter
 {
-    private static readonly Analyzer TrackingAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b1Z[0-9A-Z]{16}\b").WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b[0-9]{20,22}\b").WithInitialConfidence(0.70).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b[0-9]{12,15}\b").WithInitialConfidence(0.60).Build()
+    private static readonly Analyzer ZipAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b\d{5}(?:-\d{4})?\b").WithInitialConfidence(0.60).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="TrackingNumberFilter"/> with the given configuration.
+    /// Initializes a new <see cref="ZipCodeFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public TrackingNumberFilter(FilterConfiguration configuration) : base(FilterType.TrackingNumber, configuration) { }
+    public ZipCodeFilter(FilterConfiguration configuration) : base(FilterType.ZipCode, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, TrackingAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, ZipAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

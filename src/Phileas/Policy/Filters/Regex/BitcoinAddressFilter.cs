@@ -21,27 +21,28 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects MAC address entities in plain text.
+/// Regex-based filter that detects Bitcoin wallet address entities in plain text.
 /// </summary>
-public class MacAddressFilter : RegexFilter
+public class BitcoinAddressFilter : RegexFilter
 {
-    private static readonly Analyzer MacAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b([0-9A-Fa-f]{2}[:\-]){5}([0-9A-Fa-f]{2})\b").WithInitialConfidence(0.95).Build()
+    private static readonly Analyzer BitcoinAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b").WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder().WithPattern(@"\bbc1[a-z0-9]{6,87}\b").WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="MacAddressFilter"/> with the given configuration.
+    /// Initializes a new <see cref="BitcoinAddressFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public MacAddressFilter(FilterConfiguration configuration) : base(FilterType.MacAddress, configuration) { }
+    public BitcoinAddressFilter(FilterConfiguration configuration) : base(FilterType.BitcoinAddress, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, MacAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, BitcoinAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

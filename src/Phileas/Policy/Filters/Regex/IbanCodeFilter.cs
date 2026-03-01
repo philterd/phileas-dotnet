@@ -21,27 +21,27 @@ using Phileas.Policy;
 using Phileas.Rules.Regex;
 using PhileasPolicy = Phileas.Policy.Policy;
 
-namespace Phileas.Filters.Regex;
+namespace Phileas.Policy.Filters.Regex;
 
 /// <summary>
-/// Regex-based filter that detects US ZIP code entities in plain text.
+/// Regex-based filter that detects IBAN code entities in plain text.
 /// </summary>
-public class ZipCodeFilter : RegexFilter
+public class IbanCodeFilter : RegexFilter
 {
-    private static readonly Analyzer ZipAnalyzer = new Analyzer(
-        new FilterPattern.Builder().WithPattern(@"\b\d{5}(?:-\d{4})?\b").WithInitialConfidence(0.60).Build()
+    private static readonly Analyzer IbanAnalyzer = new Analyzer(
+        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}\b").WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>
-    /// Initializes a new <see cref="ZipCodeFilter"/> with the given configuration.
+    /// Initializes a new <see cref="IbanCodeFilter"/> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public ZipCodeFilter(FilterConfiguration configuration) : base(FilterType.ZipCode, configuration) { }
+    public IbanCodeFilter(FilterConfiguration configuration) : base(FilterType.IbanCode, configuration) { }
 
     /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, ZipAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, IbanAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);
