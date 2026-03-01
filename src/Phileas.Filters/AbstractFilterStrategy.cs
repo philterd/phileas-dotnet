@@ -24,6 +24,7 @@ public abstract class AbstractFilterStrategy
     public string MaskLength { get; set; } = "same";
     public string? Condition { get; set; }
     public bool Salt { get; set; } = false;
+    public IContextService? ContextService { get; set; }
 
     public abstract Replacement GetReplacement(string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern, Crypto? crypto, Fpe? fpe);
 

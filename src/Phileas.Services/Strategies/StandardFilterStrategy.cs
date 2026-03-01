@@ -21,6 +21,7 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
         return Strategy switch
         {
             Redact => new Replacement(GetRedactedToken(token, classification, filterType), salt, true),
+            RandomReplace => new Replacement(GetOrCreateRandomReplacement(context, token), salt, true),
             StaticReplace => new Replacement(!string.IsNullOrEmpty(StaticReplacement) ? StaticReplacement : GetRedactedToken(token, classification, filterType), salt, true),
             Mask => new Replacement(MaskToken(token), salt, true),
             Last4 => new Replacement(token.Length >= 4 ? token[^4..] : token, salt, true),
@@ -30,6 +31,19 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
             Truncate => new Replacement(token.Length > 0 ? token[..1] : token, salt, true),
             _ => new Replacement(GetRedactedToken(token, classification, filterType), salt, true)
         };
+    }
+
+    private string GetOrCreateRandomReplacement(string context, string token)
+    {
+        if (ContextService != null)
+        {
+            var existing = ContextService.Get(context, token);
+            if (existing != null) return existing;
+            var random = Guid.NewGuid().ToString();
+            ContextService.Put(context, token, random);
+            return random;
+        }
+        return Guid.NewGuid().ToString();
     }
 
     private string MaskToken(string token)
