@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting US ZIP codes.
+/// </summary>
 public class ZipCode : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of ZIP code filter strategies to apply.</summary>
     [JsonPropertyName("zipCodeFilterStrategies")]
     public List<ZipCodeFilterStrategy>? Strategies { get; set; }
 }

@@ -23,14 +23,22 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects US bank routing (ABA) number entities in plain text.
+/// </summary>
 public class BankRoutingNumberFilter : RegexFilter
 {
     private static readonly Analyzer BankRoutingAnalyzer = new Analyzer(
         new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.50).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="BankRoutingNumberFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public BankRoutingNumberFilter(FilterConfiguration configuration) : base(FilterType.BankRoutingNumber, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, BankRoutingAnalyzer, input, context, piece);

@@ -18,11 +18,17 @@ using System.Text.Json.Serialization;
 
 namespace Phileas.Policy;
 
+/// <summary>
+/// Configuration for graphical (visual) redaction, for example when redacting PDFs by
+/// overlaying colored rectangles on detected entities.
+/// </summary>
 public class Graphical
 {
+    /// <summary>Gets or sets a value indicating whether graphical redaction is enabled. Defaults to <see langword="false"/>.</summary>
     [JsonPropertyName("enabled")]
     public bool Enabled { get; set; } = false;
 
+    /// <summary>Gets or sets the CSS color name or hex code used for the redaction rectangle. Defaults to <c>"black"</c>.</summary>
     [JsonPropertyName("redactionColor")]
     public string RedactionColor { get; set; } = "black";
 }

@@ -20,11 +20,28 @@ using Phileas.Model.Filtering;
 
 namespace Phileas.Rules;
 
+/// <summary>
+/// Intermediate base class between <see cref="AbstractFilter"/> and concrete rule-based filters.
+/// Provides the <see cref="PostFilter"/> hook that concrete filters can override to refine
+/// detected spans after the initial matching pass.
+/// </summary>
 public abstract class RulesFilter : AbstractFilter
 {
+    /// <summary>
+    /// Initializes the rules filter with the given type and configuration.
+    /// </summary>
+    /// <param name="filterType">The entity type handled by this filter.</param>
+    /// <param name="configuration">Runtime filter configuration.</param>
     protected RulesFilter(FilterType filterType, FilterConfiguration configuration)
         : base(filterType, configuration) { }
 
+    /// <summary>
+    /// Applies post-processing rules to refine or remove spans after initial matching.
+    /// The default implementation returns the spans unchanged.
+    /// </summary>
+    /// <param name="spans">The list of spans produced by the initial matching pass.</param>
+    /// <param name="input">The original input text.</param>
+    /// <returns>The refined list of spans.</returns>
     public virtual IList<Span> PostFilter(IList<Span> spans, string input)
     {
         if (PostFiltersConfig.TrailingNewLines)

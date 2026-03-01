@@ -18,17 +18,24 @@ using System.Text.Json.Serialization;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Connection and behavior configuration for the PhEye NLP service.
+/// </summary>
 public class PhEyeConfiguration
 {
+    /// <summary>Gets or sets the base URL of the PhEye service. Defaults to <c>http://localhost:8080</c>.</summary>
     [JsonPropertyName("endpoint")]
     public string Endpoint { get; set; } = "http://localhost:8080";
 
+    /// <summary>Gets or sets the Bearer token used for authenticating requests to the PhEye service.</summary>
     [JsonPropertyName("bearerToken")]
     public string? BearerToken { get; set; }
 
+    /// <summary>Gets or sets the request timeout in seconds. Defaults to 30.</summary>
     [JsonPropertyName("timeout")]
     public int Timeout { get; set; } = 30;
 
+    /// <summary>Gets or sets the list of entity labels the filter should detect (e.g. <c>"Person"</c>). Defaults to <c>["Person"]</c>.</summary>
     [JsonPropertyName("labels")]
     public List<string> Labels { get; set; } = new List<string> { "Person" };
 }

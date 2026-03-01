@@ -19,13 +19,35 @@ using Phileas.Model.Filtering;
 
 namespace Phileas.Rules.Regex;
 
+/// <summary>
+/// Abstract base for filters that use regular-expression patterns to detect entities.
+/// Delegates pattern matching to an <see cref="Phileas.Filters.Analyzer"/> and exposes a
+/// <see cref="FindSpans"/> helper that handles match extraction, ignore checking, windowing,
+/// and replacement computation.
+/// </summary>
 public abstract class RegexFilter : RulesFilter
 {
+    /// <summary>Gets or sets the <see cref="Phileas.Filters.Analyzer"/> that holds the patterns for this filter.</summary>
     protected Analyzer? Analyzer { get; set; }
 
+    /// <summary>
+    /// Initializes the regex filter with the given type and configuration.
+    /// </summary>
+    /// <param name="filterType">The entity type handled by this filter.</param>
+    /// <param name="configuration">Runtime filter configuration.</param>
     protected RegexFilter(FilterType filterType, FilterConfiguration configuration)
         : base(filterType, configuration) { }
 
+    /// <summary>
+    /// Runs the <paramref name="analyzer"/> patterns against <paramref name="input"/> and returns
+    /// a list of <see cref="Span"/> objects for all accepted matches.
+    /// </summary>
+    /// <param name="policy">The active policy (used to check whether the filter is enabled and for replacement decisions).</param>
+    /// <param name="analyzer">The <see cref="Phileas.Filters.Analyzer"/> containing the patterns to run.</param>
+    /// <param name="input">The plain-text string to search.</param>
+    /// <param name="context">The context identifier.</param>
+    /// <param name="piece">Zero-based piece index within a multi-part document.</param>
+    /// <returns>A list of <see cref="Span"/> objects describing each accepted match.</returns>
     protected IList<Span> FindSpans(Phileas.Policy.Policy policy, Analyzer analyzer, string input, string context, int piece)
     {
         var spans = new List<Span>();

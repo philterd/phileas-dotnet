@@ -16,4 +16,7 @@
 
 namespace Phileas.Policy.Filters.Strategies;
 
+/// <summary>
+/// Defines the replacement strategy settings for an email address filter, as deserialized from a policy JSON document.
+/// </summary>
 public class EmailAddressFilterStrategy : AbstractFilterStrategy { }

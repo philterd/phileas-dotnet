@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting MAC (hardware) addresses.
+/// </summary>
 public class MacAddress : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of MAC address filter strategies to apply.</summary>
     [JsonPropertyName("macAddressFilterStrategies")]
     public List<MacAddressFilterStrategy>? Strategies { get; set; }
 }

@@ -19,20 +19,29 @@ using Phileas.Policy;
 
 namespace Phileas.Filters;
 
+/// <summary>
+/// Base class for all policy-level filter configuration objects that are deserialized from a
+/// Phileas policy JSON document. Provides the common properties shared by every filter type.
+/// </summary>
 public abstract class AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of literal values that the filter should ignore.</summary>
     [JsonPropertyName("ignored")]
     public List<string>? Ignored { get; set; }
 
+    /// <summary>Gets or sets the list of file paths whose contents provide additional ignored values.</summary>
     [JsonPropertyName("ignoredFiles")]
     public List<string>? IgnoredFiles { get; set; }
 
+    /// <summary>Gets or sets the list of regular-expression patterns whose matches the filter should ignore.</summary>
     [JsonPropertyName("ignoredPatterns")]
     public List<IgnoredPattern>? IgnoredPatterns { get; set; }
 
+    /// <summary>Gets or sets the detection sensitivity level (<c>"low"</c>, <c>"medium"</c>, or <c>"high"</c>). Defaults to <c>"medium"</c>.</summary>
     [JsonPropertyName("sensitivity")]
     public string Sensitivity { get; set; } = "medium";
 
+    /// <summary>Gets or sets the filter priority. Higher values are applied before lower values when resolving overlapping spans. Defaults to 0.</summary>
     [JsonPropertyName("priority")]
     public int Priority { get; set; } = 0;
 }

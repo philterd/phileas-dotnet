@@ -23,6 +23,9 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects street address entities in plain text.
+/// </summary>
 public class StreetAddressFilter : RegexFilter
 {
     private static readonly Analyzer StreetAddressAnalyzer = new Analyzer(
@@ -32,8 +35,13 @@ public class StreetAddressFilter : RegexFilter
             .Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="StreetAddressFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public StreetAddressFilter(FilterConfiguration configuration) : base(FilterType.StreetAddress, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, StreetAddressAnalyzer, input, context, piece);

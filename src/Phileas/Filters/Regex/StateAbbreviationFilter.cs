@@ -23,6 +23,9 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects US state abbreviation entities in plain text.
+/// </summary>
 public class StateAbbreviationFilter : RegexFilter
 {
     private static readonly Analyzer StateAnalyzer = new Analyzer(
@@ -32,8 +35,13 @@ public class StateAbbreviationFilter : RegexFilter
             .Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="StateAbbreviationFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public StateAbbreviationFilter(FilterConfiguration configuration) : base(FilterType.StateAbbreviation, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, StateAnalyzer, input, context, piece);

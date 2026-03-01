@@ -23,6 +23,9 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects age expression entities in plain text.
+/// </summary>
 public class AgeFilter : RegexFilter
 {
     private static readonly Analyzer AgeAnalyzer = new Analyzer(
@@ -32,8 +35,13 @@ public class AgeFilter : RegexFilter
         new FilterPattern.Builder().WithPattern(@"\b([0-9]{1,3}) (y\/o)\b", RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="AgeFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public AgeFilter(FilterConfiguration configuration) : base(FilterType.Age, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, AgeAnalyzer, input, context, piece);

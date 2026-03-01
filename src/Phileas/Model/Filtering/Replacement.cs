@@ -16,12 +16,31 @@
 
 namespace Phileas.Model.Filtering;
 
+/// <summary>
+/// Holds the result of applying a filter strategy to a detected entity, comprising the
+/// replacement value, an optional cryptographic salt, and a flag indicating whether a
+/// replacement was actually applied.
+/// </summary>
 public class Replacement
 {
+    /// <summary>Gets the replacement string that will be substituted for the original entity text.</summary>
     public string Value { get; }
+
+    /// <summary>Gets the cryptographic salt that was appended before hashing, or an empty string when salting is disabled.</summary>
     public string Salt { get; }
+
+    /// <summary>Gets a value indicating whether a replacement was applied (<see langword="true"/>) or the original text was kept (<see langword="false"/>).</summary>
     public bool Applied { get; }
 
+    /// <summary>
+    /// Initializes a new <see cref="Replacement"/>.
+    /// </summary>
+    /// <param name="value">The replacement text.</param>
+    /// <param name="salt">The salt used during replacement, or an empty string.</param>
+    /// <param name="applied">
+    /// <see langword="true"/> if the replacement was applied; <see langword="false"/> if the original text is preserved.
+    /// Defaults to <see langword="true"/>.
+    /// </param>
     public Replacement(string value, string salt, bool applied = true)
     {
         Value = value;

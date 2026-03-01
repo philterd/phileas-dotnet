@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting age expressions (e.g. "32 years old").
+/// </summary>
 public class Age : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of age filter strategies to apply.</summary>
     [JsonPropertyName("ageFilterStrategies")]
     public List<AgeFilterStrategy>? Strategies { get; set; }
 }

@@ -7,6 +7,10 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Filter that detects entities by matching input tokens against a configurable list of terms,
+/// with optional fuzzy (Levenshtein-distance) matching.
+/// </summary>
 public class DictionaryFilter : RegexFilter
 {
     private readonly Analyzer _analyzer;
@@ -14,6 +18,13 @@ public class DictionaryFilter : RegexFilter
     private readonly string _level;
     private readonly string[] _terms;
 
+    /// <summary>
+    /// Initializes a new <see cref="DictionaryFilter"/>.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
+    /// <param name="terms">The list of terms to detect.</param>
+    /// <param name="fuzzy">When <see langword="true"/>, fuzzy (approximate) matching is enabled in addition to exact matching.</param>
+    /// <param name="level">Fuzzy matching sensitivity: <c>"low"</c> (edit distance 1), <c>"medium"</c> (2), or <c>"high"</c> (3).</param>
     public DictionaryFilter(FilterConfiguration configuration, IEnumerable<string> terms, bool fuzzy = false, string level = "low")
         : base(FilterType.Dictionary, configuration)
     {
@@ -33,6 +44,7 @@ public class DictionaryFilter : RegexFilter
         _analyzer = new Analyzer(patterns);
     }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, _analyzer, input, context, piece);
@@ -98,6 +110,12 @@ public class DictionaryFilter : RegexFilter
             _        => (1, 0.9)   // "low" or unrecognized
         };
 
+    /// <summary>
+    /// Computes the Levenshtein (edit) distance between two strings using a case-insensitive comparison.
+    /// </summary>
+    /// <param name="s">The first string.</param>
+    /// <param name="t">The second string.</param>
+    /// <returns>The minimum number of single-character edits required to transform <paramref name="s"/> into <paramref name="t"/>.</returns>
     internal static int LevenshteinDistance(string s, string t)
     {
         // Case-insensitive comparison

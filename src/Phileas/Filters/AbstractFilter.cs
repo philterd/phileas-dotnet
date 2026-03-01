@@ -19,6 +19,10 @@ using Phileas.Policy;
 
 namespace Phileas.Filters;
 
+/// <summary>
+/// Base class for all Phileas filters. Stores common configuration (strategies, ignored terms,
+/// crypto settings, window size, and priority) and provides helper methods used by concrete filters.
+/// </summary>
 public abstract class AbstractFilter
 {
     protected readonly FilterType FilterType;
@@ -32,6 +36,11 @@ public abstract class AbstractFilter
     protected string? Classification;
     protected readonly Phileas.Policy.PostFilters PostFiltersConfig;
 
+    /// <summary>
+    /// Initializes the filter with the given <paramref name="filterType"/> and <paramref name="configuration"/>.
+    /// </summary>
+    /// <param name="filterType">The type of entity this filter detects.</param>
+    /// <param name="configuration">Runtime configuration including strategies, ignored terms, and window size.</param>
     protected AbstractFilter(FilterType filterType, FilterConfiguration configuration)
     {
         FilterType = filterType;
@@ -45,10 +54,26 @@ public abstract class AbstractFilter
         PostFiltersConfig = configuration.PostFilters ?? new Phileas.Policy.PostFilters();
     }
 
+    /// <summary>
+    /// Scans <paramref name="input"/> for entities, applies the configured replacement strategy
+    /// to each match, and returns a <see cref="Filtered"/> containing all detected spans.
+    /// </summary>
+    /// <param name="policy">The active policy providing per-filter settings.</param>
+    /// <param name="context">The context identifier used for referential-integrity replacements.</param>
+    /// <param name="piece">Zero-based piece index within a multi-part document.</param>
+    /// <param name="input">The plain-text string to search.</param>
+    /// <returns>A <see cref="Filtered"/> containing all detected and (optionally) replaced spans.</returns>
     public abstract Filtered Filter(Phileas.Policy.Policy policy, string context, int piece, string input);
 
+    /// <summary>Returns the <see cref="Model.Filtering.FilterType"/> handled by this filter instance.</summary>
     public FilterType GetFilterType() => FilterType;
 
+    /// <summary>
+    /// Determines whether <paramref name="token"/> should be excluded from filtering based on
+    /// the configured ignored terms and ignored-pattern rules.
+    /// </summary>
+    /// <param name="token">The candidate entity text to check.</param>
+    /// <returns><see langword="true"/> if the token is on the ignore list; otherwise <see langword="false"/>.</returns>
     protected bool IsIgnored(string token)
     {
         if (Ignored.Contains(token)) return true;
@@ -64,6 +89,14 @@ public abstract class AbstractFilter
         return false;
     }
 
+    /// <summary>
+    /// Returns the words that appear within <see cref="WindowSize"/> words of the matched entity,
+    /// providing surrounding context for condition evaluation.
+    /// </summary>
+    /// <param name="text">The full input text.</param>
+    /// <param name="characterStart">Start offset of the entity.</param>
+    /// <param name="characterEnd">Exclusive end offset of the entity.</param>
+    /// <returns>An array of words surrounding the entity, up to <see cref="WindowSize"/> words on each side.</returns>
     protected string[] GetWindow(string text, int characterStart, int characterEnd)
     {
         var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -92,6 +125,18 @@ public abstract class AbstractFilter
         return words.Skip(windowStart).Take(windowEnd - windowStart + 1).ToArray();
     }
 
+    /// <summary>
+    /// Iterates the configured strategies and returns the replacement produced by the first strategy
+    /// whose condition is satisfied. Falls back to a default redaction token when no strategy matches.
+    /// </summary>
+    /// <param name="policy">The active policy.</param>
+    /// <param name="context">The context identifier.</param>
+    /// <param name="token">The detected entity text.</param>
+    /// <param name="window">Surrounding context words.</param>
+    /// <param name="confidence">Confidence score of the detection.</param>
+    /// <param name="classification">Optional entity classification label.</param>
+    /// <param name="filterPattern">The <see cref="FilterPattern"/> that produced the match, or <see langword="null"/>.</param>
+    /// <returns>A <see cref="Replacement"/> containing the replacement value and salt.</returns>
     protected Replacement GetReplacement(Phileas.Policy.Policy policy, string context, string token, string[] window, double confidence, string? classification, FilterPattern? filterPattern)
     {
         foreach (var strategy in Strategies)

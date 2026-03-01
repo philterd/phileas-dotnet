@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting US bank routing (ABA) numbers.
+/// </summary>
 public class BankRoutingNumber : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of bank routing number filter strategies to apply.</summary>
     [JsonPropertyName("bankRoutingNumberFilterStrategies")]
     public List<BankRoutingNumberFilterStrategy>? Strategies { get; set; }
 }

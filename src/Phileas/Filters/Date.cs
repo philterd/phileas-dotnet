@@ -20,8 +20,12 @@ using Phileas.Policy.Filters.Strategies;
 
 namespace Phileas.Policy.Filters;
 
+/// <summary>
+/// Policy configuration for detecting date expressions.
+/// </summary>
 public class Date : AbstractPolicyFilter
 {
+    /// <summary>Gets or sets the list of date filter strategies to apply.</summary>
     [JsonPropertyName("dateFilterStrategies")]
     public List<DateFilterStrategy>? Strategies { get; set; }
 }

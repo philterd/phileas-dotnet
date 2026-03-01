@@ -23,14 +23,22 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Regex;
 
+/// <summary>
+/// Regex-based filter that detects MAC address entities in plain text.
+/// </summary>
 public class MacAddressFilter : RegexFilter
 {
     private static readonly Analyzer MacAnalyzer = new Analyzer(
         new FilterPattern.Builder().WithPattern(@"\b([0-9A-Fa-f]{2}[:\-]){5}([0-9A-Fa-f]{2})\b").WithInitialConfidence(0.95).Build()
     );
 
+    /// <summary>
+    /// Initializes a new <see cref="MacAddressFilter"/> with the given configuration.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
     public MacAddressFilter(FilterConfiguration configuration) : base(FilterType.MacAddress, configuration) { }
 
+    /// <inheritdoc/>
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, MacAnalyzer, input, context, piece);

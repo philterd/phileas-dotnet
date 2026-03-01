@@ -18,11 +18,17 @@ using System.Text.Json.Serialization;
 
 namespace Phileas.Policy;
 
+/// <summary>
+/// Format-preserving encryption (FPE) settings used by the <c>FPE_ENCRYPT_REPLACE</c>
+/// filter strategy.
+/// </summary>
 public class Fpe
 {
+    /// <summary>Gets or sets the Base64-encoded encryption key.</summary>
     [JsonPropertyName("key")]
     public string? Key { get; set; }
 
+    /// <summary>Gets or sets the Base64-encoded tweak value used to customize the encryption.</summary>
     [JsonPropertyName("tweak")]
     public string? Tweak { get; set; }
 }
