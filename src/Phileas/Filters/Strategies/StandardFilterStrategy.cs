@@ -64,6 +64,7 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
             Last4 => new Replacement(token.Length >= 4 ? token[^4..] : token, salt, true),
             HashSha256Replace => new Replacement(HashSha256(token + salt), salt, true),
             CryptoReplace => crypto != null ? new Replacement(AesEncrypt(token, crypto), salt, true) : new Replacement(GetRedactedToken(token, classification, filterType), salt, true),
+            FpeEncryptReplace => fpe != null ? new Replacement(FpeEncrypt(token, fpe), salt, true) : new Replacement(GetRedactedToken(token, classification, filterType), salt, true),
             Same => new Replacement(token, salt, false),
             Truncate => new Replacement(token.Length > 0 ? token[..1] : token, salt, true),
             _ => new Replacement(GetRedactedToken(token, classification, filterType), salt, true)
@@ -101,6 +102,86 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(bytes).ToLower();
+    }
+
+    private static string FpeEncrypt(string token, Fpe fpe)
+    {
+        if (string.IsNullOrEmpty(fpe.Key)) return token;
+        try
+        {
+            var key = Convert.FromBase64String(fpe.Key);
+            var tweak = string.IsNullOrEmpty(fpe.Tweak) ? [] : Convert.FromBase64String(fpe.Tweak);
+            var chars = token.ToCharArray();
+            FpeEncryptClass(chars, key, tweak, char.IsDigit, 10, '0');
+            FpeEncryptClass(chars, key, tweak, char.IsLower, 26, 'a');
+            FpeEncryptClass(chars, key, tweak, char.IsUpper, 26, 'A');
+            return new string(chars);
+        }
+        catch
+        {
+            return token;
+        }
+    }
+
+    private static void FpeEncryptClass(char[] chars, byte[] key, byte[] tweak, Func<char, bool> pred, int radix, char baseChar)
+    {
+        int i = 0;
+        while (i < chars.Length)
+        {
+            if (!pred(chars[i])) { i++; continue; }
+            int start = i;
+            while (i < chars.Length && pred(chars[i])) i++;
+            if (i - start >= 1)
+                FpeEncryptSegment(chars, start, i - start, key, tweak, radix, baseChar);
+        }
+    }
+
+    private static void FpeEncryptSegment(char[] chars, int start, int len, byte[] key, byte[] tweak, int radix, char baseChar)
+    {
+        var vals = new int[len];
+        for (int i = 0; i < len; i++) vals[i] = chars[start + i] - baseChar;
+
+        int u = (len + 1) / 2;
+        var A = vals[..u].ToArray();
+        var B = vals[u..].ToArray();
+
+        for (int round = 0; round < 8; round++)
+        {
+            if (round % 2 == 0)
+            {
+                var prf = FpeRoundPrf(key, tweak, round, radix, start, B);
+                for (int i = 0; i < A.Length; i++)
+                    A[i] = (A[i] + prf[i % prf.Length]) % radix;
+            }
+            else
+            {
+                var prf = FpeRoundPrf(key, tweak, round, radix, start, A);
+                for (int i = 0; i < B.Length; i++)
+                    B[i] = (B[i] + prf[i % prf.Length]) % radix;
+            }
+            (A, B) = (B, A);
+        }
+
+        Array.Copy(A, 0, vals, 0, A.Length);
+        Array.Copy(B, 0, vals, A.Length, B.Length);
+        for (int i = 0; i < len; i++) chars[start + i] = (char)(baseChar + vals[i]);
+    }
+
+    private static int[] FpeRoundPrf(byte[] key, byte[] tweak, int round, int radix, int startIndex, int[] input)
+    {
+        int sz = tweak.Length + 8 + input.Length * 2;
+        var data = new byte[sz];
+        int pos = 0;
+        Array.Copy(tweak, 0, data, pos, tweak.Length); pos += tweak.Length;
+        data[pos++] = (byte)round;
+        data[pos++] = (byte)(radix >> 8); data[pos++] = (byte)radix;
+        data[pos++] = (byte)(startIndex >> 24); data[pos++] = (byte)(startIndex >> 16);
+        data[pos++] = (byte)(startIndex >> 8); data[pos++] = (byte)startIndex;
+        data[pos++] = 0;
+        foreach (var v in input) { data[pos++] = (byte)(v >> 8); data[pos++] = (byte)v; }
+        using var hmac = new HMACSHA256(key);
+        var hash = hmac.ComputeHash(data);
+        return hash.Select(b => b % radix).ToArray();
     }
 
     private static string AesEncrypt(string plaintext, Crypto crypto)
