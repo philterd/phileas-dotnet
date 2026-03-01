@@ -26,12 +26,14 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 | `CreditCard` | Credit / debit card numbers |
 | `Currency` | Currency amounts |
 | `Date` | Dates in common formats |
+| `Dictionary` | Custom term list with optional fuzzy matching |
 | `DriversLicense` | US driver's license numbers |
 | `EmailAddress` | Email addresses |
 | `IbanCode` | IBAN bank account codes |
 | `IpAddress` | IPv4 / IPv6 addresses |
 | `MacAddress` | MAC (hardware) addresses |
 | `PassportNumber` | Passport numbers |
+| `PhEye` | NLP-based entity detection via a remote [PhEye](https://github.com/philterd/pheye) service |
 | `PhoneNumber` | Phone numbers |
 | `PhoneNumberExtension` | Phone number extensions |
 | `Ssn` | US Social Security numbers |
@@ -104,6 +106,84 @@ var result = new FilterService().Filter(
 );
 
 Console.WriteLine(result.FilteredText);
+```
+
+### Redact terms from a custom dictionary
+
+The `Dictionary` filter matches a list of terms you supply and optionally uses fuzzy (approximate) matching.
+
+```csharp
+using Phileas.Policy;
+using Phileas.Policy.Filters;
+using Phileas.Services;
+using PhileasPolicy = Phileas.Policy.Policy;
+
+var policy = new PhileasPolicy
+{
+    Name = "dictionary-policy",
+    Identifiers = new Identifiers
+    {
+        Dictionaries = new List<Dictionary>
+        {
+            new Dictionary
+            {
+                Name  = "project-names",
+                Terms = new List<string> { "Project Phoenix", "Operation Nightfall" },
+                Fuzzy = false
+            }
+        }
+    }
+};
+
+var result = new FilterService().Filter(
+    policy: policy,
+    context: "default",
+    piece: 0,
+    input: "The memo referenced Project Phoenix and Operation Nightfall."
+);
+
+Console.WriteLine(result.FilteredText);
+// Output: The memo referenced {{{REDACTED-dictionary}}} and {{{REDACTED-dictionary}}}.
+```
+
+### Detect named entities with PhEye
+
+The `PhEye` filter delegates entity recognition to a remote [PhEye](https://github.com/philterd/pheye) NLP service and redacts the entities it finds.
+
+```csharp
+using Phileas.Policy;
+using Phileas.Policy.Filters;
+using Phileas.Services;
+using PhileasPolicy = Phileas.Policy.Policy;
+
+var policy = new PhileasPolicy
+{
+    Name = "pheye-policy",
+    Identifiers = new Identifiers
+    {
+        PhEyes = new List<PhEye>
+        {
+            new PhEye
+            {
+                PhEyeConfiguration = new PhEyeConfiguration
+                {
+                    Endpoint = "http://localhost:8080",
+                    Labels   = new List<string> { "Person" }
+                }
+            }
+        }
+    }
+};
+
+var result = new FilterService().Filter(
+    policy: policy,
+    context: "default",
+    piece: 0,
+    input: "John Smith joined the meeting."
+);
+
+Console.WriteLine(result.FilteredText);
+// Output: {{{REDACTED-person}}} joined the meeting.
 ```
 
 ### Inspect detected spans
