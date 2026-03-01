@@ -170,7 +170,7 @@ public static class FilterPolicyLoader
                     .WithPriority(dictionary.Priority)
                     .Build();
 
-                filters.Add(new DictionaryFilter(config, dictionary.Terms));
+                filters.Add(new DictionaryFilter(config, dictionary.Terms, dictionary.Fuzzy, dictionary.Level));
             }
         }
 

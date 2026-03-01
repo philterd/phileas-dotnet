@@ -11,6 +11,12 @@ public class Dictionary : AbstractPolicyFilter
     [JsonPropertyName("terms")]
     public List<string> Terms { get; set; } = new List<string>();
 
+    [JsonPropertyName("fuzzy")]
+    public bool Fuzzy { get; set; } = false;
+
+    [JsonPropertyName("level")]
+    public string Level { get; set; } = "low";
+
     [JsonPropertyName("dictionaryFilterStrategies")]
     public List<DictionaryFilterStrategy>? Strategies { get; set; }
 }
