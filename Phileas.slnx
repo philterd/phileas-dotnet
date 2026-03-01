@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Phileas.Filters/Phileas.Filters.csproj" />
+    <Project Path="src/Phileas.Model/Phileas.Model.csproj" />
+    <Project Path="src/Phileas.Policy/Phileas.Policy.csproj" />
+    <Project Path="src/Phileas.Services/Phileas.Services.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Phileas.Tests/Phileas.Tests.csproj" />
+  </Folder>
+</Solution>
