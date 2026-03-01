@@ -20,6 +20,7 @@ using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Strategies;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
+using Serializer = Phileas.Policy.PolicySerializer;
 
 namespace Phileas.Tests;
 
@@ -66,6 +67,71 @@ public class PolicyTests
         Assert.NotNull(policy);
         Assert.Equal("test", policy.Name);
         Assert.NotNull(policy.Identifiers.EmailAddress);
+    }
+
+    [Fact]
+    public void Policy_SerializesToYaml()
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "yaml-policy",
+            Identifiers = new Identifiers
+            {
+                EmailAddress = new EmailAddress
+                {
+                    Strategies = new List<EmailAddressFilterStrategy>
+                    {
+                        new EmailAddressFilterStrategy { Strategy = "REDACT" }
+                    }
+                }
+            }
+        };
+
+        var yaml = Serializer.SerializeToYaml(policy);
+        Assert.Contains("yaml-policy", yaml);
+        Assert.Contains("emailAddress", yaml);
+    }
+
+    [Fact]
+    public void Policy_DeserializesFromYaml()
+    {
+        var yaml = """
+        name: test-yaml
+        identifiers:
+          emailAddress:
+            emailAddressFilterStrategies:
+              - strategy: REDACT
+        """;
+
+        var policy = Serializer.DeserializeFromYaml(yaml);
+        Assert.NotNull(policy);
+        Assert.Equal("test-yaml", policy.Name);
+        Assert.NotNull(policy.Identifiers.EmailAddress);
+    }
+
+    [Fact]
+    public void Policy_RoundTripsYaml()
+    {
+        var original = new PhileasPolicy
+        {
+            Name = "round-trip",
+            Identifiers = new Identifiers
+            {
+                Ssn = new Ssn
+                {
+                    Strategies = new List<SsnFilterStrategy>
+                    {
+                        new SsnFilterStrategy { Strategy = "REDACT" }
+                    }
+                }
+            }
+        };
+
+        var yaml = Serializer.SerializeToYaml(original);
+        var restored = Serializer.DeserializeFromYaml(yaml);
+
+        Assert.Equal(original.Name, restored.Name);
+        Assert.NotNull(restored.Identifiers.Ssn);
     }
 
     [Fact]
