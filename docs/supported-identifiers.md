@@ -169,7 +169,47 @@ Identifiers = new Identifiers
 }
 ```
 
-Each `Dictionary` entry also supports the common `AbstractPolicyFilter` options (`ignored`, `ignoredPatterns`, `priority`) and an optional `dictionaryFilterStrategies` list to override the default `REDACT` behaviour.
+#### Fuzzy Matching
+
+The dictionary filter supports fuzzy matching to detect misspelled or near-match terms using Levenshtein distance. Enable fuzzy matching by setting `fuzzy: true` and optionally specifying a `level`:
+
+```csharp
+new Dictionary
+{
+    Name = "medical-conditions",
+    Terms = new List<string> { "diabetes", "hypertension" },
+    Fuzzy = true,
+    Level = "medium"  // "low", "medium", or "high"
+}
+```
+
+```json
+{
+  "name": "medical-conditions",
+  "terms": ["diabetes", "hypertension"],
+  "fuzzy": true,
+  "level": "medium"
+}
+```
+
+**Fuzzy matching levels:**
+
+| Level | Max Edit Distance | Confidence |
+|---|---|---|
+| `low` (default) | 1 | 0.9 |
+| `medium` | 2 | 0.75 |
+| `high` | 3 | 0.6 |
+
+For example, with `level: "medium"`, the term `"diabetes"` would match misspellings like `"diabetis"` (1 edit) or `"diabtes"` (2 edits), but not `"diabtees"` (3 edits).
+
+#### Configuration Options
+
+Each `Dictionary` entry supports the common `AbstractPolicyFilter` options (`ignored`, `ignoredPatterns`, `priority`) and an optional `dictionaryFilterStrategies` list to override the default `REDACT` behaviour, plus:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `fuzzy` | `bool` | `false` | Enable fuzzy matching for near-match detection |
+| `level` | `string` | `"low"` | Fuzzy matching sensitivity: `"low"`, `"medium"`, or `"high"` |
 
 ---
 
