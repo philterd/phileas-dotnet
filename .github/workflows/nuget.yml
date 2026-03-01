@@ -1,0 +1,35 @@
+name: Publish NuGet Package
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Phileas.sln
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release Phileas.sln
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal Phileas.sln
+
+      - name: Pack
+        run: dotnet pack src/Phileas/Phileas.csproj --no-build --configuration Release --output ./nupkg
+
+      - name: Publish to NuGet.org
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
