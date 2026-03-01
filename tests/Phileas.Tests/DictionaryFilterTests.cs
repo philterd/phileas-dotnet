@@ -21,6 +21,16 @@ public class DictionaryFilterTests
         return new DictionaryFilter(config, terms);
     }
 
+    private static DictionaryFilter CreateFuzzyFilter(IEnumerable<string> terms, string level = "low")
+    {
+        var config = new FilterConfiguration.Builder()
+            .WithStrategies(new List<AbstractFilterStrategy> { new DictionaryFilterStrategy() })
+            .WithIgnored(new HashSet<string>())
+            .WithIgnoredPatterns(new List<IgnoredPattern>())
+            .Build();
+        return new DictionaryFilter(config, terms, fuzzy: true, level: level);
+    }
+
     private static PhileasPolicy CreatePolicy(IEnumerable<string> terms)
     {
         return new PhileasPolicy
@@ -135,5 +145,103 @@ public class DictionaryFilterTests
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("diabetes", result.FilteredText);
         Assert.DoesNotContain("metformin", result.FilteredText);
+    }
+
+    [Theory]
+    [InlineData("The patient has diabtes.", "diabetes", "low")]
+    [InlineData("Diagnosis: hypertensoin.", "hypertension", "medium")]
+    public void FuzzyFilter_DetectsNearMatchTerms(string input, string term, string level)
+    {
+        var filter = CreateFuzzyFilter(new[] { term }, level);
+        var policy = CreatePolicy(new[] { term });
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.Dictionary, result.Spans[0].FilterType);
+    }
+
+    [Fact]
+    public void FuzzyFilter_ExactTermStillDetected()
+    {
+        var filter = CreateFuzzyFilter(new[] { "diabetes" }, "low");
+        var policy = CreatePolicy(new[] { "diabetes" });
+        var result = filter.Filter(policy, "test", 0, "The patient has diabetes.");
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.Dictionary, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("low",    "diabtes",  0.9)]
+    [InlineData("medium", "dizbtes",  0.75)]
+    [InlineData("high",   "dibzaes",  0.6)]
+    public void FuzzyFilter_ConfidenceMatchesLevel(string level, string misspelled, double expectedConfidence)
+    {
+        var term = "diabetes";
+
+        var filter = CreateFuzzyFilter(new[] { term }, level);
+        var policy = CreatePolicy(new[] { term });
+        var result = filter.Filter(policy, "test", 0, $"The patient has {misspelled}.");
+
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(expectedConfidence, result.Spans[0].Confidence);
+    }
+
+    [Fact]
+    public void FuzzyFilter_DoesNotMatchDistantTerms()
+    {
+        var filter = CreateFuzzyFilter(new[] { "diabetes" }, "low");
+        var policy = CreatePolicy(new[] { "diabetes" });
+        var result = filter.Filter(policy, "test", 0, "The patient has xyzzy.");
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void DictionaryPolicyFilter_FuzzyAndLevelPropertiesDefault()
+    {
+        var dict = new Phileas.Policy.Filters.Dictionary
+        {
+            Name = "conditions",
+            Terms = new List<string> { "diabetes" }
+        };
+        Assert.False(dict.Fuzzy);
+        Assert.Equal("low", dict.Level);
+    }
+
+    [Fact]
+    public void DictionaryPolicyFilter_FuzzyAndLevelPropertiesCanBeSet()
+    {
+        var dict = new Phileas.Policy.Filters.Dictionary
+        {
+            Name = "conditions",
+            Terms = new List<string> { "diabetes" },
+            Fuzzy = true,
+            Level = "medium"
+        };
+        Assert.True(dict.Fuzzy);
+        Assert.Equal("medium", dict.Level);
+    }
+
+    [Fact]
+    public void FilterPolicyLoader_FuzzyDictionaryDetectsNearMatch()
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers
+            {
+                Dictionaries = new List<Phileas.Policy.Filters.Dictionary>
+                {
+                    new Phileas.Policy.Filters.Dictionary
+                    {
+                        Name = "conditions",
+                        Terms = new List<string> { "diabetes" },
+                        Fuzzy = true,
+                        Level = "low"
+                    }
+                }
+            }
+        };
+
+        var result = FilterPolicyLoader.Filter(policy, "test", 0, "The patient has diabtes.");
+        Assert.Contains("REDACTED", result.FilteredText);
     }
 }
