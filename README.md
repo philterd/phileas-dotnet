@@ -24,31 +24,31 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 
 ## Supported Filter Types
 
-| Filter                 | Description                                                                                |
-|------------------------|--------------------------------------------------------------------------------------------|
-| `Age`                  | Ages (e.g. *42 years old*)                                                                 |
-| `BankRoutingNumber`    | US bank routing numbers                                                                    |
-| `BitcoinAddress`       | Bitcoin wallet addresses                                                                   |
-| `CreditCard`           | Credit / debit card numbers                                                                |
-| `Currency`             | Currency amounts                                                                           |
-| `Date`                 | Dates in common formats                                                                    |
-| `Dictionary`           | Custom term list with optional fuzzy matching                                              |
-| `DriversLicense`       | US driver's license numbers                                                                |
-| `EmailAddress`         | Email addresses                                                                            |
-| `IbanCode`             | IBAN bank account codes                                                                    |
-| `IpAddress`            | IPv4 / IPv6 addresses                                                                      |
-| `MacAddress`           | MAC (hardware) addresses                                                                   |
-| `PassportNumber`       | Passport numbers                                                                           |
-| `PhEye`                | NLP-based entity detection via a remote [PhEye](https://github.com/philterd/pheye) service |
-| `PhoneNumber`          | Phone numbers                                                                              |
-| `PhoneNumberExtension` | Phone number extensions                                                                    |
-| `Ssn`                  | US Social Security numbers                                                                 |
-| `StateAbbreviation`    | US state abbreviations                                                                     |
-| `StreetAddress`        | Street addresses                                                                           |
-| `TrackingNumber`       | Parcel tracking numbers                                                                    |
-| `Url`                  | URLs                                                                                       |
-| `Vin`                  | Vehicle Identification Numbers                                                             |
-| `ZipCode`              | US ZIP / ZIP+4 codes                                                                       |
+| Filter                 | Description                                                                                 |
+|------------------------|---------------------------------------------------------------------------------------------|
+| `Age`                  | Ages (e.g. *42 years old*)                                                                  |
+| `BankRoutingNumber`    | US bank routing numbers                                                                     |
+| `BitcoinAddress`       | Bitcoin wallet addresses                                                                    |
+| `CreditCard`           | Credit / debit card numbers                                                                 |
+| `Currency`             | Currency amounts                                                                            |
+| `Date`                 | Dates in common formats                                                                     |
+| `Dictionary`           | Custom term list with optional fuzzy matching                                               |
+| `DriversLicense`       | US driver's license numbers                                                                 |
+| `EmailAddress`         | Email addresses                                                                             |
+| `IbanCode`             | IBAN bank account codes                                                                     |
+| `IpAddress`            | IPv4 / IPv6 addresses                                                                       |
+| `MacAddress`           | MAC (hardware) addresses                                                                    |
+| `PassportNumber`       | Passport numbers                                                                            |
+| `PhEye`                | NLP-based entity detection via a remote [PhEye](https://github.com/philterd/ph-eye) service |
+| `PhoneNumber`          | Phone numbers                                                                               |
+| `PhoneNumberExtension` | Phone number extensions                                                                     |
+| `Ssn`                  | US Social Security numbers                                                                  |
+| `StateAbbreviation`    | US state abbreviations                                                                      |
+| `StreetAddress`        | Street addresses                                                                            |
+| `TrackingNumber`       | Parcel tracking numbers                                                                     |
+| `Url`                  | URLs                                                                                        |
+| `Vin`                  | Vehicle Identification Numbers                                                              |
+| `ZipCode`              | US ZIP / ZIP+4 codes                                                                        |
 
 ## Installation
 
