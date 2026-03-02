@@ -18,6 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Copyright>Copyright 2026 Philterd, LLC</Copyright>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Title>Phileas</Title>
+        <PackageLicenseUrl>https://github.com/philterd/phileas-net/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
