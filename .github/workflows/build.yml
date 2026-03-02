@@ -21,10 +21,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore Phileas.sln
+        run: dotnet restore Phileas.slnx
 
       - name: Build
-        run: dotnet build --no-restore Phileas.sln
+        run: dotnet build --no-restore Phileas.slnx
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal Phileas.sln
+        run: dotnet test --no-build --verbosity normal Phileas.slnx

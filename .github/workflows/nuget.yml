@@ -20,13 +20,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore Phileas.sln
+        run: dotnet restore Phileas.slnx
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release Phileas.sln
+        run: dotnet build --no-restore --configuration Release Phileas.slnx
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal Phileas.sln
+        run: dotnet test --no-build --configuration Release --verbosity normal Phileas.slnx
 
       - name: Pack
         run: dotnet pack src/Phileas/Phileas.csproj --no-build --configuration Release --output ./nupkg
