@@ -163,7 +163,7 @@ public class ConditionIntegrationTests
 
         Assert.Contains("*", result.FilteredText);
         Assert.DoesNotContain("555-123-4567", result.FilteredText);
-        Assert.Equal(1, result.Spans.Count);
+        Assert.Single(result.Spans);
         Assert.Equal("555-123-4567", result.Spans[0].Text);
     }
 
