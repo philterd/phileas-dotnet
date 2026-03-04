@@ -1,6 +1,6 @@
 # Supported Identifiers
 
-phileas-net ships with 21 built-in PII identifier types plus a configurable **dictionary** filter. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
+phileas-net ships with 22 built-in PII identifier types plus a configurable **dictionary** filter and an AI-powered **PhEye** filter. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
 
 ## Quick Reference
 
@@ -19,6 +19,7 @@ phileas-net ships with 21 built-in PII identifier types plus a configurable **di
 | `IpAddress` | `ipAddress` | IPv4 and IPv6 addresses |
 | `MacAddress` | `macAddress` | Network MAC addresses |
 | `PassportNumber` | `passportNumber` | Passport numbers |
+| `PhEyes` | `pheye` | AI-powered NER via remote service or local ONNX model |
 | `PhoneNumber` | `phoneNumber` | US and international phone numbers |
 | `PhoneNumberExtension` | `phoneNumberExtension` | Phone number extensions (e.g. "ext. 123") |
 | `Ssn` | `ssn` | US Social Security Numbers |
@@ -281,6 +282,111 @@ Detects US passport numbers.
 ```csharp
 Identifiers = new Identifiers { PassportNumber = new PassportNumber() }
 ```
+
+---
+
+### PhEye
+
+Detects named entities using AI-powered NLP. Supports both **remote service mode** (connects to a [PhEye](https://github.com/philterd/pheye) service) and **local model mode** (uses a local ONNX BERT-based NER model).
+
+#### Remote Service Mode
+
+```csharp
+Identifiers = new Identifiers
+{
+    PhEyes = new List<PhEye>
+    {
+        new PhEye
+        {
+            PhEyeConfiguration = new PhEyeConfiguration
+            {
+                Endpoint = "http://localhost:8080",
+                BearerToken = "your-api-token",  // Optional
+                Timeout = 30,
+                Labels = new List<string> { "PERSON", "ORG", "LOC" }
+            }
+        }
+    }
+}
+```
+
+JSON configuration:
+
+```json
+"identifiers": {
+  "pheye": [
+    {
+      "phEyeConfiguration": {
+        "endpoint": "http://localhost:8080",
+        "bearerToken": "your-api-token",
+        "timeout": 30,
+        "labels": ["PERSON", "ORG", "LOC"]
+      }
+    }
+  ]
+}
+```
+
+#### Local Model Mode
+
+```csharp
+Identifiers = new Identifiers
+{
+    PhEyes = new List<PhEye>
+    {
+        new PhEye
+        {
+            PhEyeConfiguration = new PhEyeConfiguration
+            {
+                ModelPath = "C:\\models\\model.onnx",
+                VocabPath = "C:\\models\\vocab.txt",
+                Labels = new List<string> { "PER", "ORG", "LOC", "MISC" }
+            }
+        }
+    }
+}
+```
+
+JSON configuration:
+
+```json
+"identifiers": {
+  "pheye": [
+    {
+      "phEyeConfiguration": {
+        "modelPath": "C:\\models\\model.onnx",
+        "vocabPath": "C:\\models\\vocab.txt",
+        "labels": ["PER", "ORG", "LOC", "MISC"]
+      }
+    }
+  ]
+}
+```
+
+**Configuration Options:**
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `endpoint` | `string` | `"http://localhost:8080"` | Base URL of PhEye service (remote mode) |
+| `bearerToken` | `string?` | `null` | Bearer token for authentication (remote mode) |
+| `timeout` | `int` | `30` | Request timeout in seconds (remote mode) |
+| `modelPath` | `string?` | `null` | Path to ONNX model file (local mode) |
+| `vocabPath` | `string?` | `null` | Path to BERT vocabulary file (local mode) |
+| `labels` | `string[]` | `["Person"]` | Entity labels to detect |
+
+**Mode Selection:**
+- If both `modelPath` and `vocabPath` are provided → **local model mode**
+- If only `endpoint` is provided → **remote service mode**
+- If both are provided → prefers local model, falls back to remote on errors
+- If only one of `modelPath` or `vocabPath` is set → uses remote service
+
+**Detected Entity Types:**
+- `PERSON` / `PER` → Mapped to `FilterType.Person`
+- `LOCATION` / `LOC` → Mapped to `FilterType.LocationCity`
+- `ORGANIZATION` / `ORG` → Mapped to `FilterType.Other`
+- `MISC` → Mapped to `FilterType.Other`
+
+For detailed documentation, see [PhEye Filter Usage](pheye-filter-usage.md).
 
 ---
 

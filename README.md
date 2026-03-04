@@ -24,31 +24,31 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 
 ## Supported Filter Types
 
-| Filter                 | Description                                                                                 |
-|------------------------|---------------------------------------------------------------------------------------------|
-| `Age`                  | Ages (e.g. *42 years old*)                                                                  |
-| `BankRoutingNumber`    | US bank routing numbers                                                                     |
-| `BitcoinAddress`       | Bitcoin wallet addresses                                                                    |
-| `CreditCard`           | Credit / debit card numbers                                                                 |
-| `Currency`             | Currency amounts                                                                            |
-| `Date`                 | Dates in common formats                                                                     |
-| `Dictionary`           | Custom term list with optional fuzzy matching                                               |
-| `DriversLicense`       | US driver's license numbers                                                                 |
-| `EmailAddress`         | Email addresses                                                                             |
-| `IbanCode`             | IBAN bank account codes                                                                     |
-| `IpAddress`            | IPv4 / IPv6 addresses                                                                       |
-| `MacAddress`           | MAC (hardware) addresses                                                                    |
-| `PassportNumber`       | Passport numbers                                                                            |
-| `PhEye`                | NLP-based entity detection via a remote [PhEye](https://github.com/philterd/ph-eye) service |
-| `PhoneNumber`          | Phone numbers                                                                               |
-| `PhoneNumberExtension` | Phone number extensions                                                                     |
-| `Ssn`                  | US Social Security numbers                                                                  |
-| `StateAbbreviation`    | US state abbreviations                                                                      |
-| `StreetAddress`        | Street addresses                                                                            |
-| `TrackingNumber`       | Parcel tracking numbers                                                                     |
-| `Url`                  | URLs                                                                                        |
-| `Vin`                  | Vehicle Identification Numbers                                                              |
-| `ZipCode`              | US ZIP / ZIP+4 codes                                                                        |
+| Filter                 | Description                                                                                     |
+|------------------------|-------------------------------------------------------------------------------------------------|
+| `Age`                  | Ages (e.g. *42 years old*)                                                                      |
+| `BankRoutingNumber`    | US bank routing numbers                                                                         |
+| `BitcoinAddress`       | Bitcoin wallet addresses                                                                        |
+| `CreditCard`           | Credit / debit card numbers                                                                     |
+| `Currency`             | Currency amounts                                                                                |
+| `Date`                 | Dates in common formats                                                                         |
+| `Dictionary`           | Custom term list with optional fuzzy matching                                                   |
+| `DriversLicense`       | US driver's license numbers                                                                     |
+| `EmailAddress`         | Email addresses                                                                                 |
+| `IbanCode`             | IBAN bank account codes                                                                         |
+| `IpAddress`            | IPv4 / IPv6 addresses                                                                           |
+| `MacAddress`           | MAC (hardware) addresses                                                                        |
+| `PassportNumber`       | Passport numbers                                                                                |
+| `PhEye`                | AI-powered NER via remote [PhEye](https://github.com/philterd/pheye) service or local ONNX model |
+| `PhoneNumber`          | Phone numbers                                                                                   |
+| `PhoneNumberExtension` | Phone number extensions                                                                         |
+| `Ssn`                  | US Social Security numbers                                                                      |
+| `StateAbbreviation`    | US state abbreviations                                                                          |
+| `StreetAddress`        | Street addresses                                                                                |
+| `TrackingNumber`       | Parcel tracking numbers                                                                         |
+| `Url`                  | URLs                                                                                            |
+| `Vin`                  | Vehicle Identification Numbers                                                                  |
+| `ZipCode`              | US ZIP / ZIP+4 codes                                                                            |
 
 ## Installation
 
@@ -154,8 +154,9 @@ Console.WriteLine(result.FilteredText);
 
 ### Detect named entities with PhEye
 
-The `PhEye` filter delegates entity recognition to a remote [PhEye](https://github.com/philterd/pheye) NLP service and
-redacts the entities it finds.
+The `PhEye` filter provides AI-powered entity recognition using either a remote [PhEye](https://github.com/philterd/pheye) NLP service or a local ONNX BERT-based model.
+
+#### Remote Service Mode
 
 ```csharp
 using Phileas.Policy;
@@ -175,7 +176,7 @@ var policy = new PhileasPolicy
                 PhEyeConfiguration = new PhEyeConfiguration
                 {
                     Endpoint = "http://localhost:8080",
-                    Labels   = new List<string> { "Person" }
+                    Labels   = new List<string> { "PERSON" }
                 }
             }
         }
@@ -192,6 +193,42 @@ var result = new FilterService().Filter(
 Console.WriteLine(result.FilteredText);
 // Output: {{{REDACTED-person}}} joined the meeting.
 ```
+
+#### Local Model Mode
+
+```csharp
+var policy = new PhileasPolicy
+{
+    Name = "pheye-local-policy",
+    Identifiers = new Identifiers
+    {
+        PhEyes = new List<PhEye>
+        {
+            new PhEye
+            {
+                PhEyeConfiguration = new PhEyeConfiguration
+                {
+                    ModelPath = "C:\\models\\model.onnx",
+                    VocabPath = "C:\\models\\vocab.txt",
+                    Labels = new List<string> { "PER", "ORG", "LOC" }
+                }
+            }
+        }
+    }
+};
+
+var result = new FilterService().Filter(
+    policy: policy,
+    context: "default",
+    piece: 0,
+    input: "John Smith works at Microsoft in Seattle."
+);
+
+Console.WriteLine(result.FilteredText);
+// Output: {{{REDACTED-person}}} works at {{{REDACTED-other}}} in {{{REDACTED-location-city}}}.
+```
+
+For detailed PhEye documentation including model setup and configuration options, see the [PhEye Filter Usage Guide](docs/pheye-filter-usage.md).
 
 ### Inspect detected spans
 

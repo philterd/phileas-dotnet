@@ -45,4 +45,5 @@ public class PhEye : AbstractPolicyFilter
     /// </summary>
     [JsonPropertyName("thresholds")]
     public Dictionary<string, double> Thresholds { get; set; } = new();
+
 }

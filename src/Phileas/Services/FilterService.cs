@@ -17,6 +17,7 @@
 using System.Collections;
 using System.Text;
 using Phileas.Filters;
+using Phileas.Filters.PhEye;
 using Phileas.Filters.Rules.Regex;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;

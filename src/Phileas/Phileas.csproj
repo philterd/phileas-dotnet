@@ -23,6 +23,12 @@
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     </PropertyGroup>
     <ItemGroup>
-        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+        <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Filters\AI\" />
     </ItemGroup>
 </Project>
