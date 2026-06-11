@@ -15,6 +15,7 @@
  */
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Phileas.Policy;
 
@@ -26,7 +27,13 @@ public static class PolicySerializer
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        // Mirror the Java reference (gson), which omits null fields. The canonical policy schema is
+        // additionalProperties:false and types optional objects (crypto, fpe) as objects, so emitting
+        // an explicit null would make otherwise-valid policies fail schema validation.
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        // Resolve whole-value ${NAME} placeholders to environment variables on deserialization.
+        Converters = { new PlaceholderStringConverter() }
     };
 
     /// <summary>
@@ -47,7 +54,7 @@ public static class PolicySerializer
     /// <returns>The JSON representation of the policy.</returns>
     public static string SerializeToJson(Policy policy)
     {
-        return JsonSerializer.Serialize(policy);
+        return JsonSerializer.Serialize(policy, JsonOptions);
     }
 
 }

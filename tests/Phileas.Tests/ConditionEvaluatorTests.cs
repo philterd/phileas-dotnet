@@ -151,14 +151,15 @@ public class ConditionEvaluatorTests
     }
 
     [Fact]
-    public void Population_AlwaysReturnsTrue()
+    public void Population_ComparesCensusPopulationForZipCode()
     {
-        // Population is not supported in phileas-net
-        var result = ConditionEvaluator.Evaluate("population > 20000", "ctx", "12345", 0.9, null);
-        Assert.True(result);
+        // ZIP 90210 has a census population of 21134.
+        Assert.True(ConditionEvaluator.Evaluate("population > 20000", "ctx", "90210", 0.9, null));
+        Assert.False(ConditionEvaluator.Evaluate("population < 1000", "ctx", "90210", 0.9, null));
+        Assert.True(ConditionEvaluator.Evaluate("population == 21134", "ctx", "90210", 0.9, null));
 
-        result = ConditionEvaluator.Evaluate("population < 1000", "ctx", "12345", 0.9, null);
-        Assert.True(result);
+        // A ZIP code that is not present in the census data fails the condition.
+        Assert.False(ConditionEvaluator.Evaluate("population > 0", "ctx", "00000", 0.9, null));
     }
 
     [Theory]

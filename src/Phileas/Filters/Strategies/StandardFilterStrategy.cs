@@ -69,10 +69,10 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
             Last4 => new Replacement(token.Length >= 4 ? token[^4..] : token, salt),
             HashSha256Replace => new Replacement(HashSha256(token + salt), salt),
             CryptoReplace => crypto != null
-                ? new Replacement(AesEncrypt(token, crypto), salt)
+                ? new Replacement("{{" + Utils.Encryption.Encrypt(token, crypto) + "}}", salt)
                 : new Replacement(GetRedactedToken(token, classification, filterType), salt),
             FpeEncryptReplace => fpe != null
-                ? new Replacement(FpeEncrypt(token, fpe), salt)
+                ? FpeReplacement(context, token, window, confidence, classification, filterPattern, filterType, fpe, salt)
                 : new Replacement(GetRedactedToken(token, classification, filterType), salt),
             Same => new Replacement(token, salt, false),
             Truncate => new Replacement(token.Length > 0 ? token[..1] : token, salt),
@@ -82,16 +82,25 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
 
     private string GetOrCreateRandomReplacement(string context, string token)
     {
-        if (ContextService != null)
+        // Produce a realistic fake value via the anonymization service when one is wired in; otherwise
+        // fall back to a UUID.
+        string Generate() =>
+            AnonymizationService != null ? AnonymizationService.Anonymize(token) : Guid.NewGuid().ToString();
+
+        // CONTEXT scope: reuse a token's previously generated replacement so the same value is anonymized
+        // consistently across the context (referential integrity). DOCUMENT scope (the default, matching
+        // Java) does not consult the context and anonymizes each occurrence independently.
+        if (string.Equals(ReplacementScope, ReplacementScopeContext, StringComparison.OrdinalIgnoreCase)
+            && ContextService != null)
         {
             var existing = ContextService.Get(context, token);
             if (existing != null) return existing;
-            var random = Guid.NewGuid().ToString();
-            ContextService.Put(context, token, random);
-            return random;
+            var replacement = Generate();
+            ContextService.Put(context, token, replacement);
+            return replacement;
         }
 
-        return Guid.NewGuid().ToString();
+        return Generate();
     }
 
     private string MaskToken(string token)
@@ -114,120 +123,18 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
         return Convert.ToHexString(bytes).ToLower();
     }
 
-    private static string FpeEncrypt(string token, Fpe fpe)
-    {
-        if (string.IsNullOrEmpty(fpe.Key)) return token;
-        try
-        {
-            var key = Convert.FromBase64String(fpe.Key);
-            var tweak = string.IsNullOrEmpty(fpe.Tweak) ? [] : Convert.FromBase64String(fpe.Tweak);
-            var chars = token.ToCharArray();
-            FpeEncryptClass(chars, key, tweak, char.IsDigit, 10, '0');
-            FpeEncryptClass(chars, key, tweak, char.IsLower, 26, 'a');
-            FpeEncryptClass(chars, key, tweak, char.IsUpper, 26, 'A');
-            return new string(chars);
-        }
-        catch
-        {
-            return token;
-        }
-    }
-
-    private static void FpeEncryptClass(char[] chars, byte[] key, byte[] tweak, Func<char, bool> pred, int radix,
-        char baseChar)
-    {
-        var i = 0;
-        while (i < chars.Length)
-        {
-            if (!pred(chars[i]))
-            {
-                i++;
-                continue;
-            }
-
-            var start = i;
-            while (i < chars.Length && pred(chars[i])) i++;
-            if (i - start >= 1)
-                FpeEncryptSegment(chars, start, i - start, key, tweak, radix, baseChar);
-        }
-    }
-
-    private static void FpeEncryptSegment(char[] chars, int start, int len, byte[] key, byte[] tweak, int radix,
-        char baseChar)
-    {
-        var vals = new int[len];
-        for (var i = 0; i < len; i++) vals[i] = chars[start + i] - baseChar;
-
-        var u = (len + 1) / 2;
-        var A = vals[..u].ToArray();
-        var B = vals[u..].ToArray();
-
-        for (var round = 0; round < 8; round++)
-        {
-            if (round % 2 == 0)
-            {
-                var prf = FpeRoundPrf(key, tweak, round, radix, start, B);
-                for (var i = 0; i < A.Length; i++)
-                    A[i] = (A[i] + prf[i % prf.Length]) % radix;
-            }
-            else
-            {
-                var prf = FpeRoundPrf(key, tweak, round, radix, start, A);
-                for (var i = 0; i < B.Length; i++)
-                    B[i] = (B[i] + prf[i % prf.Length]) % radix;
-            }
-
-            (A, B) = (B, A);
-        }
-
-        Array.Copy(A, 0, vals, 0, A.Length);
-        Array.Copy(B, 0, vals, A.Length, B.Length);
-        for (var i = 0; i < len; i++) chars[start + i] = (char)(baseChar + vals[i]);
-    }
-
-    private static int[] FpeRoundPrf(byte[] key, byte[] tweak, int round, int radix, int startIndex, int[] input)
-    {
-        var sz = tweak.Length + 8 + input.Length * 2;
-        var data = new byte[sz];
-        var pos = 0;
-        Array.Copy(tweak, 0, data, pos, tweak.Length);
-        pos += tweak.Length;
-        data[pos++] = (byte)round;
-        data[pos++] = (byte)(radix >> 8);
-        data[pos++] = (byte)radix;
-        data[pos++] = (byte)(startIndex >> 24);
-        data[pos++] = (byte)(startIndex >> 16);
-        data[pos++] = (byte)(startIndex >> 8);
-        data[pos++] = (byte)startIndex;
-        data[pos++] = 0;
-        foreach (var v in input)
-        {
-            data[pos++] = (byte)(v >> 8);
-            data[pos++] = (byte)v;
-        }
-
-        using var hmac = new HMACSHA256(key);
-        var hash = hmac.ComputeHash(data);
-        return hash.Select(b => b % radix).ToArray();
-    }
-
-    private static string AesEncrypt(string plaintext, Crypto crypto)
+    private Replacement FpeReplacement(string context, string token, string[] window, double confidence,
+        string? classification, FilterPattern? filterPattern, FilterType filterType, Fpe fpe, string salt)
     {
         try
         {
-            var key = Convert.FromBase64String(crypto.Key ?? string.Empty);
-            var iv = Convert.FromBase64String(crypto.Iv ?? string.Empty);
-            using var aes = Aes.Create();
-            aes.Key = key;
-            aes.IV = iv;
-            var encryptor = aes.CreateEncryptor();
-            var plaintextBytes = Encoding.UTF8.GetBytes(plaintext);
-            var encrypted = encryptor.TransformFinalBlock(plaintextBytes, 0, plaintextBytes.Length);
-            return Convert.ToBase64String(encrypted);
+            return new Replacement(Utils.Encryption.FormatPreservingEncrypt(fpe, token), salt);
         }
-        catch
+        catch (Exception)
         {
-            return plaintext;
+            // The value cannot be format-preserving encrypted (for example its format-preservable content
+            // is outside FF3's supported length range); fall back to redaction, matching the Java reference.
+            return new Replacement(GetRedactedToken(token, classification, filterType), salt);
         }
     }
 }

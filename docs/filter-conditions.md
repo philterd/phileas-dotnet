@@ -14,7 +14,7 @@ When multiple strategies are defined for a filter, phileas-net evaluates their c
 | `context` | `string` | The context name passed to `FilterService.Filter()` | `context == "medical"` |
 | `token` | `string` | The detected text value | `token startswith "555"` |
 | `type` | `string` | The classification type (e.g., `PER`, `LOC`) | `type == "PER"` |
-| `population` | `number` | ZIP code population (not supported in phileas-net) | N/A |
+| `population` | `number` | Census population of the detected ZIP code (looks the token up in the bundled census data) | `population > 50000` |
 
 ## Supported Operators
 
@@ -369,9 +369,36 @@ Strategies = new List<IpAddressFilterStrategy>
 }
 ```
 
+## Population Conditions
+
+The `population` field applies to **ZIP code** tokens. phileas-net looks the detected ZIP code up in its bundled US census population data and compares the result against the configured value. A ZIP code that is not present in the census data **fails** the condition.
+
+```csharp
+var policy = new Policy
+{
+    Name = "population-policy",
+    Identifiers = new Identifiers
+    {
+        ZipCode = new ZipCode
+        {
+            Strategies = new List<ZipCodeFilterStrategy>
+            {
+                // Only redact ZIP codes for places with a small population (more identifying).
+                new ZipCodeFilterStrategy
+                {
+                    Strategy = "REDACT",
+                    Condition = "population < 20000"
+                },
+                // Leave large-population ZIP codes unchanged.
+                new ZipCodeFilterStrategy { Strategy = "SAME" }
+            }
+        }
+    }
+};
+```
+
 ## Limitations
 
-- **Population**: The `population` field is not supported in phileas-net (it requires external census data).
 - **OR Operator**: Only `and` is supported for combining conditions. Use multiple strategies for OR logic.
 - **Complex Expressions**: Parentheses and nested conditions are not supported.
 - **Regular Expressions**: The `token` field supports `startswith` but not full regex matching.

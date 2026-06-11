@@ -24,9 +24,29 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.2" />
+        <PackageReference Include="JsonSchema.Net" Version="7.0.4" />
+        <!-- PDF redaction: PdfPig extracts text with per-glyph coordinates; PDFtoImage (PDFium)
+             rasterizes pages; SkiaSharp draws redaction rectangles, encodes JPEG/PNG, and assembles
+             the image-only output PDF. -->
+        <PackageReference Include="PdfPig" Version="0.1.14" />
+        <PackageReference Include="PDFtoImage" Version="5.2.1" />
+        <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- PhiSQL .NET reference library. Not yet on NuGet; referenced from the
+             sibling phisql checkout. Provides the PhiSQL compiler and the canonical
+             redaction policy schema used for all policy operations. -->
+        <ProjectReference Include="../../../phisql/reference/dotnet/PhiSql/PhiSql.csproj" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\NOTICE" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Fake-data dictionaries used by the data generators / anonymization services, embedded
+             into the assembly (the .NET analog of the Java classpath resources). -->
+        <EmbeddedResource Include="Data\Resources\*.txt" />
+        <EmbeddedResource Include="Data\Resources\*.csv" />
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Filters\AI\" />

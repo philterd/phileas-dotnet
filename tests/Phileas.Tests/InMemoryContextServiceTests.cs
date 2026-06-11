@@ -88,7 +88,11 @@ public class InMemoryContextServiceTests
 
         var contextService = new InMemoryContextService();
         var strategy = new SsnFilterStrategy
-            { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
+        {
+            Strategy = AbstractFilterStrategy.RandomReplace,
+            ReplacementScope = AbstractFilterStrategy.ReplacementScopeContext,
+            ContextService = contextService
+        };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { strategy })
             .WithIgnored(new HashSet<string>())
@@ -115,7 +119,11 @@ public class InMemoryContextServiceTests
 
         var contextService = new InMemoryContextService();
         var strategy = new SsnFilterStrategy
-            { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
+        {
+            Strategy = AbstractFilterStrategy.RandomReplace,
+            ReplacementScope = AbstractFilterStrategy.ReplacementScopeContext,
+            ContextService = contextService
+        };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { strategy })
             .WithIgnored(new HashSet<string>())
@@ -147,7 +155,11 @@ public class InMemoryContextServiceTests
         contextService.Put("ctx", "123-45-6789", knownReplacement);
 
         var strategy = new SsnFilterStrategy
-            { Strategy = AbstractFilterStrategy.RandomReplace, ContextService = contextService };
+        {
+            Strategy = AbstractFilterStrategy.RandomReplace,
+            ReplacementScope = AbstractFilterStrategy.ReplacementScopeContext,
+            ContextService = contextService
+        };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { strategy })
             .WithIgnored(new HashSet<string>())

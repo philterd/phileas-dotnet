@@ -56,6 +56,13 @@ public class FilterConfiguration
     public Policy.PostFilters? PostFilters { get; private set; }
 
     /// <summary>
+    ///     Gets the per-pattern regex match budget in milliseconds. A pattern that exceeds the budget is
+    ///     aborted and yields no spans, so a catastrophic user-supplied pattern cannot stall filtering.
+    ///     Defaults to 1000.
+    /// </summary>
+    public long RegexTimeoutMs { get; private set; } = 1000;
+
+    /// <summary>
     ///     Fluent builder for <see cref="FilterConfiguration" />.
     /// </summary>
     public class Builder
@@ -125,10 +132,75 @@ public class FilterConfiguration
             return this;
         }
 
-        /// <summary>Builds and returns the <see cref="FilterConfiguration" />.</summary>
+        /// <summary>Sets the per-pattern regex match budget in milliseconds.</summary>
+        public Builder WithRegexTimeoutMs(long regexTimeoutMs)
+        {
+            _config.RegexTimeoutMs = regexTimeoutMs;
+            return this;
+        }
+
+        /// <summary>Builds and returns the <see cref="FilterConfiguration" />, validating it first.</summary>
+        /// <exception cref="InvalidOperationException">If the configuration is invalid (e.g. a CRYPTO_REPLACE strategy with a missing or malformed encryption key).</exception>
         public FilterConfiguration Build()
         {
+            Validate();
             return _config;
+        }
+
+        /// <summary>
+        ///     Validates the configuration, failing fast at configuration time rather than per-document at
+        ///     encryption time. Mirrors the Java reference: a CRYPTO_REPLACE strategy requires a crypto key
+        ///     that is decodable hexadecimal of a legal AES length (16, 24, or 32 bytes). The key value
+        ///     itself is never included in any error message.
+        /// </summary>
+        private void Validate()
+        {
+            if (_config.Strategies == null) return;
+
+            foreach (var strategy in _config.Strategies)
+            {
+                if (string.Equals(strategy.Strategy, "FPE_ENCRYPT_REPLACE", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_config.Fpe == null)
+                        throw new InvalidOperationException(
+                            "Invalid configuration for filter: Missing FPE encryption property.");
+                    if (string.IsNullOrEmpty(_config.Fpe.GetKey()))
+                        throw new InvalidOperationException(
+                            "Invalid configuration for filter: Missing FPE encryption key.");
+                    if (string.IsNullOrEmpty(_config.Fpe.GetTweak()))
+                        throw new InvalidOperationException(
+                            "Invalid configuration for filter: Missing FPE encryption tweak value.");
+                    continue;
+                }
+
+                if (!string.Equals(strategy.Strategy, "CRYPTO_REPLACE", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (_config.Crypto == null)
+                    throw new InvalidOperationException(
+                        "Invalid configuration for filter: Missing crypto encryption property.");
+
+                var cryptoKey = _config.Crypto.GetKey();
+                if (string.IsNullOrEmpty(cryptoKey))
+                    throw new InvalidOperationException(
+                        "Invalid configuration for filter: Missing crypto encryption key.");
+
+                byte[] cryptoKeyBytes;
+                try
+                {
+                    cryptoKeyBytes = Convert.FromHexString(cryptoKey);
+                }
+                catch (FormatException)
+                {
+                    throw new InvalidOperationException(
+                        "Invalid configuration for filter: The crypto encryption key is not valid hexadecimal.");
+                }
+
+                if (cryptoKeyBytes.Length != 16 && cryptoKeyBytes.Length != 24 && cryptoKeyBytes.Length != 32)
+                    throw new InvalidOperationException(
+                        "Invalid configuration for filter: The crypto encryption key must be a 128-, 192-, "
+                        + $"or 256-bit AES key (16, 24, or 32 bytes); got {cryptoKeyBytes.Length} bytes.");
+            }
         }
     }
 }

@@ -24,11 +24,40 @@ namespace Phileas.Policy;
 /// </summary>
 public class Crypto
 {
-    /// <summary>Gets or sets the Base64-encoded AES-256 encryption key.</summary>
+    /// <summary>Creates an empty <see cref="Crypto" /> (used by JSON deserialization).</summary>
+    public Crypto()
+    {
+    }
+
+    /// <summary>Creates a <see cref="Crypto" /> with the given key and IV.</summary>
+    /// <param name="key">The Base64-encoded key, or an <c>env:NAME</c> reference.</param>
+    /// <param name="iv">The Base64-encoded IV, or an <c>env:NAME</c> reference.</param>
+    public Crypto(string? key, string? iv)
+    {
+        Key = key;
+        Iv = iv;
+    }
+
+    /// <summary>Gets or sets the Base64-encoded AES-256 encryption key, or an <c>env:NAME</c> reference.</summary>
     [JsonPropertyName("key")]
     public string? Key { get; set; }
 
-    /// <summary>Gets or sets the Base64-encoded AES initialization vector (IV).</summary>
+    /// <summary>Gets or sets the Base64-encoded AES initialization vector (IV), or an <c>env:NAME</c> reference.</summary>
     [JsonPropertyName("iv")]
     public string? Iv { get; set; }
+
+    /// <summary>
+    ///     Returns the key, resolving an <c>env:NAME</c> reference to the value of the named environment
+    ///     variable. PhiSQL-authored policies store keys as <c>env:NAME</c> so secrets stay out of the policy.
+    /// </summary>
+    public string? GetKey()
+    {
+        return EnvResolver.Resolve(Key);
+    }
+
+    /// <summary>Returns the IV, resolving an <c>env:NAME</c> reference to the named environment variable's value.</summary>
+    public string? GetIv()
+    {
+        return EnvResolver.Resolve(Iv);
+    }
 }

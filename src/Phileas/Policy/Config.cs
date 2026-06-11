@@ -23,17 +23,19 @@ namespace Phileas.Policy;
 /// </summary>
 public class Config
 {
-    /// <summary>
-    ///     Gets or sets the number of words on each side of a detected entity that form the context window. Defaults to
-    ///     5.
-    /// </summary>
-    [JsonPropertyName("windowSize")]
-    public int WindowSize { get; set; } = 5;
+    /// <summary>Gets or sets the document-splitting configuration.</summary>
+    [JsonPropertyName("splitting")]
+    public Splitting Splitting { get; set; } = new();
 
-    /// <summary>
-    ///     Gets or sets a value indicating whether the input text should be split on punctuation before filtering.
-    ///     Defaults to <see langword="false" />.
-    /// </summary>
-    [JsonPropertyName("splitOnPunctuation")]
-    public bool SplitOnPunctuation { get; set; } = false;
+    /// <summary>Gets or sets the PDF redaction configuration.</summary>
+    [JsonPropertyName("pdf")]
+    public Pdf Pdf { get; set; } = new();
+
+    /// <summary>Gets or sets the post-filter configuration that trims trailing characters from detected spans.</summary>
+    [JsonPropertyName("postFilters")]
+    public PostFilters PostFilters { get; set; } = new();
+
+    /// <summary>Gets or sets the analysis configuration.</summary>
+    [JsonPropertyName("analysis")]
+    public Analysis Analysis { get; set; } = new();
 }

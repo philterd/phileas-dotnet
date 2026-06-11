@@ -24,7 +24,21 @@ namespace Phileas.Policy.Filters;
 /// </summary>
 public class ZipCode : AbstractPolicyFilter
 {
+    /// <summary>
+    ///     Gets or sets a value indicating whether a delimiter is required between the 5-digit ZIP and the
+    ///     +4 extension. When <see langword="false" /> (the default), the extension may be undelimited.
+    /// </summary>
+    [JsonPropertyName("requireDelimiter")]
+    public bool RequireDelimiter { get; set; } = false;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether detected ZIP codes are validated against the census ZIP
+    ///     database. When <see langword="true" />, ZIP codes not present in the data are not redacted.
+    /// </summary>
+    [JsonPropertyName("validate")]
+    public bool Validate { get; set; } = false;
+
     /// <summary>Gets or sets the list of ZIP code filter strategies to apply.</summary>
-    [JsonPropertyName("zipCodeFilterStrategies")]
+    [JsonPropertyName("zipCodeFilterStrategy")]
     public List<ZipCodeFilterStrategy>? Strategies { get; set; }
 }

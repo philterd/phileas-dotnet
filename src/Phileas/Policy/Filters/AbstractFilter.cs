@@ -17,6 +17,8 @@
 using System.Text.RegularExpressions;
 using Phileas.Model;
 using Phileas.Policy;
+using Phileas.Services;
+using Phileas.Services.Anonymization;
 
 namespace Phileas.Filters;
 
@@ -72,6 +74,21 @@ public abstract class AbstractFilter
         WindowSize = configuration.WindowSize;
         Priority = configuration.Priority;
         PostFiltersConfig = configuration.PostFilters ?? new Policy.PostFilters();
+
+        // Initialize the strategy-specific anonymization services (mirrors the Java Filter constructor):
+        // each strategy gets the service for this filter type, drawing FROM_LIST when the strategy
+        // carries anonymization candidates and generating realistic values otherwise.
+        var random = new Random();
+        foreach (var strategy in Strategies)
+        {
+            if (strategy.AnonymizationService != null) continue;
+            strategy.AnonymizationService = AnonymizationServiceFactory.Create(
+                filterType,
+                strategy.ContextService ?? new InMemoryContextService(),
+                random,
+                strategy.AnonymizationCandidates,
+                AnonymizationMethods.FromString(strategy.AnonymizationMethod ?? "realistic"));
+        }
     }
 
     /// <summary>

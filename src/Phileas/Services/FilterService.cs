@@ -18,12 +18,17 @@ using System.Collections;
 using System.Text;
 using Phileas.Filters;
 using Phileas.Filters.PhEye;
+using Phileas.Filters.Rules.Dictionary;
 using Phileas.Filters.Rules.Regex;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
+using Phileas.Services.Anonymization;
+using Phileas.Services.Disambiguation;
+using Phileas.Services.Split;
+using Phileas.Services.Tokens;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Services;
@@ -33,24 +38,121 @@ namespace Phileas.Services;
 /// </summary>
 public class FilterService : IFilterService
 {
+    /// <summary>The context-window size used when a filter does not specify one of its own.</summary>
+    private const int DefaultWindowSize = 5;
+
+    private readonly bool _incrementalRedactionsEnabled;
+    private readonly ISpanDisambiguationService _disambiguationService;
+    private static readonly WhitespaceTokenCounter TokenCounter = new();
+
+    /// <summary>Creates a filter service.</summary>
+    public FilterService() : this(false)
+    {
+    }
+
+    /// <summary>Creates a filter service, optionally recording the incremental redaction trail.</summary>
+    /// <param name="incrementalRedactionsEnabled">When <see langword="true" />, each result carries a per-redaction snapshot trail.</param>
+    public FilterService(bool incrementalRedactionsEnabled)
+        : this(incrementalRedactionsEnabled, new NoOpSpanDisambiguationService())
+    {
+    }
+
+    /// <summary>
+    ///     Creates a filter service with span disambiguation. When the supplied service is enabled,
+    ///     spans competing at the same location are resolved by surrounding context before overlap
+    ///     resolution.
+    /// </summary>
+    /// <param name="incrementalRedactionsEnabled">When <see langword="true" />, each result carries a per-redaction snapshot trail.</param>
+    /// <param name="disambiguationService">The span disambiguation service (use a no-op to disable).</param>
+    public FilterService(bool incrementalRedactionsEnabled, ISpanDisambiguationService disambiguationService)
+    {
+        _incrementalRedactionsEnabled = incrementalRedactionsEnabled;
+        _disambiguationService = disambiguationService;
+    }
+
     /// <inheritdoc />
     public TextFilterResult Filter(PhileasPolicy policy, string context, int piece, string input,
         IContextService? contextService = null)
     {
         contextService ??= new InMemoryContextService();
-        var allSpans = new List<Span>();
-
         var filters = BuildFilters(policy, contextService);
+
+        // Split the input when the policy enables splitting and the document is over the threshold,
+        // filter each piece independently, and combine the per-piece results.
+        var splitting = policy.Config.Splitting;
+        if (splitting.Enabled && input.Length >= splitting.Threshold)
+        {
+            var splitService = SplitFactory.GetSplitService(splitting.Method, splitting.Threshold);
+            var splits = splitService.Split(input);
+
+            var results = new List<TextFilterResult>();
+            for (var i = 0; i < splits.Count; i++)
+            {
+                results.Add(ProcessPiece(policy, filters, context, i, splits[i]));
+            }
+
+            return TextFilterResult.Combine(results, context, splitService.GetSeparator());
+        }
+
+        return ProcessPiece(policy, filters, context, piece, input);
+    }
+
+    private TextFilterResult ProcessPiece(PhileasPolicy policy, IList<AbstractFilter> filters, string context,
+        int piece, string input)
+    {
+        var allSpans = new List<Span>();
         foreach (var filter in filters)
         {
             var filtered = filter.Filter(policy, context, piece, input);
             allSpans.AddRange(filtered.Spans);
         }
 
-        var finalSpans = Span.DropOverlappingSpans(allSpans);
-        var filteredText = ApplyReplacements(input, finalSpans);
+        // Resolve spans that compete at the same location (same text classified as different types) using
+        // their surrounding context, before overlapping spans are dropped. A no-op service leaves the
+        // spans untouched.
+        var disambiguatedSpans = _disambiguationService.Disambiguate(context, allSpans);
 
-        return new TextFilterResult(filteredText, finalSpans);
+        var finalSpans = Span.DropOverlappingSpans(disambiguatedSpans);
+        finalSpans = ApplyGlobalIgnored(policy, finalSpans);
+        var (filteredText, incrementalRedactions) = ApplyReplacements(input, finalSpans);
+
+        return new TextFilterResult(filteredText, context, piece, finalSpans, incrementalRedactions,
+            TokenCounter.CountTokens(input));
+    }
+
+    /// <summary>
+    ///     Applies the policy's document-scoped <c>ignored</c> sets, removing any span whose entity text
+    ///     matches an ignored term (or a term loaded from an ignored file). Mirrors the Java
+    ///     <c>IgnoredTermsFilter</c> post-filter, which applies regardless of which filter produced the span.
+    /// </summary>
+    private static IList<Span> ApplyGlobalIgnored(PhileasPolicy policy, IList<Span> spans)
+    {
+        if (policy.Ignored == null || policy.Ignored.Count == 0)
+            return spans;
+
+        var result = spans;
+        foreach (var ignored in policy.Ignored)
+        {
+            var terms = new HashSet<string>();
+            foreach (var term in ignored.Terms)
+                terms.Add(ignored.CaseSensitive ? term : term.ToLowerInvariant());
+
+            foreach (var file in ignored.Files)
+            {
+                if (!File.Exists(file))
+                    continue;
+                foreach (var line in File.ReadAllLines(file))
+                    terms.Add(ignored.CaseSensitive ? line : line.ToLowerInvariant());
+            }
+
+            if (terms.Count == 0)
+                continue;
+
+            result = result.Where(span =>
+                !terms.Contains(ignored.CaseSensitive ? span.Text : span.Text.ToLowerInvariant())).ToList();
+        }
+
+        return result;
     }
 
     /// <inheritdoc />
@@ -100,7 +202,11 @@ public class FilterService : IFilterService
         if (identifiers.Ssn != null)
             filters.Add(BuildFilter<SsnFilter, SsnFilterStrategy>(identifiers.Ssn, policy, contextService));
         if (identifiers.ZipCode != null)
-            filters.Add(BuildFilter<ZipCodeFilter, ZipCodeFilterStrategy>(identifiers.ZipCode, policy, contextService));
+        {
+            var zipConfig = BuildRegexConfig<ZipCodeFilterStrategy>(identifiers.ZipCode, policy, contextService);
+            filters.Add(new ZipCodeFilter(zipConfig, identifiers.ZipCode.RequireDelimiter,
+                identifiers.ZipCode.Validate));
+        }
         if (identifiers.CreditCard != null)
             filters.Add(
                 BuildFilter<CreditCardFilter, CreditCardFilterStrategy>(identifiers.CreditCard, policy,
@@ -124,7 +230,10 @@ public class FilterService : IFilterService
         if (identifiers.Vin != null)
             filters.Add(BuildFilter<VinFilter, VinFilterStrategy>(identifiers.Vin, policy, contextService));
         if (identifiers.Date != null)
-            filters.Add(BuildFilter<DateFilter, DateFilterStrategy>(identifiers.Date, policy, contextService));
+        {
+            var dateConfig = BuildRegexConfig<DateFilterStrategy>(identifiers.Date, policy, contextService);
+            filters.Add(new DateFilter(dateConfig, identifiers.Date.OnlyValidDates));
+        }
         if (identifiers.PassportNumber != null)
             filters.Add(BuildFilter<PassportNumberFilter, PassportNumberFilterStrategy>(identifiers.PassportNumber,
                 policy, contextService));
@@ -167,6 +276,9 @@ public class FilterService : IFilterService
                             MaskLength = s.MaskLength,
                             Condition = s.Condition,
                             Salt = s.Salt,
+                            AnonymizationMethod = s.AnonymizationMethod,
+                            AnonymizationCandidates = s.AnonymizationCandidates,
+                            ReplacementScope = s.ReplacementScope,
                             ContextService = contextService
                         });
 
@@ -182,9 +294,9 @@ public class FilterService : IFilterService
                     .WithStrategies(strategies)
                     .WithIgnored(ignored)
                     .WithIgnoredPatterns(phEye.IgnoredPatterns ?? new List<IgnoredPattern>())
-                    .WithWindowSize(policy.Config.WindowSize)
+                    .WithWindowSize(phEye.GetWindowSizeOrDefault(DefaultWindowSize))
                     .WithPriority(phEye.Priority)
-                    .WithPostFilters(policy.PostFilters)
+                    .WithPostFilters(policy.Config.PostFilters)
                     .Build();
 
                 filters.Add(
@@ -206,6 +318,9 @@ public class FilterService : IFilterService
                             MaskLength = s.MaskLength,
                             Condition = s.Condition,
                             Salt = s.Salt,
+                            AnonymizationMethod = s.AnonymizationMethod,
+                            AnonymizationCandidates = s.AnonymizationCandidates,
+                            ReplacementScope = s.ReplacementScope,
                             ContextService = contextService
                         });
 
@@ -221,20 +336,157 @@ public class FilterService : IFilterService
                     .WithStrategies(strategies)
                     .WithIgnored(ignored)
                     .WithIgnoredPatterns(dictionary.IgnoredPatterns ?? new List<IgnoredPattern>())
-                    .WithWindowSize(policy.Config.WindowSize)
+                    .WithWindowSize(dictionary.GetWindowSizeOrDefault(DefaultWindowSize))
                     .WithPriority(dictionary.Priority)
-                    .WithPostFilters(policy.PostFilters)
+                    .WithPostFilters(policy.Config.PostFilters)
                     .Build();
 
                 filters.Add(new DictionaryFilter(config, dictionary.Terms, dictionary.Fuzzy, dictionary.Level));
             }
 
+        // Dictionary-backed name/location filters (load the bundled term lists by filter type).
+        if (identifiers.City != null)
+            filters.Add(BuildDictionaryFilter(identifiers.City, identifiers.City.Strategies, FilterType.LocationCity,
+                identifiers.City.Fuzzy, identifiers.City.Sensitivity, identifiers.City.Capitalized, policy, contextService));
+        if (identifiers.County != null)
+            filters.Add(BuildDictionaryFilter(identifiers.County, identifiers.County.Strategies, FilterType.LocationCounty,
+                identifiers.County.Fuzzy, identifiers.County.Sensitivity, identifiers.County.Capitalized, policy, contextService));
+        if (identifiers.State != null)
+            filters.Add(BuildDictionaryFilter(identifiers.State, identifiers.State.Strategies, FilterType.LocationState,
+                identifiers.State.Fuzzy, identifiers.State.Sensitivity, identifiers.State.Capitalized, policy, contextService));
+        if (identifiers.Hospital != null)
+            filters.Add(BuildDictionaryFilter(identifiers.Hospital, identifiers.Hospital.Strategies, FilterType.Hospital,
+                identifiers.Hospital.Fuzzy, identifiers.Hospital.Sensitivity, identifiers.Hospital.Capitalized, policy, contextService));
+        if (identifiers.FirstName != null)
+            filters.Add(BuildDictionaryFilter(identifiers.FirstName, identifiers.FirstName.Strategies, FilterType.FirstName,
+                identifiers.FirstName.Fuzzy, identifiers.FirstName.Sensitivity, identifiers.FirstName.Capitalized, policy, contextService));
+        if (identifiers.Surname != null)
+            filters.Add(BuildDictionaryFilter(identifiers.Surname, identifiers.Surname.Strategies, FilterType.Surname,
+                identifiers.Surname.Fuzzy, identifiers.Surname.Sensitivity, identifiers.Surname.Capitalized, policy, contextService));
+
+        if (identifiers.CustomDictionaries != null)
+            foreach (var customDictionary in identifiers.CustomDictionaries)
+                filters.Add(BuildCustomDictionaryFilter(customDictionary, policy, contextService));
+
+        // Custom regex identifier filters.
+        if (identifiers.CustomIdentifiers != null)
+            foreach (var identifier in identifiers.CustomIdentifiers)
+            {
+                var config = BuildDictionaryConfig(identifier, identifier.Strategies, FilterType.Identifier, policy,
+                    contextService);
+                filters.Add(new IdentifierFilter(config, identifier.Classification, identifier.Pattern,
+                    identifier.CaseSensitive, identifier.GroupNumber));
+            }
+
+        // Section filters.
+        if (identifiers.Sections != null)
+            foreach (var section in identifiers.Sections)
+            {
+                var config = BuildDictionaryConfig(section, section.Strategies, FilterType.Section, policy,
+                    contextService);
+                filters.Add(new SectionFilter(config, section.StartPattern ?? string.Empty,
+                    section.EndPattern ?? string.Empty));
+            }
+
         return filters;
+    }
+
+    private AbstractFilter BuildDictionaryFilter(AbstractPolicyFilter policyFilter,
+        IEnumerable<Policy.Filters.Strategies.AbstractFilterStrategy>? policyStrategies, FilterType filterType,
+        bool fuzzy, string sensitivity, bool capitalized, PhileasPolicy policy, IContextService contextService)
+    {
+        var config = BuildDictionaryConfig(policyFilter, policyStrategies, filterType, policy, contextService);
+        return fuzzy
+            ? new FuzzyDictionaryFilter(filterType, config, SensitivityLevels.FromName(sensitivity), capitalized)
+            : new SetDictionaryFilter(filterType, config);
+    }
+
+    private AbstractFilter BuildCustomDictionaryFilter(Policy.Filters.CustomDictionary customDictionary,
+        PhileasPolicy policy, IContextService contextService)
+    {
+        var config = BuildDictionaryConfig(customDictionary, customDictionary.Strategies, FilterType.CustomDictionary,
+            policy, contextService);
+        var terms = customDictionary.Terms ?? new List<string>();
+        return customDictionary.Fuzzy
+            ? new FuzzyDictionaryFilter(FilterType.CustomDictionary, config,
+                SensitivityLevels.FromName(customDictionary.Sensitivity), terms, customDictionary.Capitalized)
+            : new SetDictionaryFilter(FilterType.CustomDictionary, config, terms, customDictionary.Classification);
+    }
+
+    private FilterConfiguration BuildDictionaryConfig(AbstractPolicyFilter policyFilter,
+        IEnumerable<Policy.Filters.Strategies.AbstractFilterStrategy>? policyStrategies, FilterType filterType,
+        PhileasPolicy policy, IContextService contextService)
+    {
+        var strategies = new List<AbstractFilterStrategy>();
+        if (policyStrategies != null)
+            foreach (var s in policyStrategies)
+            {
+                var runtimeStrategy = CreateDictionaryRuntimeStrategy(filterType);
+                runtimeStrategy.Strategy = s.Strategy;
+                runtimeStrategy.RedactionFormat = s.RedactionFormat;
+                runtimeStrategy.StaticReplacement = s.StaticReplacement ?? string.Empty;
+                runtimeStrategy.MaskCharacter = s.MaskCharacter;
+                runtimeStrategy.MaskLength = s.MaskLength;
+                runtimeStrategy.Condition = s.Condition;
+                runtimeStrategy.Salt = s.Salt;
+                runtimeStrategy.AnonymizationMethod = s.AnonymizationMethod;
+                runtimeStrategy.AnonymizationCandidates = s.AnonymizationCandidates;
+                runtimeStrategy.ReplacementScope = s.ReplacementScope;
+                runtimeStrategy.ContextService = contextService;
+                strategies.Add(runtimeStrategy);
+            }
+
+        if (strategies.Count == 0)
+        {
+            var runtimeStrategy = CreateDictionaryRuntimeStrategy(filterType);
+            runtimeStrategy.ContextService = contextService;
+            strategies.Add(runtimeStrategy);
+        }
+
+        var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (policyFilter.Ignored != null)
+            foreach (var s in policyFilter.Ignored)
+                ignored.Add(s);
+
+        var config = new FilterConfiguration.Builder()
+            .WithStrategies(strategies)
+            .WithIgnored(ignored)
+            .WithIgnoredPatterns(policyFilter.IgnoredPatterns ?? new List<IgnoredPattern>())
+            .WithWindowSize(policyFilter.GetWindowSizeOrDefault(DefaultWindowSize))
+            .WithPriority(policyFilter.Priority)
+            .WithPostFilters(policy.Config.PostFilters)
+            .Build();
+
+        return config;
+    }
+
+    private static AbstractFilterStrategy CreateDictionaryRuntimeStrategy(FilterType filterType)
+    {
+        return filterType switch
+        {
+            FilterType.LocationCity => new Filters.Strategies.Rules.CityFilterStrategy(),
+            FilterType.LocationCounty => new Filters.Strategies.Rules.CountyFilterStrategy(),
+            FilterType.LocationState => new Filters.Strategies.Rules.StateFilterStrategy(),
+            FilterType.Hospital => new Filters.Strategies.Rules.HospitalFilterStrategy(),
+            FilterType.FirstName => new Filters.Strategies.Rules.FirstNameFilterStrategy(),
+            FilterType.Surname => new Filters.Strategies.Rules.SurnameFilterStrategy(),
+            FilterType.Identifier => new Filters.Strategies.Rules.IdentifierFilterStrategy(),
+            FilterType.Section => new Filters.Strategies.Rules.SectionFilterStrategy(),
+            _ => new Filters.Strategies.Rules.CustomDictionaryFilterStrategy()
+        };
     }
 
     private TFilter BuildFilter<TFilter, TStrategy>(
         AbstractPolicyFilter policyFilter, PhileasPolicy policy, IContextService contextService)
         where TFilter : RegexFilter
+        where TStrategy : AbstractFilterStrategy, new()
+    {
+        var config = BuildRegexConfig<TStrategy>(policyFilter, policy, contextService);
+        return (TFilter)Activator.CreateInstance(typeof(TFilter), config)!;
+    }
+
+    private FilterConfiguration BuildRegexConfig<TStrategy>(
+        AbstractPolicyFilter policyFilter, PhileasPolicy policy, IContextService contextService)
         where TStrategy : AbstractFilterStrategy, new()
     {
         // Extract strategies from the policyFilter using reflection
@@ -272,38 +524,53 @@ public class FilterService : IFilterService
             foreach (var s in policyFilter.Ignored)
                 ignored.Add(s);
 
-        var config = new FilterConfiguration.Builder()
+        return new FilterConfiguration.Builder()
             .WithStrategies(strategies)
             .WithIgnored(ignored)
             .WithIgnoredPatterns(policyFilter.IgnoredPatterns ?? new List<IgnoredPattern>())
             .WithCrypto(policy.Crypto)
             .WithFpe(policy.Fpe)
-            .WithWindowSize(policy.Config.WindowSize)
+            .WithWindowSize(policyFilter.GetWindowSizeOrDefault(DefaultWindowSize))
             .WithPriority(policyFilter.Priority)
-            .WithPostFilters(policy.PostFilters)
+            .WithPostFilters(policy.Config.PostFilters)
             .Build();
-
-        return (TFilter)Activator.CreateInstance(typeof(TFilter), config)!;
     }
 
-    private string ApplyReplacements(string input, IList<Span> spans)
-    {
-        if (!spans.Any()) return input;
 
-        var result = new StringBuilder();
-        var lastIndex = 0;
+    private (string FilteredText, IList<IncrementalRedaction> IncrementalRedactions) ApplyReplacements(
+        string input, IList<Span> spans)
+    {
+        var incrementalRedactions = new List<IncrementalRedaction>();
+        if (!spans.Any()) return (input, incrementalRedactions);
+
+        // Apply the replacements in ascending start order, tracking the cumulative offset introduced by
+        // replacements whose length differs from the original span. The spans do not overlap, so this
+        // single left-to-right pass is safe.
+        var sb = new StringBuilder(input);
+        var offset = 0;
 
         foreach (var span in spans.OrderBy(s => s.CharacterStart))
         {
-            if (span.CharacterStart > lastIndex)
-                result.Append(input, lastIndex, span.CharacterStart - lastIndex);
-            result.Append(span.Replacement);
-            lastIndex = span.CharacterEnd;
+            var start = span.CharacterStart + offset;
+            var length = span.CharacterEnd - span.CharacterStart;
+            sb.Remove(start, length);
+            sb.Insert(start, span.Replacement);
+            offset += span.Replacement.Length - length;
+
+            if (_incrementalRedactionsEnabled)
+            {
+                // Hash the document as it stands after this redaction.
+                var snapshot = sb.ToString();
+                incrementalRedactions.Add(new IncrementalRedaction(Sha256Hex(snapshot), span, snapshot));
+            }
         }
 
-        if (lastIndex < input.Length)
-            result.Append(input, lastIndex, input.Length - lastIndex);
+        return (sb.ToString(), incrementalRedactions);
+    }
 
-        return result.ToString();
+    private static string Sha256Hex(string text)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 }

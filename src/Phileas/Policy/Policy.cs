@@ -15,6 +15,7 @@
  */
 
 using System.Text.Json.Serialization;
+using Philterd.PhiSql;
 
 namespace Phileas.Policy;
 
@@ -25,8 +26,41 @@ namespace Phileas.Policy;
 /// </summary>
 public class Policy
 {
-    /// <summary>Gets or sets the human-readable name of the policy.</summary>
-    [JsonPropertyName("name")]
+    /// <summary>
+    ///     Creates a <see cref="Policy" /> from a PhiSQL document. The PhiSQL is compiled to a Phileas
+    ///     JSON policy by the <c>phisql</c> compiler and then deserialized into a <see cref="Policy" />;
+    ///     the runtime behaves identically to a policy loaded from JSON — PhiSQL is purely an additional
+    ///     authoring format.
+    /// </summary>
+    /// <param name="phisql">The PhiSQL document source.</param>
+    /// <returns>The compiled <see cref="Policy" />.</returns>
+    /// <exception cref="PolicyCompilationException">If the PhiSQL cannot be parsed or compiled.</exception>
+    public static Policy FromPhiSQL(string phisql)
+    {
+        CompileResult result;
+        try
+        {
+            result = new Compiler().Compile(phisql);
+        }
+        catch (Exception ex) when (ex is ParseException or CompileException)
+        {
+            // ParseException for syntax errors, CompileException for semantic ones (unknown entity
+            // type, strategy, and so on). Wrap them in a Phileas type so callers get one exception to
+            // catch and the original message is kept.
+            throw new PolicyCompilationException(
+                "The PhiSQL document could not be compiled into a policy: " + ex.Message, ex);
+        }
+
+        return PolicySerializer.DeserializeFromJson(result.ToJsonString());
+    }
+
+    /// <summary>
+    ///     Gets or sets the human-readable name of the policy. This is an in-memory convenience label only:
+    ///     the canonical Phileas policy JSON has no top-level <c>name</c> (the name is tracked separately —
+    ///     e.g. via the PhiSQL <c>POLICY</c> declaration or the source filename), so it is never serialized
+    ///     to or read from JSON.
+    /// </summary>
+    [JsonIgnore]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the global configuration settings for the policy.</summary>
@@ -53,7 +87,7 @@ public class Policy
     [JsonPropertyName("ignoredPatterns")]
     public List<IgnoredPattern> IgnoredPatterns { get; set; } = new();
 
-    /// <summary>Gets or sets the post-filter settings that trim trailing characters from detected entity text.</summary>
-    [JsonPropertyName("postFilters")]
-    public PostFilters PostFilters { get; set; } = new();
+    /// <summary>Gets or sets the graphical redaction configuration (fixed bounding boxes).</summary>
+    [JsonPropertyName("graphical")]
+    public Graphical Graphical { get; set; } = new();
 }

@@ -1,0 +1,4 @@
+# The synthetic-data generators are mechanical ports with self-evident members; suppress the
+# "missing XML doc comment" warning (CS1591) for this tree to keep the build warning-free.
+[*.cs]
+dotnet_diagnostic.CS1591.severity = none

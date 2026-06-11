@@ -98,9 +98,9 @@ public class FilterServiceTests
     public void Filter_DefaultPostFilters_AllEnabled()
     {
         var policy = new PhileasPolicy { Name = "test" };
-        Assert.True(policy.PostFilters.TrailingNewLines);
-        Assert.True(policy.PostFilters.TrailingPeriods);
-        Assert.True(policy.PostFilters.TrailingSpaces);
+        Assert.True(policy.Config.PostFilters.RemoveTrailingNewLines);
+        Assert.True(policy.Config.PostFilters.RemoveTrailingPeriods);
+        Assert.True(policy.Config.PostFilters.RemoveTrailingSpaces);
     }
 
     [Fact]
@@ -110,7 +110,13 @@ public class FilterServiceTests
         {
             Name = "test",
             Identifiers = new Identifiers { Ssn = new Ssn() },
-            PostFilters = new PostFilters { TrailingNewLines = false, TrailingPeriods = false, TrailingSpaces = false }
+            Config = new Config
+            {
+                PostFilters = new PostFilters
+                {
+                    RemoveTrailingNewLines = false, RemoveTrailingPeriods = false, RemoveTrailingSpaces = false
+                }
+            }
         };
 
         // SSN regex uses \b so trailing chars are not captured; ensure filter still works normally
@@ -125,14 +131,20 @@ public class FilterServiceTests
         var policy = new PhileasPolicy
         {
             Name = "test",
-            PostFilters = new PostFilters { TrailingNewLines = false, TrailingPeriods = true, TrailingSpaces = false }
+            Config = new Config
+            {
+                PostFilters = new PostFilters
+                {
+                    RemoveTrailingNewLines = false, RemoveTrailingPeriods = true, RemoveTrailingSpaces = false
+                }
+            }
         };
 
         var json = JsonSerializer.Serialize(policy);
         Assert.Contains("postFilters", json);
-        Assert.Contains("trailingNewLines", json);
-        Assert.Contains("trailingPeriods", json);
-        Assert.Contains("trailingSpaces", json);
+        Assert.Contains("removeTrailingNewLines", json);
+        Assert.Contains("removeTrailingPeriods", json);
+        Assert.Contains("removeTrailingSpaces", json);
     }
 
     [Fact]
@@ -140,19 +152,20 @@ public class FilterServiceTests
     {
         var json = """
                    {
-                       "name": "test",
-                       "postFilters": {
-                           "trailingNewLines": false,
-                           "trailingPeriods": true,
-                           "trailingSpaces": false
+                       "config": {
+                           "postFilters": {
+                               "removeTrailingNewLines": false,
+                               "removeTrailingPeriods": true,
+                               "removeTrailingSpaces": false
+                           }
                        }
                    }
                    """;
 
         var policy = JsonSerializer.Deserialize<PhileasPolicy>(json);
         Assert.NotNull(policy);
-        Assert.False(policy.PostFilters.TrailingNewLines);
-        Assert.True(policy.PostFilters.TrailingPeriods);
-        Assert.False(policy.PostFilters.TrailingSpaces);
+        Assert.False(policy.Config.PostFilters.RemoveTrailingNewLines);
+        Assert.True(policy.Config.PostFilters.RemoveTrailingPeriods);
+        Assert.False(policy.Config.PostFilters.RemoveTrailingSpaces);
     }
 }

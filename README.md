@@ -3,6 +3,11 @@
 A .NET port of [Phileas (Java)](https://github.com/philterd/phileas) — a library to deidentify and redact PII, PHI, and
 other sensitive information from text.
 
+> **Parity note:** This implementation is close to parity with the Java Phileas reference implementation, but it may
+> never achieve true, exact parity. The two libraries serve overlapping but not identical use cases, and the Java and
+> .NET ecosystems differ (available libraries, APIs, and platform conventions), so some behaviors and capabilities are
+> intentionally adapted rather than mirrored one-to-one.
+
 * Check out the [documentation](https://philterd.github.io/phileas-net/) or details and code examples.
 * Built by [Philterd](https://www.philterd.ai).
 * Commercial support and consulting is available - [contact us](https://www.philterd.ai).

@@ -19,17 +19,26 @@ using System.Text.Json.Serialization;
 namespace Phileas.Policy;
 
 /// <summary>
-///     Specifies a single literal value that should be excluded from filtering.
+///     A named set of literal terms (and term files) that should be excluded from filtering. Mirrors the
+///     canonical Phileas <c>ignored</c> entry.
 /// </summary>
 public class Ignored
 {
-    /// <summary>Gets or sets the literal value to ignore.</summary>
-    [JsonPropertyName("value")]
-    public string? Value { get; set; }
+    /// <summary>Gets or sets the name of this ignored set.</summary>
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    /// <summary>Gets or sets the literal terms to ignore.</summary>
+    [JsonPropertyName("terms")]
+    public List<string> Terms { get; set; } = new();
+
+    /// <summary>Gets or sets the files whose contents provide additional terms to ignore.</summary>
+    [JsonPropertyName("files")]
+    public List<string> Files { get; set; } = new();
 
     /// <summary>
-    ///     Gets or sets a value indicating whether the comparison is case-sensitive. Defaults to <see langword="false" />
-    ///     .
+    ///     Gets or sets a value indicating whether term comparison is case-sensitive. Defaults to
+    ///     <see langword="false" />.
     /// </summary>
     [JsonPropertyName("caseSensitive")]
     public bool CaseSensitive { get; set; } = false;

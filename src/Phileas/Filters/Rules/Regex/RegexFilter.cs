@@ -58,8 +58,19 @@ public abstract class RegexFilter : RulesFilter
 
         foreach (var filterPattern in analyzer.FilterPatterns)
         {
-            var matches = filterPattern.Pattern.Matches(input);
-            foreach (Match match in matches)
+            // MatchCollection is lazy, so materialize it under the pattern's match budget: a pattern
+            // that exceeds its timeout is abandoned (contributing no spans) rather than stalling filtering.
+            List<Match> matches;
+            try
+            {
+                matches = filterPattern.Pattern.Matches(input).ToList();
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                continue;
+            }
+
+            foreach (var match in matches)
             {
                 string matchText;
                 int matchStart;
@@ -97,6 +108,7 @@ public abstract class RegexFilter : RulesFilter
                     window, Priority);
                 span.AlwaysValid = filterPattern.AlwaysValid;
                 span.Classification = filterPattern.Classification ?? Classification;
+                span.Pattern = filterPattern.Format;
 
                 spans.Add(span);
             }

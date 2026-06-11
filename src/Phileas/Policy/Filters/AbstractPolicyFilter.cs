@@ -24,6 +24,10 @@ namespace Phileas.Policy.Filters;
 /// </summary>
 public abstract class AbstractPolicyFilter
 {
+    /// <summary>Gets or sets a value indicating whether this filter is enabled. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; } = true;
+
     /// <summary>Gets or sets the list of literal values that the filter should ignore.</summary>
     [JsonPropertyName("ignored")]
     public List<string>? Ignored { get; set; }
@@ -37,11 +41,11 @@ public abstract class AbstractPolicyFilter
     public List<IgnoredPattern>? IgnoredPatterns { get; set; }
 
     /// <summary>
-    ///     Gets or sets the detection sensitivity level (<c>"low"</c>, <c>"medium"</c>, or <c>"high"</c>). Defaults to
-    ///     <c>"medium"</c>.
+    ///     Gets or sets the number of words on each side of a detected entity that form the context window. A value
+    ///     of 0 means "unset"; callers fall back to a default via <see cref="GetWindowSizeOrDefault" />.
     /// </summary>
-    [JsonPropertyName("sensitivity")]
-    public string Sensitivity { get; set; } = "medium";
+    [JsonPropertyName("windowSize")]
+    public int WindowSize { get; set; }
 
     /// <summary>
     ///     Gets or sets the filter priority. Higher values are applied before lower values when resolving overlapping
@@ -49,4 +53,14 @@ public abstract class AbstractPolicyFilter
     /// </summary>
     [JsonPropertyName("priority")]
     public int Priority { get; set; } = 0;
+
+    /// <summary>
+    ///     Returns the configured <see cref="WindowSize" />, or <paramref name="defaultWindowSize" /> when the
+    ///     window size is unset (0).
+    /// </summary>
+    /// <param name="defaultWindowSize">The fallback window size to use when none is configured.</param>
+    public int GetWindowSizeOrDefault(int defaultWindowSize)
+    {
+        return WindowSize == 0 ? defaultWindowSize : WindowSize;
+    }
 }

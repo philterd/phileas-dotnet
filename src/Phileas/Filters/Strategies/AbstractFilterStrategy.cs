@@ -17,6 +17,7 @@
 using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Services;
+using Phileas.Services.Anonymization;
 
 namespace Phileas.Filters;
 
@@ -62,6 +63,12 @@ public abstract class AbstractFilterStrategy
     /// <summary>Default redaction format string; <c>%t</c> is replaced with the filter-type slug.</summary>
     public const string DefaultRedaction = "{{{REDACTED-%t}}}";
 
+    /// <summary>Replacement-scope constant: anonymize each occurrence independently (the default).</summary>
+    public const string ReplacementScopeDocument = "DOCUMENT";
+
+    /// <summary>Replacement-scope constant: reuse a token's replacement across the context (referential integrity).</summary>
+    public const string ReplacementScopeContext = "CONTEXT";
+
     /// <summary>Gets or sets the replacement strategy name. Defaults to <see cref="Redact" />.</summary>
     public string Strategy { get; set; } = Redact;
 
@@ -103,6 +110,33 @@ public abstract class AbstractFilterStrategy
     ///     <see langword="null" />.
     /// </summary>
     public IContextService? ContextService { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the anonymization service that produces realistic fake values for the
+    ///     <see cref="RandomReplace" /> strategy. When <see langword="null" />, RANDOM_REPLACE falls back to
+    ///     a random UUID.
+    /// </summary>
+    public IAnonymizationService? AnonymizationService { get; set; }
+
+    /// <summary>
+    ///     Gets or sets how the <see cref="RandomReplace" /> strategy produces replacements:
+    ///     <c>"realistic"</c> (default), <c>"from_list"</c>, or <c>"uuid"</c>.
+    /// </summary>
+    public string? AnonymizationMethod { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the candidate values the <see cref="RandomReplace" /> strategy draws from. When
+    ///     non-empty, the wired anonymization service picks from this list instead of generating realistic values.
+    /// </summary>
+    public List<string>? AnonymizationCandidates { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the scope over which a <see cref="RandomReplace" /> replacement is reused.
+    ///     <see cref="ReplacementScopeContext" /> reuses a token's previously generated replacement (referential
+    ///     integrity across the context); <see cref="ReplacementScopeDocument" /> (the default) anonymizes each
+    ///     occurrence independently.
+    /// </summary>
+    public string ReplacementScope { get; set; } = ReplacementScopeDocument;
 
     /// <summary>
     ///     Computes the replacement value for a detected entity.

@@ -4,7 +4,7 @@ This guide walks you through adding phileas-net to a .NET project and running yo
 
 ## Prerequisites
 
-- .NET 8 or later
+- .NET 10 or later
 - A project that references the `Phileas` NuGet package or project
 
 ## Installation
@@ -104,15 +104,13 @@ var policy = new Policy
 
 ## Loading a Policy from JSON
 
-Policies can be serialised as JSON and deserialised at runtime:
+Policies can be serialised as JSON and deserialised at runtime. Use `PolicySerializer` rather than `System.Text.Json` directly — it applies the canonical serialization options (null omission) and resolves `${ENV_VAR}` placeholders against environment variables:
 
 ```csharp
-using System.Text.Json;
 using Phileas.Policy;
 
 const string json = """
 {
-  "name": "json-policy",
   "identifiers": {
     "ssn": {},
     "emailAddress": {}
@@ -120,8 +118,13 @@ const string json = """
 }
 """;
 
-var policy = JsonSerializer.Deserialize<Policy>(json)!;
+var policy = PolicySerializer.DeserializeFromJson(json);
+
+// And back to JSON:
+string serialized = PolicySerializer.SerializeToJson(policy);
 ```
+
+> The canonical policy JSON has no top-level `name` field — the policy `Name` is an in-memory label only and is not serialized. Policies can also be authored in PhiSQL and compiled with `Policy.FromPhiSQL(phisql)`.
 
 ## Using Conditional Strategies
 

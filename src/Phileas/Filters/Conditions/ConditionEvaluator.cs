@@ -15,6 +15,7 @@
  */
 
 using System.Text.RegularExpressions;
+using Phileas.Model.Metadata;
 
 namespace Phileas.Filters.Conditions;
 
@@ -30,6 +31,8 @@ namespace Phileas.Filters.Conditions;
 /// </summary>
 public static class ConditionEvaluator
 {
+    private static readonly ZipCodeMetadataService ZipCodeMetadata = new();
+
     private static readonly Regex ConditionPattern = new(
         @"^\s*(?<field>population|token|type|confidence|context)\s+(?<op>>|<|<=|>=|==|!=|startswith|is|is not)\s+(?<value>""[^""]*""|\d+(?:\.\d+)?)\s*(?<and>and\s+(?<rest>.+))?$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
@@ -79,7 +82,7 @@ public static class ConditionEvaluator
         // Evaluate current condition
         var result = field switch
         {
-            "population" => EvaluatePopulation(op, valueStr),
+            "population" => EvaluatePopulation(op, valueStr, token),
             "token" => EvaluateToken(op, valueStr, token),
             "type" => EvaluateType(op, valueStr, classification),
             "confidence" => EvaluateConfidence(op, valueStr, confidence),
@@ -94,11 +97,28 @@ public static class ConditionEvaluator
         return result;
     }
 
-    private static bool EvaluatePopulation(string op, string valueStr)
+    private static bool EvaluatePopulation(string op, string valueStr, string token)
     {
-        // Population is not supported in phileas-net (requires external data)
-        // Always return true
-        return true;
+        // The population condition applies to zip-code tokens: look up the census population for the
+        // token and compare against the configured value. A zip code not present in the census data
+        // fails the condition (mirrors the Java ZipCodeFilterStrategy).
+        if (!int.TryParse(valueStr, out var value))
+            return false;
+
+        var (population, exists) = ZipCodeMetadata.GetMetadata(token);
+        if (!exists)
+            return false;
+
+        return op switch
+        {
+            ">" => population > value,
+            "<" => population < value,
+            ">=" => population >= value,
+            "<=" => population <= value,
+            "==" or "is" => population == value,
+            "!=" or "is not" => population != value,
+            _ => false
+        };
     }
 
     private static bool EvaluateToken(string op, string valueStr, string token)

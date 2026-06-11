@@ -26,11 +26,11 @@ namespace Phileas.Tests;
 
 public class FpeStrategyTests
 {
-    // 256-bit key (32 bytes) Base64-encoded
-    private const string TestKey = "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXQ="; // 32 bytes
-    private const string TestTweak = "dHdlYWs="; // 5 bytes
+    // FF3 keys and tweaks are hex-encoded. Key is a 128-bit AES key; tweak is 56- or 64-bit.
+    private const string TestKey = "EF4359D8D580AA4F7F036D6F04FC6A94";
+    private const string TestTweak = "D8E7920AFA330A73";
 
-    private static SsnFilter CreateSsnFilterWithFpe(string? key = TestKey, string? tweak = null)
+    private static SsnFilter CreateSsnFilterWithFpe(string key = TestKey, string tweak = TestTweak)
     {
         var strategy = new SsnFilterStrategy { Strategy = "FPE_ENCRYPT_REPLACE" };
         var config = new FilterConfiguration.Builder()
@@ -42,133 +42,90 @@ public class FpeStrategyTests
         return new SsnFilter(config);
     }
 
-    private static PhileasPolicy CreateSsnPolicy(Fpe? fpe = null)
+    private static PhileasPolicy SsnPolicy()
     {
-        return new PhileasPolicy
-        {
-            Name = "test",
-            Identifiers = new Identifiers { Ssn = new Ssn() },
-            Fpe = fpe ?? new Fpe { Key = TestKey }
-        };
+        return new PhileasPolicy { Identifiers = new Identifiers { Ssn = new Ssn() } };
     }
 
     [Fact]
-    public void FpeStrategy_WithValidKey_ProducesNonOriginalOutput()
+    public void WithValidKey_ProducesNonOriginalOutput()
     {
-        var filter = CreateSsnFilterWithFpe();
-        var policy = CreateSsnPolicy();
-        var result = filter.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var result = CreateSsnFilterWithFpe().Filter(SsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
 
         Assert.NotEmpty(result.Spans);
         Assert.NotEqual("123-45-6789", result.Spans[0].Replacement);
     }
 
     [Fact]
-    public void FpeStrategy_PreservesDigitsAsDigits()
+    public void PreservesDigitsAsDigits()
     {
-        var filter = CreateSsnFilterWithFpe();
-        var policy = CreateSsnPolicy();
-        var result = filter.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var result = CreateSsnFilterWithFpe().Filter(SsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
 
         Assert.NotEmpty(result.Spans);
         var replacement = result.Spans[0].Replacement;
 
-        // Replacement must have the same format: DDD-DD-DDDD
+        // The structural dashes are preserved and the digits remain digits: DDD-DD-DDDD.
         Assert.Equal(11, replacement.Length);
         Assert.Equal('-', replacement[3]);
         Assert.Equal('-', replacement[6]);
-        Assert.All(replacement.Where((c, i) => i != 3 && i != 6), c => Assert.True(char.IsDigit(c)));
+        Assert.All(replacement.Where((_, i) => i != 3 && i != 6), c => Assert.True(char.IsDigit(c)));
     }
 
     [Fact]
-    public void FpeStrategy_IsDeterministic()
+    public void IsDeterministic()
     {
         var filter = CreateSsnFilterWithFpe();
-        var policy = CreateSsnPolicy();
-        const string input = "SSN: 123-45-6789";
+        var policy = SsnPolicy();
 
-        var result1 = filter.Filter(policy, "ctx", 0, input);
-        var result2 = filter.Filter(policy, "ctx", 0, input);
+        var r1 = filter.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var r2 = filter.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
 
-        Assert.NotEmpty(result1.Spans);
-        Assert.NotEmpty(result2.Spans);
-        Assert.Equal(result1.Spans[0].Replacement, result2.Spans[0].Replacement);
+        Assert.Equal(r1.Spans[0].Replacement, r2.Spans[0].Replacement);
     }
 
     [Fact]
-    public void FpeStrategy_DifferentKeys_ProduceDifferentOutput()
+    public void DifferentKeys_ProduceDifferentOutput()
     {
-        var key1 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; // 28+ bytes in base64
-        var key2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
+        const string key1 = "00000000000000000000000000000000";
+        const string key2 = "11111111111111111111111111111111";
 
-        var filter1 = CreateSsnFilterWithFpe(key1);
-        var filter2 = CreateSsnFilterWithFpe(key2);
+        var r1 = CreateSsnFilterWithFpe(key1).Filter(SsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
+        var r2 = CreateSsnFilterWithFpe(key2).Filter(SsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
 
-        var policy1 = new PhileasPolicy
-            { Name = "test", Identifiers = new Identifiers { Ssn = new Ssn() }, Fpe = new Fpe { Key = key1 } };
-        var policy2 = new PhileasPolicy
-            { Name = "test", Identifiers = new Identifiers { Ssn = new Ssn() }, Fpe = new Fpe { Key = key2 } };
-
-        var result1 = filter1.Filter(policy1, "ctx", 0, "SSN: 123-45-6789");
-        var result2 = filter2.Filter(policy2, "ctx", 0, "SSN: 123-45-6789");
-
-        Assert.NotEmpty(result1.Spans);
-        Assert.NotEmpty(result2.Spans);
-        Assert.NotEqual(result1.Spans[0].Replacement, result2.Spans[0].Replacement);
+        Assert.NotEqual(r1.Spans[0].Replacement, r2.Spans[0].Replacement);
     }
 
     [Fact]
-    public void FpeStrategy_WithTweak_IsDeterministic()
+    public void DifferentTweaks_ProduceDifferentOutput()
     {
-        var filter = CreateSsnFilterWithFpe(TestKey, TestTweak);
-        var policy = new PhileasPolicy
-        {
-            Name = "test",
-            Identifiers = new Identifiers { Ssn = new Ssn() },
-            Fpe = new Fpe { Key = TestKey, Tweak = TestTweak }
-        };
+        var r1 = CreateSsnFilterWithFpe(tweak: "D8E7920AFA330A73").Filter(SsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
+        var r2 = CreateSsnFilterWithFpe(tweak: "9A768A92F60E12D8").Filter(SsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
 
-        var result1 = filter.Filter(policy, "ctx", 0, "SSN: 234-56-7890");
-        var result2 = filter.Filter(policy, "ctx", 0, "SSN: 234-56-7890");
-
-        Assert.NotEmpty(result1.Spans);
-        Assert.Equal(result1.Spans[0].Replacement, result2.Spans[0].Replacement);
+        Assert.NotEqual(r1.Spans[0].Replacement, r2.Spans[0].Replacement);
     }
 
     [Fact]
-    public void FpeStrategy_WithNullFpe_FallsBackToRedact()
+    public void DifferentInputs_ProduceDifferentOutputs()
+    {
+        var filter = CreateSsnFilterWithFpe();
+        var policy = SsnPolicy();
+
+        var r1 = filter.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
+        var r2 = filter.Filter(policy, "ctx", 0, "SSN: 456-78-9012");
+
+        Assert.NotEqual(r1.Spans[0].Replacement, r2.Spans[0].Replacement);
+    }
+
+    [Fact]
+    public void MissingFpe_FailsValidation()
     {
         var strategy = new SsnFilterStrategy { Strategy = "FPE_ENCRYPT_REPLACE" };
-        var config = new FilterConfiguration.Builder()
+        var builder = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { strategy })
             .WithIgnored(new HashSet<string>())
-            .WithIgnoredPatterns(new List<IgnoredPattern>())
-            .Build();
-        var filter = new SsnFilter(config);
-        var policy = new PhileasPolicy
-        {
-            Name = "test",
-            Identifiers = new Identifiers { Ssn = new Ssn() }
-            // No Fpe configured
-        };
+            .WithIgnoredPatterns(new List<IgnoredPattern>());
 
-        var result = filter.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
-
-        Assert.NotEmpty(result.Spans);
-        Assert.Contains("REDACTED", result.Spans[0].Replacement);
-    }
-
-    [Fact]
-    public void FpeStrategy_DifferentInputs_ProduceDifferentOutputs()
-    {
-        var filter = CreateSsnFilterWithFpe();
-        var policy = CreateSsnPolicy();
-
-        var result1 = filter.Filter(policy, "ctx", 0, "SSN: 123-45-6789");
-        var result2 = filter.Filter(policy, "ctx", 0, "SSN: 456-78-9012");
-
-        Assert.NotEmpty(result1.Spans);
-        Assert.NotEmpty(result2.Spans);
-        Assert.NotEqual(result1.Spans[0].Replacement, result2.Spans[0].Replacement);
+        var ex = Assert.Throws<InvalidOperationException>(() => builder.Build());
+        Assert.Contains("FPE", ex.Message);
     }
 }

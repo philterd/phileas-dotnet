@@ -26,20 +26,20 @@ namespace Phileas.Policy;
 public class PostFilters
 {
     /// <summary>
-    ///     Gets or sets a value indicating whether trailing newline characters (<c>\n</c>, <c>\r</c>) are stripped
-    ///     from the end of matched entity text. Defaults to <see langword="true" />.
-    /// </summary>
-    [JsonPropertyName("trailingNewLines")] public bool TrailingNewLines { get; set; } = true;
-
-    /// <summary>
     ///     Gets or sets a value indicating whether trailing period characters (<c>.</c>) are stripped from the end
     ///     of matched entity text. Defaults to <see langword="true" />.
     /// </summary>
-    [JsonPropertyName("trailingPeriods")] public bool TrailingPeriods { get; set; } = true;
+    [JsonPropertyName("removeTrailingPeriods")] public bool RemoveTrailingPeriods { get; set; } = true;
 
     /// <summary>
     ///     Gets or sets a value indicating whether trailing space characters are stripped from the end of matched
     ///     entity text. Defaults to <see langword="true" />.
     /// </summary>
-    [JsonPropertyName("trailingSpaces")] public bool TrailingSpaces { get; set; } = true;
+    [JsonPropertyName("removeTrailingSpaces")] public bool RemoveTrailingSpaces { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether trailing newline characters (<c>\n</c>, <c>\r</c>) are stripped
+    ///     from the end of matched entity text. Defaults to <see langword="true" />.
+    /// </summary>
+    [JsonPropertyName("removeTrailingNewLines")] public bool RemoveTrailingNewLines { get; set; } = true;
 }

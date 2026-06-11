@@ -1,0 +1,68 @@
+/*
+ * Copyright 2026 Philterd, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using Phileas.Filters.Rules.Dictionary;
+using Phileas.Model;
+using Xunit;
+using static Phileas.Tests.Dictionaries.DictionaryTestSupport;
+
+namespace Phileas.Tests.Dictionaries;
+
+public class CountyFilterTests
+{
+    [Fact]
+    public void Low()
+    {
+        var filter = new FuzzyDictionaryFilter(FilterType.LocationCounty, Config(), SensitivityLevel.Low, true);
+        var spans = Span.DropOverlappingSpans(filter.Filter(GetPolicy(), "context", Piece, "Lived in Fyette").Spans);
+        Assert.Equal(2, spans.Count);
+    }
+
+    [Fact]
+    public void Medium()
+    {
+        var filter = new FuzzyDictionaryFilter(FilterType.LocationCounty, Config(), SensitivityLevel.Medium, true);
+        var spans = Span.DropOverlappingSpans(filter.Filter(GetPolicy(), "context", Piece, "He lived in Fyette County").Spans);
+        Assert.Single(spans);
+        Assert.Equal("Fyette", spans[0].Text);
+    }
+
+    [Fact]
+    public void HighNoMatch()
+    {
+        var filter = new FuzzyDictionaryFilter(FilterType.LocationCounty, Config(), SensitivityLevel.High, true);
+        var spans = Span.DropOverlappingSpans(filter.Filter(GetPolicy(), "context", Piece, "Lived in Fyette").Spans);
+        Assert.Empty(spans);
+    }
+
+    [Fact]
+    public void OffExactMatch()
+    {
+        var filter = new FuzzyDictionaryFilter(FilterType.LocationCounty, Config(), SensitivityLevel.Off, true);
+        var spans = Span.DropOverlappingSpans(filter.Filter(GetPolicy(), "context", Piece, "Lived in Fayette").Spans);
+        Assert.Single(spans);
+        Assert.True(CheckSpan(spans[0], 9, 16, FilterType.LocationCounty));
+        Assert.Equal("Fayette", spans[0].Text);
+    }
+
+    [Fact]
+    public void OffNoMatch()
+    {
+        var filter = new FuzzyDictionaryFilter(FilterType.LocationCounty, Config(), SensitivityLevel.Off, true);
+        var spans = Span.DropOverlappingSpans(filter.Filter(GetPolicy(), "context", Piece, "Lived in Fyette").Spans);
+        Assert.Empty(spans);
+    }
+}

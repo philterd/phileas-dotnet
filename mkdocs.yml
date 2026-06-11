@@ -47,6 +47,10 @@ nav:
   - Getting Started: getting-started.md
   - Policies: policies.md
   - Supported Identifiers: supported-identifiers.md
+  - PhEye Filter: pheye-filter-usage.md
   - Filter Strategies: filter-strategies.md
+  - Filter Conditions: filter-conditions.md
   - Context Service: context-service.md
+  - Span Disambiguation: span-disambiguation.md
+  - PDF Redaction: pdf-redaction.md
   - API Reference: api-reference.md

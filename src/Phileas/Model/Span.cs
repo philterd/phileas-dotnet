@@ -87,6 +87,26 @@ public class Span
     [JsonIgnore]
     public bool AlwaysValid { get; set; }
 
+    /// <summary>Gets or sets the 1-based page number this span was found on (PDF documents). Not serialized.</summary>
+    [JsonIgnore]
+    public int PageNumber { get; set; }
+
+    /// <summary>Gets or sets the lower-left X coordinate of the span's bounding box in PDF user space. Not serialized.</summary>
+    [JsonIgnore]
+    public double LowerLeftX { get; set; }
+
+    /// <summary>Gets or sets the lower-left Y coordinate of the span's bounding box in PDF user space. Not serialized.</summary>
+    [JsonIgnore]
+    public double LowerLeftY { get; set; }
+
+    /// <summary>Gets or sets the upper-right X coordinate of the span's bounding box in PDF user space. Not serialized.</summary>
+    [JsonIgnore]
+    public double UpperRightX { get; set; }
+
+    /// <summary>Gets or sets the upper-right Y coordinate of the span's bounding box in PDF user space. Not serialized.</summary>
+    [JsonIgnore]
+    public double UpperRightY { get; set; }
+
     /// <summary>
     ///     Creates a new <see cref="Span" /> with the specified values.
     /// </summary>
@@ -134,6 +154,49 @@ public class Span
         };
     }
 
+    /// <summary>Returns a deep copy of this span.</summary>
+    public Span Copy()
+    {
+        return new Span
+        {
+            CharacterStart = CharacterStart,
+            CharacterEnd = CharacterEnd,
+            FilterType = FilterType,
+            Context = Context,
+            Classification = Classification,
+            Confidence = Confidence,
+            Text = Text,
+            Replacement = Replacement,
+            Salt = Salt,
+            Ignored = Ignored,
+            Applied = Applied,
+            Priority = Priority,
+            Pattern = Pattern,
+            Window = Window,
+            AlwaysValid = AlwaysValid,
+            PageNumber = PageNumber,
+            LowerLeftX = LowerLeftX,
+            LowerLeftY = LowerLeftY,
+            UpperRightX = UpperRightX,
+            UpperRightY = UpperRightY
+        };
+    }
+
+    /// <summary>Returns copies of <paramref name="spans" /> with their character offsets shifted by <paramref name="offset" />.</summary>
+    public static IList<Span> ShiftSpans(int offset, IEnumerable<Span> spans)
+    {
+        var shifted = new List<Span>();
+        foreach (var span in spans)
+        {
+            var copy = span.Copy();
+            copy.CharacterStart += offset;
+            copy.CharacterEnd += offset;
+            shifted.Add(copy);
+        }
+
+        return shifted;
+    }
+
     /// <summary>
     ///     Determines whether a span with the given character offsets already exists in the provided list.
     /// </summary>
@@ -155,19 +218,71 @@ public class Span
     /// <returns>A new list of non-overlapping spans ordered by character position.</returns>
     public static IList<Span> DropOverlappingSpans(IList<Span> spans)
     {
-        var sorted = spans.OrderByDescending(s => s.Confidence).ToList();
+        // Rank by length (longest first), then confidence, then priority, then start position, and
+        // greedily keep each span that does not overlap an already-kept span. The overlap check treats
+        // the character range as inclusive at both ends, mirroring the Java reference.
+        var ranked = spans
+            .OrderByDescending(s => s.CharacterEnd - s.CharacterStart)
+            .ThenByDescending(s => s.Confidence)
+            .ThenByDescending(s => s.Priority)
+            .ThenBy(s => s.CharacterStart)
+            .ToList();
+
         var result = new List<Span>();
 
-        foreach (var span in sorted)
+        foreach (var span in ranked)
         {
             var overlaps = result.Any(existing =>
-                span.CharacterStart < existing.CharacterEnd &&
-                span.CharacterEnd > existing.CharacterStart);
+                span.CharacterStart <= existing.CharacterEnd &&
+                existing.CharacterStart <= span.CharacterEnd);
 
             if (!overlaps)
                 result.Add(span);
         }
 
         return result.OrderBy(s => s.CharacterStart).ToList();
+    }
+
+    /// <summary>
+    ///     Determines whether <paramref name="span2" /> directly follows <paramref name="span1" /> in
+    ///     <paramref name="text" />, separated only by whitespace or a comma.
+    /// </summary>
+    public static bool AreSpansAdjacent(Span span1, Span span2, string text)
+    {
+        if (span1.CharacterStart > span2.CharacterStart) return false;
+
+        if (span1.CharacterEnd == span1.CharacterStart + 1) return true;
+
+        var separators = text[span1.CharacterEnd..(span2.CharacterStart - 1)];
+        return separators.All(char.IsWhiteSpace) || separators.Trim() == ",";
+    }
+
+    /// <summary>
+    ///     Returns the spans in <paramref name="spans" /> that cover the same range as
+    ///     <paramref name="span" /> with the same confidence but a different filter type.
+    /// </summary>
+    public static IList<Span> GetIdenticalSpans(Span span, IList<Span> spans)
+    {
+        return spans.Where(candidate =>
+                candidate.CharacterStart == span.CharacterStart
+                && candidate.CharacterEnd == span.CharacterEnd
+                && candidate.FilterType != span.FilterType
+                && Math.Abs(candidate.Confidence - span.Confidence) == 0)
+            .ToList();
+    }
+
+    /// <summary>Returns the span that starts at <paramref name="index" />, or <see langword="null" />.</summary>
+    public static Span? DoesIndexStartSpan(int index, IList<Span> spans)
+    {
+        return spans.FirstOrDefault(span => span.CharacterStart == index);
+    }
+
+    /// <summary>
+    ///     Returns copies of every span except <paramref name="ignoreSpan" /> with their character
+    ///     offsets shifted by <paramref name="offset" />.
+    /// </summary>
+    public static IList<Span> ShiftSpans(int offset, Span ignoreSpan, IEnumerable<Span> spans)
+    {
+        return ShiftSpans(offset, spans.Where(span => !ReferenceEquals(span, ignoreSpan)));
     }
 }

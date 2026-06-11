@@ -119,6 +119,43 @@ public class Identifiers
     [JsonPropertyName("zipCode")]
     public ZipCode? ZipCode { get; set; }
 
+    /// <summary>Gets or sets the city (dictionary) filter configuration.</summary>
+    [JsonPropertyName("city")]
+    public City? City { get; set; }
+
+    /// <summary>Gets or sets the county (dictionary) filter configuration.</summary>
+    [JsonPropertyName("county")]
+    public County? County { get; set; }
+
+    /// <summary>Gets or sets the state (dictionary) filter configuration.</summary>
+    [JsonPropertyName("state")]
+    public State? State { get; set; }
+
+    /// <summary>Gets or sets the hospital (dictionary) filter configuration.</summary>
+    [JsonPropertyName("hospital")]
+    public Hospital? Hospital { get; set; }
+
+    /// <summary>Gets or sets the first-name (dictionary) filter configuration.</summary>
+    [JsonPropertyName("firstName")]
+    public FirstName? FirstName { get; set; }
+
+    /// <summary>Gets or sets the surname (dictionary) filter configuration.</summary>
+    [JsonPropertyName("surname")]
+    public Surname? Surname { get; set; }
+
+    /// <summary>Gets or sets the list of user-supplied custom dictionaries. This is the canonical
+    ///     <c>"dictionaries"</c> identifier (matching the PhiSQL <c>DEFINE DICTIONARY</c> output).</summary>
+    [JsonPropertyName("dictionaries")]
+    public List<CustomDictionary>? CustomDictionaries { get; set; }
+
+    /// <summary>Gets or sets the list of custom regex-based identifier filters.</summary>
+    [JsonPropertyName("identifiers")]
+    public List<Identifier>? CustomIdentifiers { get; set; }
+
+    /// <summary>Gets or sets the list of section filters.</summary>
+    [JsonPropertyName("sections")]
+    public List<Section>? Sections { get; set; }
+
     /// <summary>
     ///     Determines whether the filter for the specified <paramref name="filterType" /> is enabled in this identifiers
     ///     configuration.
@@ -152,6 +189,15 @@ public class Identifiers
             FilterType.Url => Url != null,
             FilterType.Vin => Vin != null,
             FilterType.ZipCode => ZipCode != null,
+            FilterType.LocationCity => City != null,
+            FilterType.LocationCounty => County != null,
+            FilterType.LocationState => State != null,
+            FilterType.Hospital => Hospital != null,
+            FilterType.FirstName => FirstName != null,
+            FilterType.Surname => Surname != null,
+            FilterType.CustomDictionary => CustomDictionaries != null && CustomDictionaries.Count > 0,
+            FilterType.Identifier => CustomIdentifiers != null && CustomIdentifiers.Count > 0,
+            FilterType.Section => Sections != null && Sections.Count > 0,
             _ => false
         };
     }

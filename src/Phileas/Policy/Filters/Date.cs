@@ -24,6 +24,14 @@ namespace Phileas.Policy.Filters;
 /// </summary>
 public class Date : AbstractPolicyFilter
 {
+    /// <summary>
+    ///     Gets or sets a value indicating whether only dates that parse as real calendar dates are
+    ///     redacted. When <see langword="false" /> (the default), well-formed but invalid dates such as
+    ///     <c>02-31-2019</c> are still redacted.
+    /// </summary>
+    [JsonPropertyName("onlyValidDates")]
+    public bool OnlyValidDates { get; set; } = false;
+
     /// <summary>Gets or sets the list of date filter strategies to apply.</summary>
     [JsonPropertyName("dateFilterStrategies")]
     public List<DateFilterStrategy>? Strategies { get; set; }

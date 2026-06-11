@@ -4,6 +4,19 @@
 
 `FilterService` (in `Phileas.Services`) is the main entry point. It implements the `IFilterService` interface.
 
+### Constructors
+
+```csharp
+public FilterService();
+public FilterService(bool incrementalRedactionsEnabled);
+public FilterService(bool incrementalRedactionsEnabled, ISpanDisambiguationService disambiguationService);
+```
+
+| Parameter | Description |
+|---|---|
+| `incrementalRedactionsEnabled` | When `true`, each `TextFilterResult` carries a per-redaction snapshot trail in `IncrementalRedactions`. |
+| `disambiguationService` | Resolves spans that compete at the same location by surrounding context. Defaults to a no-op. See [Span Disambiguation](span-disambiguation.md). |
+
 ### Filter
 
 ```csharp
@@ -119,14 +132,22 @@ Returned by [`IFilterService.Evaluate`](#evaluate). All values are in the range 
 public class TextFilterResult
 {
     public string FilteredText { get; }
+    public string Context { get; }
+    public int Piece { get; }
     public IList<Span> Spans { get; }
+    public IList<IncrementalRedaction> IncrementalRedactions { get; }
+    public long Tokens { get; }
 }
 ```
 
 | Property | Type | Description |
 |---|---|---|
 | `FilteredText` | `string` | The input text with all detected PII replaced according to the active filter strategies. |
+| `Context` | `string` | The context name passed to `Filter`. |
+| `Piece` | `int` | The piece index passed to `Filter`. |
 | `Spans` | `IList<Span>` | Ordered list of [`Span`](#span) objects describing each detected PII occurrence. |
+| `IncrementalRedactions` | `IList<IncrementalRedaction>` | Per-redaction snapshot trail (populated only when the service is constructed with incremental redactions enabled). |
+| `Tokens` | `long` | Number of whitespace-delimited tokens in the input. |
 
 ---
 
@@ -177,7 +198,8 @@ Span.Make(characterStart, characterEnd, filterType, context, confidence,
 // Check whether a span with the same bounds already exists in a list
 Span.DoesSpanExist(characterStart, characterEnd, spans);
 
-// Remove lower-confidence spans that overlap higher-confidence spans
+// Resolve overlapping spans, keeping the longest (then highest confidence,
+// then highest priority, then earliest) and discarding the rest
 IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 ```
 
@@ -185,33 +207,47 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 
 ## FilterType
 
-`FilterType` (in `Phileas.Model`) is an enum that identifies the category of detected PII. The values below are the types supported by `FilterService` through the standard filtering pipeline:
+`FilterType` (in `Phileas.Model`) is an enum that identifies the category of detected PII. Its values and their `GetFilterTypeName()` strings:
 
 | Value | `GetFilterTypeName()` |
 |---|---|
 | `Age` | `"age"` |
 | `BankRoutingNumber` | `"bank-routing-number"` |
 | `BitcoinAddress` | `"bitcoin-address"` |
-| `CreditCard` | `"credit-card"` |
 | `Currency` | `"currency"` |
-| `Date` | `"date"` |
+| `CreditCard` | `"credit-card"` |
 | `DriversLicenseNumber` | `"drivers-license-number"` |
+| `LocationCity` | `"city"` |
+| `LocationState` | `"state"` |
+| `LocationCounty` | `"county"` |
+| `Date` | `"date"` |
 | `EmailAddress` | `"email-address"` |
+| `FirstName` | `"first-name"` |
+| `Hospital` | `"hospital"` |
+| `HospitalAbbreviation` | `"hospital-abbreviation"` |
 | `IbanCode` | `"iban-code"` |
+| `Identifier` | `"identifier"` |
 | `IpAddress` | `"ip-address"` |
 | `MacAddress` | `"mac-address"` |
 | `PassportNumber` | `"passport-number"` |
 | `PhEye` | `"ph-eye"` |
 | `PhoneNumber` | `"phone-number"` |
 | `PhoneNumberExtension` | `"phone-number-extension"` |
+| `PhysicianName` | `"physician-name"` |
+| `Section` | `"section"` |
 | `Ssn` | `"ssn"` |
 | `StateAbbreviation` | `"state-abbreviation"` |
 | `StreetAddress` | `"street-address"` |
+| `Surname` | `"surname"` |
 | `TrackingNumber` | `"tracking-number"` |
 | `Url` | `"url"` |
 | `Vin` | `"vin"` |
 | `ZipCode` | `"zip-code"` |
+| `CustomDictionary` | `"custom-dictionary"` |
 | `Dictionary` | `"dictionary"` |
+| `Person` | `"person"` |
+| `MedicalCondition` | `"medical-condition"` |
+| `Other` | `"other"` |
 
 Call `filterType.GetFilterTypeName()` to get the lower-kebab-case string used in redaction format tokens (e.g. `"email-address"`, `"ssn"`).
 
@@ -248,18 +284,18 @@ The default implementation of `IContextService` (in `Phileas.Services`). Stores 
 ```csharp
 public class Policy
 {
-    public string Name { get; set; }
+    public string Name { get; set; }        // in-memory label only; [JsonIgnore]
     public Config Config { get; set; }
     public Crypto? Crypto { get; set; }
     public Fpe? Fpe { get; set; }
     public Identifiers Identifiers { get; set; }
     public List<Ignored> Ignored { get; set; }
     public List<IgnoredPattern> IgnoredPatterns { get; set; }
-    public PostFilters PostFilters { get; set; }
+    public Graphical Graphical { get; set; }
 }
 ```
 
-See [Policies](policies.md) for full documentation.
+Post-filter cleanup lives on `Config.PostFilters` (not at the top level). Use `PolicySerializer.SerializeToJson` / `DeserializeFromJson` to convert to and from JSON. See [Policies](policies.md) for full documentation.
 
 ---
 
@@ -283,10 +319,12 @@ var config = new FilterConfiguration.Builder()
 | `WithIgnored(ISet<string>)` | Sets the set of exact values to ignore. |
 | `WithIgnoredFiles(ISet<string>)` | Sets a set of file-based ignore lists (reserved). |
 | `WithIgnoredPatterns(IList<IgnoredPattern>)` | Sets the list of ignored regex patterns. |
-| `WithCrypto(Crypto)` | Provides AES key/IV for `CRYPTO_REPLACE`. |
-| `WithFpe(Fpe)` | Provides FPE key/tweak for `FPE_ENCRYPT_REPLACE`. |
+| `WithCrypto(Crypto?)` | Provides the AES key for `CRYPTO_REPLACE`. |
+| `WithFpe(Fpe?)` | Provides FPE key/tweak for `FPE_ENCRYPT_REPLACE`. |
 | `WithWindowSize(int)` | Sets the context window size. |
 | `WithPriority(int)` | Sets the filter priority. |
+| `WithPostFilters(Policy.PostFilters?)` | Sets the post-filter cleanup options. |
+| `WithRegexTimeoutMs(long)` | Sets the per-pattern regex match timeout (used by custom regex filters). |
 
 ---
 
@@ -301,6 +339,10 @@ var config = new FilterConfiguration.Builder()
 | `StaticReplacement` | `string` | `""` | Value used by `STATIC_REPLACE`. |
 | `MaskCharacter` | `string` | `"*"` | Character used by `MASK`. |
 | `MaskLength` | `string` | `"same"` | Mask length (`"same"` or integer string). |
-| `Condition` | `string?` | `null` | Condition expression (reserved). |
+| `Condition` | `string?` | `null` | Condition expression evaluated to decide whether the strategy applies (see [Filter Conditions](filter-conditions.md)). |
 | `Salt` | `bool` | `false` | Whether to add a random salt before hashing. |
-| `ContextService` | `IContextService?` | `null` | Context service for `RANDOM_REPLACE`. |
+| `ContextService` | `IContextService?` | `null` | Context service for `RANDOM_REPLACE` under `CONTEXT` scope. |
+| `AnonymizationService` | `IAnonymizationService?` | `null` | Generates realistic fake values for `RANDOM_REPLACE`. |
+| `AnonymizationMethod` | `string?` | `null` | Generation method for `RANDOM_REPLACE`. |
+| `AnonymizationCandidates` | `List<string>?` | `null` | Explicit value pool for `RANDOM_REPLACE`. |
+| `ReplacementScope` | `string` | `"DOCUMENT"` | `"DOCUMENT"` (fresh each occurrence) or `"CONTEXT"` (reuse per token). |

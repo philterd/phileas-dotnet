@@ -15,6 +15,7 @@
  */
 
 using Phileas.Model;
+using Phileas.Model.Metadata;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
@@ -24,23 +25,44 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class ZipCodeFilter : RegexFilter
 {
-    private static readonly Analyzer ZipAnalyzer = new(
-        new FilterPattern.Builder().WithPattern(@"\b\d{5}(?:-\d{4})?\b").WithInitialConfidence(0.60).Build()
+    // With a required delimiter the +4 extension must be dash-separated and the match is high confidence;
+    // without it the extension may be undelimited and the match is lower confidence. Mirrors Java's ZipCodeFilter.
+    private static readonly Analyzer DelimitedAnalyzer = new(
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{5}(?:-[0-9]{4})?\b").WithInitialConfidence(0.90).Build()
     );
+
+    private static readonly Analyzer UndelimitedAnalyzer = new(
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{5}(?:-?[0-9]{4})?\b").WithInitialConfidence(0.50).Build()
+    );
+
+    private static readonly ZipCodeMetadataService ZipCodeMetadata = new();
+
+    private readonly Analyzer _analyzer;
+    private readonly bool _validate;
 
     /// <summary>
     ///     Initializes a new <see cref="ZipCodeFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public ZipCodeFilter(FilterConfiguration configuration) : base(FilterType.ZipCode, configuration)
+    /// <param name="requireDelimiter">When <see langword="true" />, the +4 extension must be dash-separated.</param>
+    /// <param name="validate">When <see langword="true" />, ZIP codes not in the census database are not redacted.</param>
+    public ZipCodeFilter(FilterConfiguration configuration, bool requireDelimiter = false, bool validate = false)
+        : base(FilterType.ZipCode, configuration)
     {
+        _analyzer = requireDelimiter ? DelimitedAnalyzer : UndelimitedAnalyzer;
+        _validate = validate;
     }
 
     /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, ZipAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, _analyzer, input, context, piece);
         spans = PostFilter(spans, input);
+
+        if (_validate)
+            // The census database only stores the first five digits, so validate against those.
+            spans = spans.Where(span => ZipCodeMetadata.GetMetadata(span.Text[..5]).Exists).ToList();
+
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);
     }

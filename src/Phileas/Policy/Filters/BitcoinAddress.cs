@@ -25,6 +25,6 @@ namespace Phileas.Policy.Filters;
 public class BitcoinAddress : AbstractPolicyFilter
 {
     /// <summary>Gets or sets the list of Bitcoin address filter strategies to apply.</summary>
-    [JsonPropertyName("bitcoinAddressFilterStrategies")]
+    [JsonPropertyName("bitcoinFilterStrategies")]
     public List<BitcoinAddressFilterStrategy>? Strategies { get; set; }
 }

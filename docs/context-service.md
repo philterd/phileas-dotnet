@@ -2,15 +2,17 @@
 
 ## Overview
 
-When the `RANDOM_REPLACE` filter strategy is used, Phileas replaces detected PII with a randomly-generated value. Without any additional bookkeeping, the **same PII token appearing multiple times** in different documents (or even in the same document) would be replaced by **different random values**, breaking referential integrity.
+When the `RANDOM_REPLACE` filter strategy is used, Phileas replaces detected PII with a realistic, type-appropriate fake value. By default (`replacementScope = "DOCUMENT"`), each occurrence is anonymized independently, so the **same PII token appearing multiple times** can map to **different** fake values.
 
-The **Context Service** solves this problem. It maintains a mapping of PII tokens to their replacement values within a named *context*. If the same token is encountered again inside the same context, the previously-generated replacement is reused, ensuring consistency across the filtered output.
+When you need referential integrity — the same input value always mapping to the same fake value — set `replacementScope = "CONTEXT"` on the strategy. In that mode the **Context Service** maintains a mapping of PII tokens to their replacement values within a named *context*: if the same token is encountered again inside the same context, the previously-generated replacement is reused.
+
+> **In short:** the Context Service only affects `RANDOM_REPLACE` strategies whose `replacementScope` is `"CONTEXT"`. With the default `"DOCUMENT"` scope the context service is not consulted.
 
 ## Concepts
 
 ### Context
 
-A *context* is a named scope that groups related filter operations. For example, all documents belonging to the same patient could share a context named `"patient-123"`. Within that context, the SSN `123-45-6789` will always be replaced with the same random value regardless of how many times it appears.
+A *context* is a named scope that groups related filter operations. For example, all documents belonging to the same patient could share a context named `"patient-123"`. With `replacementScope = "CONTEXT"`, the SSN `123-45-6789` will always be replaced with the same fake value within that context, regardless of how many times it appears.
 
 ### Referential Integrity
 
@@ -84,12 +86,21 @@ var result = new FilterService().Filter(
 
 ### Using RANDOM_REPLACE directly on a filter strategy
 
+This uses the **runtime** strategy types (in `Phileas.Filters.*`), which carry the `ContextService`. The
+policy-level strategy types (in `Phileas.Policy.Filters.Strategies`) do not — `FilterService` wires the
+context service onto the runtime strategies for you.
+
 ```csharp
+using Phileas.Filters;                  // runtime AbstractFilterStrategy
+using Phileas.Filters.Strategies.Rules; // runtime SsnFilterStrategy
+using Phileas.Services;                 // InMemoryContextService
+
 var contextService = new InMemoryContextService();
 
 var strategy = new SsnFilterStrategy
 {
     Strategy = AbstractFilterStrategy.RandomReplace,
+    ReplacementScope = AbstractFilterStrategy.ReplacementScopeContext,  // "CONTEXT"
     ContextService = contextService
 };
 ```
@@ -97,10 +108,10 @@ var strategy = new SsnFilterStrategy
 ## How It Works
 
 1. The `RANDOM_REPLACE` branch in `StandardFilterStrategy` calls `GetOrCreateRandomReplacement(context, token)`.
-2. If a `ContextService` is set, the method calls `ContextService.Get(context, token)`.
-   - **Hit**: the previously stored random value is returned unchanged.
-   - **Miss**: a new `Guid` is generated, stored via `ContextService.Put(context, token, guid)`, and returned.
-3. If no `ContextService` is set (strategy used outside of `FilterService`), a fresh `Guid` is generated each time with no persistence.
+2. If `ReplacementScope` is `"CONTEXT"` **and** a `ContextService` is set, the method calls `ContextService.Get(context, token)`.
+   - **Hit**: the previously stored replacement is returned unchanged.
+   - **Miss**: a new replacement is generated (a realistic fake value via the anonymization service, or a GUID when none is wired in), stored via `ContextService.Put(context, token, replacement)`, and returned.
+3. Otherwise (the default `"DOCUMENT"` scope, or no `ContextService`), a fresh replacement is generated for every occurrence and the context service is not consulted.
 
 ## Implementing a Custom Context Service
 

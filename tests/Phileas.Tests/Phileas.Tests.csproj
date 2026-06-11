@@ -12,8 +12,16 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <!-- SkiaSharp native binaries for headless Linux (no system fontconfig dependency), so the
+             PDF rasterization/drawing tests can run in CI and containers. -->
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="../../src/Phileas/Phileas.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Shared test documents (copied from the Java test resources). -->
+        <Content Include="Resources\*.txt" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="Resources\*.pdf" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 </Project>

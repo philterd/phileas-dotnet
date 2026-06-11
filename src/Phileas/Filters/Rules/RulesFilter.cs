@@ -45,14 +45,51 @@ public abstract class RulesFilter : AbstractFilter
     /// <returns>The refined list of spans.</returns>
     protected IList<Span> PostFilter(IList<Span> spans, string input)
     {
-        if (PostFiltersConfig.TrailingNewLines)
+        if (PostFiltersConfig.RemoveTrailingNewLines)
             spans = TrailingNewLinesPostFilter.Apply(spans);
-        if (PostFiltersConfig.TrailingPeriods)
+        if (PostFiltersConfig.RemoveTrailingPeriods)
             spans = TrailingPeriodPostFilter.Apply(spans);
-        if (PostFiltersConfig.TrailingSpaces)
+        if (PostFiltersConfig.RemoveTrailingSpaces)
             spans = TrailingSpacePostFilter.Apply(spans);
         spans = IgnoredTermsPostFilter.Apply(spans, Ignored);
         spans = IgnoredPatternsPostFilter.Apply(spans, IgnoredPatterns);
         return spans;
+    }
+
+    /// <summary>
+    ///     Returns all whitespace-delimited n-grams of every length from <paramref name="length" /> down to 1,
+    ///     each paired with its character <see cref="Position" /> in <paramref name="text" />.
+    /// </summary>
+    protected static List<(Position Position, string Ngram)> GetNgramsUpToLength(string text, int length)
+    {
+        var ngrams = new List<(Position, string)>();
+        for (var n = length; n > 0; n--)
+        {
+            ngrams.AddRange(GetNgramsOfLength(text, n));
+        }
+
+        return ngrams;
+    }
+
+    /// <summary>
+    ///     Returns the whitespace-delimited n-grams of exactly <paramref name="length" /> words, each paired
+    ///     with its character <see cref="Position" /> in <paramref name="text" />.
+    /// </summary>
+    protected static List<(Position Position, string Ngram)> GetNgramsOfLength(string text, int length)
+    {
+        var ngrams = new List<(Position, string)>();
+        var words = text.Split(' ');
+        var lastLocation = 0;
+
+        for (var i = 0; i <= words.Length - length; i++)
+        {
+            var ngram = string.Join(' ', words.Skip(i).Take(length));
+            var newLocation = text.IndexOf(ngram, lastLocation, StringComparison.Ordinal);
+            if (newLocation < 0) continue;
+            lastLocation = newLocation;
+            ngrams.Add((new Position(newLocation, newLocation + ngram.Length), ngram));
+        }
+
+        return ngrams;
     }
 }

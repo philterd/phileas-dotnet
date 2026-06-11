@@ -1,0 +1,68 @@
+Phileas (.NET)
+Copyright 2026 Philterd, LLC
+
+This product is licensed under the Apache License, Version 2.0 (see the LICENSE
+file). It includes and/or depends on third-party software listed below. Each
+component remains under its own license; copies/links are provided for each.
+
+================================================================================
+Runtime dependencies
+================================================================================
+These libraries are required by, and distributed alongside, the Phileas library.
+
+- Microsoft.ML.OnnxRuntime 1.24.2
+    License: MIT
+    https://github.com/microsoft/onnxruntime
+
+- JsonSchema.Net 7.0.4  (json-everything)
+    License: MIT
+    https://github.com/gregsdennis/json-everything
+
+- PdfPig 0.1.14
+    License: Apache-2.0
+    https://github.com/UglyToad/PdfPig
+
+- PDFtoImage 5.2.1
+    License: MIT
+    https://github.com/sungaila/PDFtoImage
+
+- SkiaSharp 3.119.4
+    License: MIT
+    https://github.com/mono/SkiaSharp
+
+- Philterd.PhiSql  (PhiSQL .NET reference library, compiled in via project reference)
+    License: Apache-2.0
+    https://github.com/philterd/phisql
+
+================================================================================
+Bundled native components
+================================================================================
+The PDF rasterization stack pulls in native binaries transitively at runtime.
+
+- PDFium
+    License: BSD-3-Clause (Copyright The PDFium Authors / Google LLC)
+    Distributed via the bblanchon.PDFium.* packages (packaging: Apache-2.0)
+    https://pdfium.googlesource.com/pdfium/
+    https://github.com/bblanchon/pdfium-binaries
+
+- Skia
+    License: BSD-3-Clause (Copyright Google LLC)
+    Wrapped by SkiaSharp; native binaries via the SkiaSharp.NativeAssets.* packages (MIT)
+    https://skia.org/
+
+================================================================================
+Build- and test-only dependencies
+================================================================================
+These are used to build and test Phileas and are NOT distributed with it.
+
+- xUnit 2.7.0                                  License: Apache-2.0   https://github.com/xunit/xunit
+- xunit.runner.visualstudio 2.5.7              License: Apache-2.0   https://github.com/xunit/visualstudio.xunit
+- Microsoft.NET.Test.Sdk 17.9.0                License: MIT          https://github.com/microsoft/vstest
+- SkiaSharp.NativeAssets.Linux.NoDependencies 3.119.4   License: MIT  https://github.com/mono/SkiaSharp
+
+================================================================================
+.NET runtime and base class libraries
+================================================================================
+Transitively referenced .NET runtime / base-class-library packages (System.*,
+Microsoft.Extensions.*, and similar) are provided by the .NET Foundation and
+contributors under the MIT License. https://github.com/dotnet/runtime

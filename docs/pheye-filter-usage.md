@@ -233,7 +233,7 @@ PhEyes = new List<PhEye>
             new PhEyeFilterStrategy
             {
                 Strategy = "REDACT",
-                Condition = new Condition { Confidence = 0.90 }  // Minimum confidence
+                Condition = "confidence >= 0.90"  // Minimum confidence
             }
         }
     }
@@ -271,7 +271,7 @@ PhEyes = new List<PhEye>
 The PhEye filter supports all standard Phileas strategies:
 
 ```csharp
-using Phileas.Filters;
+using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Strategies;
 
 PhEyes = new List<PhEye>
@@ -286,13 +286,13 @@ PhEyes = new List<PhEye>
         Strategies = new List<PhEyeFilterStrategy>
         {
             // Mask person names
-            new PhEyeFilterStrategy { Strategy = AbstractFilterStrategy.Mask },
-            
+            new PhEyeFilterStrategy { Strategy = "MASK" },
+
             // Or use static replacement
             new PhEyeFilterStrategy
             {
-                Strategy = AbstractFilterStrategy.StaticReplace,
-                Replacement = "[NAME REMOVED]"
+                Strategy = "STATIC_REPLACE",
+                StaticReplacement = "[NAME REMOVED]"
             }
         }
     }

@@ -32,6 +32,8 @@ public class PolicyTests
     {
         var policy = new PhileasPolicy
         {
+            // Name is an in-memory convenience label only; the canonical Phileas policy JSON has no
+            // top-level "name", so it is intentionally not serialized.
             Name = "test-policy",
             Identifiers = new Identifiers
             {
@@ -46,7 +48,7 @@ public class PolicyTests
         };
 
         var json = JsonSerializer.Serialize(policy);
-        Assert.Contains("test-policy", json);
+        Assert.DoesNotContain("test-policy", json);
         Assert.Contains("emailAddress", json);
     }
 
@@ -55,7 +57,6 @@ public class PolicyTests
     {
         var json = """
                    {
-                       "name": "test",
                        "identifiers": {
                            "emailAddress": {
                                "emailAddressFilterStrategies": [{"strategy": "REDACT"}]
@@ -66,7 +67,6 @@ public class PolicyTests
 
         var policy = JsonSerializer.Deserialize<PhileasPolicy>(json);
         Assert.NotNull(policy);
-        Assert.Equal("test", policy.Name);
         Assert.NotNull(policy.Identifiers.EmailAddress);
     }
 

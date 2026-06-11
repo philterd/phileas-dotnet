@@ -1,0 +1,6 @@
+# PDF rasterization/drawing goes through PDFium (PDFtoImage) and SkiaSharp, which are annotated with
+# [SupportedOSPlatform]. CA1416 (platform compatibility) flags every call site; the PDF feature
+# legitimately targets desktop/server platforms (Linux/Windows/macOS) where these libraries are
+# supported, so suppress it for this tree to keep the build warning-free.
+[*.cs]
+dotnet_diagnostic.CA1416.severity = none

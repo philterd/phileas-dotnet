@@ -7,23 +7,23 @@ A **Policy** is the primary configuration object in phileas-net. It defines whic
 ```csharp
 public class Policy
 {
-    public string Name { get; set; }
+    public string Name { get; set; }                       // in-memory label only (not serialized)
     public Config Config { get; set; }
     public Crypto? Crypto { get; set; }
     public Fpe? Fpe { get; set; }
     public Identifiers Identifiers { get; set; }
     public List<Ignored> Ignored { get; set; }
     public List<IgnoredPattern> IgnoredPatterns { get; set; }
-    public PostFilters PostFilters { get; set; }
+    public Graphical Graphical { get; set; }
 }
 ```
+
+> The canonical policy JSON has **no top-level `name`** — `Name` is an in-memory convenience label and is marked `[JsonIgnore]`. Use [`PolicySerializer`](#serializing-policies) to load and save policies; it applies the canonical options (null fields omitted) and resolves `${ENV_VAR}` / `env:NAME` placeholders.
 
 ### Equivalent JSON
 
 ```json
 {
-  "name": "my-policy",
-  "config": { "windowSize": 5 },
   "identifiers": {
     "ssn": {},
     "emailAddress": {}
@@ -35,31 +35,46 @@ public class Policy
 
 ## Config
 
-`Config` holds global tuning parameters that apply to all filters in the policy.
+`Config` holds global settings, grouped into sub-objects.
 
-| Property | Type | Default | Description |
+| Property | Type | JSON key | Description |
 |---|---|---|---|
-| `windowSize` | `int` | `5` | Number of words on each side of a detected token that are passed to filter strategies as context. |
-| `splitOnPunctuation` | `bool` | `false` | Reserved for future use. |
+| `Splitting` | `Splitting` | `splitting` | Splits long input into pieces before filtering. |
+| `Pdf` | `Pdf` | `pdf` | PDF redaction rendering options. |
+| `PostFilters` | `PostFilters` | `postFilters` | Cleanup applied to replacements (see [PostFilters](#postfilters)). |
+| `Analysis` | `Analysis` | `analysis` | Analysis options. |
+
+### Splitting
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `Enabled` | `enabled` | `false` | Enable splitting of long inputs. |
+| `Threshold` | `threshold` | `10000` | Minimum input length (characters) before splitting applies. |
+| `Method` | `method` | `"newline"` | Split method (e.g. `"newline"`). |
 
 ```csharp
 var policy = new Policy
 {
     Name = "my-policy",
-    Config = new Config { WindowSize = 3 }
+    Config = new Config
+    {
+        Splitting = new Splitting { Enabled = true, Threshold = 5000, Method = "newline" }
+    }
 };
 ```
+
+> The per-filter context **window size** is configured on each identifier via `WindowSize` (see [Common Options](#common-identifier-options)), not on `Config`.
 
 ---
 
 ## Crypto
 
-`Crypto` provides the AES key and initialisation vector used by the `CRYPTO_REPLACE` filter strategy.
+`Crypto` provides the AES key used by the `CRYPTO_REPLACE` filter strategy, which encrypts with **AES-GCM**.
 
-| Property | Type | Description |
-|---|---|---|
-| `key` | `string?` | Base64-encoded 16, 24, or 32-byte AES key. |
-| `iv` | `string?` | Base64-encoded 16-byte AES initialisation vector. |
+| Property | Type | JSON key | Description |
+|---|---|---|---|
+| `Key` | `string?` | `key` | **Hex-encoded** 16, 24, or 32-byte AES key, or an `env:NAME` reference. |
+| `Iv` | `string?` | `iv` | Present in the model but unused by AES-GCM, which generates a fresh random nonce per value. |
 
 ```csharp
 var policy = new Policy
@@ -67,8 +82,7 @@ var policy = new Policy
     Name = "encrypted-policy",
     Crypto = new Crypto
     {
-        Key = Convert.ToBase64String(aesKey),
-        Iv  = Convert.ToBase64String(aesIv)
+        Key = Convert.ToHexString(aesKey)   // hex-encoded AES key
     }
 };
 ```
@@ -79,12 +93,14 @@ See [Filter Strategies — CRYPTO_REPLACE](filter-strategies.md#crypto_replace) 
 
 ## Fpe
 
-`Fpe` provides the key and tweak used by the `FPE_ENCRYPT_REPLACE` (Format Preserving Encryption) strategy.
+`Fpe` provides the key and tweak used by the `FPE_ENCRYPT_REPLACE` (Format Preserving Encryption, FF3-1) strategy.
 
-| Property | Type | Description |
-|---|---|---|
-| `key` | `string?` | Encryption key. |
-| `tweak` | `string?` | Tweak value for FPE. |
+| Property | Type | JSON key | Description |
+|---|---|---|---|
+| `Key` | `string?` | `key` | **Hex-encoded** FF3-1 key, or an `env:NAME` reference. |
+| `Tweak` | `string?` | `tweak` | **Hex-encoded** tweak (required by FF3-1; 56- or 64-bit), or an `env:NAME` reference. |
+
+See [Filter Strategies — FPE_ENCRYPT_REPLACE](filter-strategies.md#fpe_encrypt_replace).
 
 ---
 
@@ -101,14 +117,18 @@ var identifiers = new Identifiers
 };
 ```
 
-Each identifier class extends `AbstractPolicyFilter` and supports the following common options:
+### Common Identifier Options
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `ignored` | `List<string>?` | `null` | Exact values that should not be redacted. |
-| `ignoredPatterns` | `List<IgnoredPattern>?` | `null` | Regex patterns whose matches are not redacted. |
-| `sensitivity` | `string` | `"medium"` | Sensitivity level (reserved for future use). |
-| `priority` | `int` | `0` | Higher-priority filter spans win when spans overlap. |
+Each identifier class extends `AbstractPolicyFilter` and supports these common options:
+
+| Property | JSON key | Type | Default | Description |
+|---|---|---|---|---|
+| `Enabled` | `enabled` | `bool` | `true` | Whether the filter is active. |
+| `Ignored` | `ignored` | `List<string>?` | `null` | Exact values that should not be redacted. |
+| `IgnoredFiles` | `ignoredFiles` | `List<string>?` | `null` | Files whose lines provide additional ignored terms. |
+| `IgnoredPatterns` | `ignoredPatterns` | `List<IgnoredPattern>?` | `null` | Regex patterns whose matches are not redacted. |
+| `WindowSize` | `windowSize` | `int` | `0` | Context words on each side of a match; `0` uses the default (5). |
+| `Priority` | `priority` | `int` | `0` | Higher-priority filter spans win when spans overlap. |
 
 ---
 
@@ -158,17 +178,26 @@ var policy = new Policy
 };
 ```
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `name` | `string?` | `null` | Human-readable name for the pattern. |
-| `pattern` | `string?` | `null` | Regular expression to match against the detected token. |
-| `caseSensitive` | `bool` | `false` | Whether the pattern match is case-sensitive. |
+| Property | JSON key | Type | Default | Description |
+|---|---|---|---|---|
+| `Name` | `name` | `string?` | `null` | Human-readable name for the pattern. |
+| `Pattern` | `pattern` | `string?` | `null` | Regular expression to match against the detected token. |
+| `CaseSensitive` | `caseSensitive` | `bool` | `false` | Whether the pattern match is case-sensitive. |
 
 ---
 
 ## Global Ignored Values
 
-The top-level `Ignored` and `IgnoredPatterns` lists apply across all identifier types. Each entry has a `value` (exact string) and a `caseSensitive` flag.
+The top-level `Ignored` and `IgnoredPatterns` lists apply **across all identifier types** — any span whose text matches is dropped, no matter which filter produced it.
+
+Each `Ignored` entry is a named set of terms:
+
+| Property | JSON key | Type | Default | Description |
+|---|---|---|---|---|
+| `Name` | `name` | `string?` | `null` | Optional name for the set. |
+| `Terms` | `terms` | `List<string>` | `[]` | Exact values to ignore. |
+| `Files` | `files` | `List<string>` | `[]` | Files whose lines provide additional ignored terms. |
+| `CaseSensitive` | `caseSensitive` | `bool` | `false` | Whether term comparison is case-sensitive. |
 
 ```csharp
 var policy = new Policy
@@ -176,7 +205,12 @@ var policy = new Policy
     Name = "policy",
     Ignored = new List<Ignored>
     {
-        new Ignored { Value = "000-00-0000", CaseSensitive = false }
+        new Ignored
+        {
+            Name = "test-values",
+            Terms = new List<string> { "000-00-0000", "test@example.com" },
+            CaseSensitive = false
+        }
     }
 };
 ```
@@ -185,26 +219,44 @@ var policy = new Policy
 
 ## PostFilters
 
-`PostFilters` controls lightweight cleanup applied to each replaced token after the strategy produces a replacement value.
+`PostFilters` (on `Config.PostFilters`) controls lightweight cleanup applied to each replaced token after the strategy produces a replacement value.
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `trailingNewLines` | `bool` | `true` | Strip trailing newline characters from the replacement. |
-| `trailingPeriods` | `bool` | `true` | Strip trailing period characters from the replacement. |
-| `trailingSpaces` | `bool` | `true` | Strip trailing whitespace from the replacement. |
+| Property | JSON key | Type | Default | Description |
+|---|---|---|---|---|
+| `RemoveTrailingPeriods` | `removeTrailingPeriods` | `bool` | `true` | Strip trailing period characters from the replacement. |
+| `RemoveTrailingSpaces` | `removeTrailingSpaces` | `bool` | `true` | Strip trailing whitespace from the replacement. |
+| `RemoveTrailingNewLines` | `removeTrailingNewLines` | `bool` | `true` | Strip trailing newline characters from the replacement. |
 
 ```csharp
 var policy = new Policy
 {
     Name = "my-policy",
-    PostFilters = new PostFilters
+    Config = new Config
     {
-        TrailingNewLines = true,
-        TrailingPeriods  = false,
-        TrailingSpaces   = true
+        PostFilters = new PostFilters
+        {
+            RemoveTrailingNewLines = true,
+            RemoveTrailingPeriods  = false,
+            RemoveTrailingSpaces   = true
+        }
     }
 };
 ```
+
+---
+
+## Serializing Policies
+
+Use `PolicySerializer` to convert policies to and from JSON:
+
+```csharp
+using Phileas.Policy;
+
+string json = PolicySerializer.SerializeToJson(policy);
+Policy loaded = PolicySerializer.DeserializeFromJson(json);
+```
+
+`PolicySerializer` omits null fields (matching the canonical schema) and resolves `${ENV_VAR}` / `env:NAME` placeholders from environment variables during deserialization. Policies can also be authored in **PhiSQL** and compiled with `Policy.FromPhiSQL(phisql)`.
 
 ---
 
@@ -214,7 +266,10 @@ var policy = new Policy
 var policy = new Policy
 {
     Name = "full-example",
-    Config = new Config { WindowSize = 5 },
+    Config = new Config
+    {
+        Splitting = new Splitting { Enabled = true, Threshold = 5000 }
+    },
     Identifiers = new Identifiers
     {
         Ssn = new Ssn
