@@ -336,7 +336,7 @@ new SsnFilterStrategy
 
 ## Strategy Conditions
 
-Strategies can include a `condition` property that controls when they are applied. When multiple strategies are defined, phileas-net evaluates their conditions in order and applies the first strategy whose condition evaluates to `true`.
+Strategies can include a `condition` property that controls when they are applied. When multiple strategies are defined, phileas-dotnet evaluates their conditions in order and applies the first strategy whose condition evaluates to `true`.
 
 ```csharp
 new EmailAddressFilterStrategy

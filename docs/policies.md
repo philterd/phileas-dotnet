@@ -1,6 +1,6 @@
 # Policies
 
-A **Policy** is the primary configuration object in phileas-net. It defines which PII types to detect, how to handle each type, global settings, and values that should never be redacted.
+A **Policy** is the primary configuration object in phileas-dotnet. It defines which PII types to detect, how to handle each type, global settings, and values that should never be redacted.
 
 ## Policy Structure
 

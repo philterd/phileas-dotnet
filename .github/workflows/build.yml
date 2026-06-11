@@ -13,13 +13,13 @@ jobs:
       contents: read
 
     steps:
-      # phileas-net references the PhiSQL .NET reference library via a ProjectReference
+      # phileas-dotnet references the PhiSQL .NET reference library via a ProjectReference
       # (../../../phisql/reference/dotnet/PhiSql/PhiSql.csproj) because it is not yet on NuGet.
       # Both repositories are checked out as siblings so that relative path resolves.
-      - name: Checkout phileas-net
+      - name: Checkout phileas-dotnet
         uses: actions/checkout@v4
         with:
-          path: phileas-net
+          path: phileas-dotnet
 
       - name: Checkout phisql
         uses: actions/checkout@v4
@@ -35,10 +35,10 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore phileas-net/Phileas.slnx
+        run: dotnet restore phileas-dotnet/Phileas.slnx
 
       - name: Build
-        run: dotnet build --no-restore phileas-net/Phileas.slnx
+        run: dotnet build --no-restore phileas-dotnet/Phileas.slnx
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal phileas-net/Phileas.slnx
+        run: dotnet test --no-build --verbosity normal phileas-dotnet/Phileas.slnx

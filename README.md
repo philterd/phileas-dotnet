@@ -8,7 +8,7 @@ other sensitive information from text.
 > .NET ecosystems differ (available libraries, APIs, and platform conventions), so some behaviors and capabilities are
 > intentionally adapted rather than mirrored one-to-one.
 
-* Check out the [documentation](https://philterd.github.io/phileas-net/) or details and code examples.
+* Check out the [documentation](https://philterd.github.io/phileas-dotnet/) or details and code examples.
 * Built by [Philterd](https://www.philterd.ai).
 * Commercial support and consulting is available - [contact us](https://www.philterd.ai).
 
@@ -44,7 +44,7 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 | `IpAddress`            | IPv4 / IPv6 addresses                                                                           |
 | `MacAddress`           | MAC (hardware) addresses                                                                        |
 | `PassportNumber`       | Passport numbers                                                                                |
-| `PhEye`                | AI-powered NER via remote [PhEye](https://github.com/philterd/pheye) service or local ONNX model |
+| `PhEye`                | AI-powered NER via a remote [PhEye](https://github.com/philterd/pheye) service                  |
 | `PhoneNumber`          | Phone numbers                                                                                   |
 | `PhoneNumberExtension` | Phone number extensions                                                                         |
 | `Ssn`                  | US Social Security numbers                                                                      |
@@ -159,9 +159,7 @@ Console.WriteLine(result.FilteredText);
 
 ### Detect named entities with PhEye
 
-The `PhEye` filter provides AI-powered entity recognition using either a remote [PhEye](https://github.com/philterd/pheye) NLP service or a local ONNX BERT-based model.
-
-#### Remote Service Mode
+The `PhEye` filter provides AI-powered entity recognition using a remote [PhEye](https://github.com/philterd/pheye) NLP service.
 
 ```csharp
 using Phileas.Policy;
@@ -199,41 +197,7 @@ Console.WriteLine(result.FilteredText);
 // Output: {{{REDACTED-person}}} joined the meeting.
 ```
 
-#### Local Model Mode
-
-```csharp
-var policy = new PhileasPolicy
-{
-    Name = "pheye-local-policy",
-    Identifiers = new Identifiers
-    {
-        PhEyes = new List<PhEye>
-        {
-            new PhEye
-            {
-                PhEyeConfiguration = new PhEyeConfiguration
-                {
-                    ModelPath = "C:\\models\\model.onnx",
-                    VocabPath = "C:\\models\\vocab.txt",
-                    Labels = new List<string> { "PER", "ORG", "LOC" }
-                }
-            }
-        }
-    }
-};
-
-var result = new FilterService().Filter(
-    policy: policy,
-    context: "default",
-    piece: 0,
-    input: "John Smith works at Microsoft in Seattle."
-);
-
-Console.WriteLine(result.FilteredText);
-// Output: {{{REDACTED-person}}} works at {{{REDACTED-other}}} in {{{REDACTED-location-city}}}.
-```
-
-For detailed PhEye documentation including model setup and configuration options, see the [PhEye Filter Usage Guide](docs/pheye-filter-usage.md).
+For detailed PhEye documentation and configuration options, see the [PhEye Filter Usage Guide](docs/pheye-filter-usage.md).
 
 ### Inspect detected spans
 
@@ -245,6 +209,44 @@ foreach (var span in result.Spans)
     Console.WriteLine($"[{span.FilterType}] '{span.Text}' at {span.CharacterStart}-{span.CharacterEnd} → '{span.Replacement}'");
 }
 ```
+
+## Authoring Policies with PhiSQL
+
+Policies don't have to be written as C# objects or JSON. Phileas (.NET) is built on
+[**PhiSQL**](https://github.com/philterd/phisql) — a declarative, SQL-like language for PII redaction and
+discovery that compiles to the canonical Phileas JSON policy. PhiSQL is embedded directly in the library
+(the `Philterd.PhiSql` compiler and policy schema), so it is used in two ways:
+
+- **As an authoring format.** `Policy.FromPhiSQL(...)` compiles a PhiSQL document into a `Policy` that you
+  run exactly like any other policy.
+- **As the canonical schema.** All policy operations validate against the redaction policy schema that PhiSQL
+  defines (exposed via `PolicySchema`), so a C#-, JSON-, or PhiSQL-authored policy is the same thing under
+  the hood.
+
+```csharp
+using Phileas.Services;
+using PhileasPolicy = Phileas.Policy.Policy;
+
+const string phisql = """
+    POLICY support_tickets;
+
+    REDACT FIRST_NAME, SURNAME WITH STATIC_REPLACE(value='Customer');
+    REDACT EMAIL_ADDRESS WITH MASK;
+    REDACT SSN WITH MASK;
+    """;
+
+// Compiles the PhiSQL into a policy (throws PolicyCompilationException on a syntax/semantic error).
+PhileasPolicy policy = PhileasPolicy.FromPhiSQL(phisql);
+
+var result = new FilterService().Filter(policy, "default", 0,
+    "Contact Jane Doe at jane@example.com; SSN 123-45-6789.");
+
+Console.WriteLine(result.FilteredText);
+// First/last names are replaced with "Customer"; the email and SSN are masked with '*'.
+```
+
+See the [PhiSQL repository](https://github.com/philterd/phisql) for the language specification and more
+examples.
 
 ## Filter Strategies
 

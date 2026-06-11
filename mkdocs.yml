@@ -1,7 +1,7 @@
-site_name: phileas-net
-site_description: Developer documentation for phileas-net, a .NET PII filtering library
-site_url: https://philterd.github.io/phileas-net/
-repo_url: https://github.com/philterd/phileas-net
+site_name: phileas-dotnet
+site_description: Developer documentation for phileas-dotnet, a .NET PII filtering library
+site_url: https://philterd.github.io/phileas-dotnet/
+repo_url: https://www.github.com/philterd/phileas-dotnet
 edit_uri: tree/main/docs
 copyright: Copyright 2026 Philterd, LLC
 site_author: philterd

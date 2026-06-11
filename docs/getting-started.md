@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide walks you through adding phileas-net to a .NET project and running your first PII filter.
+This guide walks you through adding phileas-dotnet to a .NET project and running your first PII filter.
 
 ## Prerequisites
 

@@ -1,6 +1,6 @@
 # PDF Redaction
 
-phileas-net can redact PII directly in **PDF documents**. It detects sensitive values using the same
+phileas-dotnet can redact PII directly in **PDF documents**. It detects sensitive values using the same
 policies and filters used for text, then produces a redacted document in which every page is rendered to an
 image with redaction rectangles burned in.
 
@@ -184,7 +184,7 @@ var result = new PdfFilterService().Filter(policy, "ctx", inputPdf, MimeType.App
   larger than the source and is not text-searchable.
 - **Native dependencies.** PDF rendering uses PDFium (via PDFtoImage) and SkiaSharp, which include native
   binaries. On Linux you may need the appropriate `SkiaSharp.NativeAssets.Linux*` package for your
-  deployment. See the [NOTICE](https://github.com/philterd/phileas-net/blob/main/NOTICE) file for the full
+  deployment. See the [NOTICE](https://www.github.com/philterd/phileas-dotnet/blob/main/NOTICE) file for the full
   dependency and license list.
 - **`PreserveUnredactedPages`** is accepted in the policy but not yet honored in the .NET port; every page is
   rasterized.

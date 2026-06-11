@@ -1,26 +1,20 @@
 # PhEye Filter - AI-Powered Named Entity Recognition
 
-The `PhEye` filter provides flexible AI-powered named entity recognition (NER) for detecting persons, organizations, locations, and other custom entities in text. It supports two modes of operation:
-
-1. **Remote Service Mode**: Connects to a remote [PhEye](https://github.com/philterd/pheye) NLP service via HTTP
-2. **Local Model Mode**: Uses a local ONNX BERT-based NER model for offline inference
+The `PhEye` filter provides AI-powered named entity recognition (NER) for detecting persons,
+organizations, locations, and other entities in text. It connects to a remote
+[PhEye](https://github.com/philterd/pheye) NLP service via HTTP.
 
 ## Features
 
-- **Dual Operation Modes**: Choose between remote service or local model inference
 - **Named Entity Recognition**: Detects persons, organizations, locations, and custom entity types
-- **BERT Tokenization**: Built-in WordPiece tokenizer for BERT models (local mode)
-- **ONNX Runtime**: Fast local inference using Microsoft's ONNX Runtime
-- **Entity Grouping**: Automatically groups B-* and I-* tags into complete entities
 - **Confidence Scoring**: Provides confidence scores for each detection
 - **Configurable Thresholds**: Filter entities based on confidence levels per label
 - **Bearer Token Authentication**: Secure communication with remote PhEye services
 
-## Remote Service Mode
+## Setup
 
-### Setup
-
-Deploy a [PhEye](https://github.com/philterd/pheye) service or use an existing endpoint.
+Deploy a [PhEye](https://github.com/philterd/pheye) service or use an existing endpoint, then point the
+filter at it.
 
 ### Configuration
 
@@ -32,7 +26,7 @@ using PhileasPolicy = Phileas.Policy.Policy;
 
 var policy = new PhileasPolicy
 {
-    Name = "pheye-remote-policy",
+    Name = "pheye-policy",
     Identifiers = new Identifiers
     {
         PhEyes = new List<PhEye>
@@ -56,7 +50,6 @@ var policy = new PhileasPolicy
 
 ```json
 {
-  "name": "pheye-remote-policy",
   "identifiers": {
     "pheye": [
       {
@@ -82,86 +75,11 @@ var result = filterService.Filter(
     policy: policy,
     context: "default",
     piece: 0,
-    input: "John Smith works at Microsoft in Seattle."
+    input: "John Smith joined the meeting."
 );
 
 Console.WriteLine(result.FilteredText);
-// Output: {{{REDACTED-person}}} works at {{{REDACTED-other}}} in {{{REDACTED-location-city}}}.
-```
-
-## Local Model Mode
-
-### Setup
-
-#### 1. Download the ONNX Model
-
-Download a BERT NER ONNX model from HuggingFace, such as [protectai/bert-base-NER-onnx](https://huggingface.co/protectai/bert-base-NER-onnx):
-
-```bash
-# Clone the model repository
-git clone https://huggingface.co/protectai/bert-base-NER-onnx
-
-# Or download specific files:
-# - model.onnx (the ONNX model file)
-# - vocab.txt (the BERT vocabulary file)
-```
-
-#### 2. Configure the Filter
-
-```csharp
-var policy = new PhileasPolicy
-{
-    Name = "pheye-local-policy",
-    Identifiers = new Identifiers
-    {
-        PhEyes = new List<PhEye>
-        {
-            new PhEye
-            {
-                PhEyeConfiguration = new PhEyeConfiguration
-                {
-                    ModelPath = "C:\\models\\model.onnx",
-                    VocabPath = "C:\\models\\vocab.txt",
-                    Labels = new List<string> { "PER", "ORG", "LOC", "MISC" }
-                }
-            }
-        }
-    }
-};
-```
-
-#### 3. JSON Configuration
-
-```json
-{
-  "name": "pheye-local-policy",
-  "identifiers": {
-    "pheye": [
-      {
-        "phEyeConfiguration": {
-          "modelPath": "C:\\models\\model.onnx",
-          "vocabPath": "C:\\models\\vocab.txt",
-          "labels": ["PER", "ORG", "LOC", "MISC"]
-        },
-        "removePunctuation": false
-      }
-    ]
-  }
-}
-```
-
-### Mixed Configuration
-
-If both `modelPath`/`vocabPath` **and** `endpoint` are provided, the filter will prefer the local model. If only `modelPath` or only `vocabPath` is set (but not both), the filter falls back to the remote service.
-
-```csharp
-new PhEyeConfiguration
-{
-    ModelPath = "C:\\models\\model.onnx",
-    VocabPath = "C:\\models\\vocab.txt",
-    Endpoint = "http://localhost:8080",  // Fallback if local model fails to load
-    Labels = new List<string> { "PERSON" }
-}
+// Output: {{{REDACTED-person}}} joined the meeting.
 ```
 
 ## Configuration Options
@@ -170,12 +88,10 @@ new PhEyeConfiguration
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `Endpoint` | `string` | `"http://localhost:8080"` | Base URL of the PhEye service (remote mode) |
-| `BearerToken` | `string?` | `null` | Bearer token for API authentication (remote mode) |
-| `Timeout` | `int` | `30` | Request timeout in seconds (remote mode) |
+| `Endpoint` | `string` | `"http://localhost:8080"` | Base URL of the PhEye service |
+| `BearerToken` | `string?` | `null` | Bearer token for API authentication |
+| `Timeout` | `int` | `30` | Request timeout in seconds |
 | `Labels` | `List<string>` | `["Person"]` | Entity labels to detect |
-| `ModelPath` | `string?` | `null` | Path to ONNX model file (local mode) |
-| `VocabPath` | `string?` | `null` | Path to BERT vocabulary file (local mode) |
 
 ### PhEye Filter Properties
 
@@ -189,34 +105,18 @@ new PhEyeConfiguration
 
 ## Supported Entity Types
 
-The filter maps entity labels to Phileas `FilterType` enums:
+Detected entities are mapped to a Phileas `FilterType`:
 
 | Entity Label | FilterType | Description |
 |--------------|------------|-------------|
-| `PERSON`, `PER` | `FilterType.Person` | Person names |
-| `LOCATION`, `LOC` | `FilterType.LocationCity` | Location names |
-| `ORGANIZATION`, `ORG` | `FilterType.Other` | Organization names |
-| `MISC` | `FilterType.Other` | Miscellaneous entities |
+| `PERSON` (case-insensitive) | `FilterType.Person` | Person names |
+| Any other label | `FilterType.Other` | All other entity types |
 
-Custom labels not in this list are mapped to `FilterType.Other`.
+The original service label is preserved on each span's `Classification`.
 
 ## Confidence Thresholds
 
-You can set minimum confidence thresholds per label to filter out low-confidence predictions:
-
-```csharp
-var thresholds = new Dictionary<string, double>
-{
-    { "PERSON", 0.90 },
-    { "ORG", 0.85 },
-    { "LOC", 0.80 }
-};
-
-// Note: Thresholds are typically configured via filter strategies
-// or custom filter initialization when using the PhEye filter directly
-```
-
-When using filter strategies:
+Use a per-label minimum confidence (via a strategy condition) to filter out low-confidence predictions:
 
 ```csharp
 PhEyes = new List<PhEye>
@@ -242,7 +142,7 @@ PhEyes = new List<PhEye>
 
 ## Multiple PhEye Configurations
 
-You can configure multiple PhEye instances in a single policy, each with different endpoints or model configurations:
+You can configure multiple PhEye instances in a single policy, each pointing at a different endpoint:
 
 ```csharp
 PhEyes = new List<PhEye>
@@ -322,60 +222,12 @@ PhEyes = new List<PhEye>
 
 ## Performance Considerations
 
-### Remote Service Mode
-
-- **Network Latency**: Processing time depends on network speed and service location
-- **Scalability**: PhEye service can be scaled horizontally
-- **Resource Usage**: Minimal local resources required
-- **Throughput**: Depends on service capacity and configuration
-
-### Local Model Mode
-
-- **Model Size**: BERT-base models are typically ~400MB
-- **Memory Usage**: Model must be loaded into memory (~400MB RAM)
-- **Inference Speed**: Processing time depends on text length and CPU/GPU
-- **Token Limit**: Maximum sequence length is 512 tokens (BERT limit)
-- **No Network**: Operates completely offline
-
-### Choosing a Mode
-
-| Factor | Remote Service | Local Model |
-|--------|----------------|-------------|
-| Setup Complexity | Easy | Moderate |
-| Network Required | Yes | No |
-| Privacy | Data leaves host | Data stays local |
-| Scalability | High | Limited by host resources |
-| Latency | Variable | Consistent |
-| Resource Usage | Low | Moderate-High |
+- **Network Latency**: Processing time depends on network speed and service location.
+- **Scalability**: The PhEye service can be scaled horizontally.
+- **Resource Usage**: Minimal local resources are required.
+- **Throughput**: Depends on service capacity and configuration.
 
 ## Example Scenarios
-
-### Medical Records Processing
-
-```csharp
-var policy = new PhileasPolicy
-{
-    Name = "medical-ner",
-    Identifiers = new Identifiers
-    {
-        PhEyes = new List<PhEye>
-        {
-            new PhEye
-            {
-                PhEyeConfiguration = new PhEyeConfiguration
-                {
-                    ModelPath = "C:\\models\\medical-ner.onnx",
-                    VocabPath = "C:\\models\\vocab.txt",
-                    Labels = new List<string> { "PERSON", "CONDITION", "MEDICATION", "PROCEDURE" }
-                }
-            }
-        }
-    }
-};
-
-var text = "Dr. Sarah Johnson prescribed metformin to treat the patient's diabetes.";
-var result = new FilterService().Filter(policy, "ctx", 0, text);
-```
 
 ### Multi-Language Support
 
@@ -403,57 +255,27 @@ PhEyes = new List<PhEye>
 
 ## Troubleshooting
 
-### Remote Service Issues
-
 **Connection Timeout**
-- Verify the endpoint URL is correct and accessible
-- Check network connectivity and firewall rules
-- Increase the `Timeout` value if the service is slow
+- Verify the endpoint URL is correct and accessible.
+- Check network connectivity and firewall rules.
+- Increase the `Timeout` value if the service is slow.
 
 **Authentication Errors**
-- Ensure the `BearerToken` is correct
-- Verify the token has not expired
+- Ensure the `BearerToken` is correct.
+- Verify the token has not expired.
 
 **No Entities Detected**
-- Confirm the `Labels` list matches the model's output labels
-- Check service logs for errors
-
-### Local Model Issues
-
-**Model Loading Errors**
-- Verify the `ModelPath` and `VocabPath` are correct
-- Ensure the ONNX model format is compatible with ONNX Runtime 1.20.1+
-- Check file permissions
-
-**OutOfMemoryException**
-- The BERT model requires ~400MB RAM minimum
-- Close other applications or increase available memory
-
-**Poor Detection Quality**
-- Verify the model matches your text domain (general, medical, legal, etc.)
-- Adjust confidence thresholds
-- Consider fine-tuning the model on domain-specific data
-
-**Partial Configuration Fallback**
-- If only `ModelPath` or `VocabPath` is set, the filter uses remote service
-- Ensure both paths are provided for local inference
+- Confirm the `Labels` list matches the service's output labels.
+- Check the service logs for errors.
 
 ## Resource Cleanup
 
 The PhEye filter implements `IDisposable` for proper resource cleanup:
 
 ```csharp
-using var filterService = new FilterService();
-// Filter operations...
-// Resources automatically cleaned up
-```
-
-When manually creating filters:
-
-```csharp
 using var filter = new PhEyeFilter(config, phEyeConfig, false, thresholds);
 // Use the filter...
-// Automatically disposes ONNX session and HTTP client
+// Automatically disposes the HTTP client.
 ```
 
 ## Integration with Phileas Pipeline
@@ -478,7 +300,7 @@ var policy = new PhileasPolicy
                 }
             }
         },
-        
+
         // Pattern-based detectors
         EmailAddress = new EmailAddress(),
         PhoneNumber = new PhoneNumber(),
@@ -490,27 +312,11 @@ var policy = new PhileasPolicy
 
 ## Next Steps
 
-- Read about [Filter Strategies](filter-strategies.md) to customize redaction behavior
-- Learn about [Filter Conditions](filter-conditions.md) for conditional redaction
-- Explore the [API Reference](api-reference.md) for detailed method documentation
-- Check out the [PhEye service documentation](https://github.com/philterd/pheye) for service setup
-
-## Model Information
-
-### Recommended Models
-
-- **General NER**: [protectai/bert-base-NER-onnx](https://huggingface.co/protectai/bert-base-NER-onnx)
-- **Medical NER**: Fine-tuned BERT models for medical domain
-- **Custom Models**: Train and export your own BERT NER models to ONNX format
-
-### Model Requirements
-
-- Format: ONNX
-- Architecture: BERT-based token classification
-- Input tensors: `input_ids`, `attention_mask`, `token_type_ids`
-- Output tensor: `logits` with shape `[batch_size, sequence_length, num_labels]`
-- Vocabulary: WordPiece vocabulary file compatible with BERT tokenizer
+- Read about [Filter Strategies](filter-strategies.md) to customize redaction behavior.
+- Learn about [Filter Conditions](filter-conditions.md) for conditional redaction.
+- Explore the [API Reference](api-reference.md) for detailed method documentation.
+- Check out the [PhEye service documentation](https://github.com/philterd/pheye) for service setup.
 
 ## Questions?
 
-Visit the [Phileas documentation](https://philterd.github.io/phileas-net/) or the [GitHub repository](https://github.com/philterd/phileas-net) for more information.
+Visit the [Phileas documentation](https://philterd.github.io/phileas-dotnet/) or the [GitHub repository](https://www.github.com/philterd/phileas-dotnet) for more information.

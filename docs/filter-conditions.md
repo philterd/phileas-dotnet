@@ -4,7 +4,7 @@ Filter strategy conditions allow you to apply different strategies based on the 
 
 ## Overview
 
-When multiple strategies are defined for a filter, phileas-net evaluates their conditions in order. The **first strategy whose condition evaluates to `true`** is applied. If no strategy conditions match, the default redaction format is used.
+When multiple strategies are defined for a filter, phileas-dotnet evaluates their conditions in order. The **first strategy whose condition evaluates to `true`** is applied. If no strategy conditions match, the default redaction format is used.
 
 ## Supported Condition Fields
 
@@ -371,7 +371,7 @@ Strategies = new List<IpAddressFilterStrategy>
 
 ## Population Conditions
 
-The `population` field applies to **ZIP code** tokens. phileas-net looks the detected ZIP code up in its bundled US census population data and compares the result against the configured value. A ZIP code that is not present in the census data **fails** the condition.
+The `population` field applies to **ZIP code** tokens. phileas-dotnet looks the detected ZIP code up in its bundled US census population data and compares the result against the configured value. A ZIP code that is not present in the census data **fails** the condition.
 
 ```csharp
 var policy = new Policy

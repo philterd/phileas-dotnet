@@ -41,12 +41,4 @@ public class PhEyeConfiguration
     /// </summary>
     [JsonPropertyName("labels")]
     public List<string> Labels { get; set; } = new() { "Person" };
-
-    /// <summary>Gets or sets the path to the ONNX model file for local inference.</summary>
-    [JsonPropertyName("modelPath")]
-    public string? ModelPath { get; set; }
-
-    /// <summary>Gets or sets the path to the BERT vocabulary file for local inference.</summary>
-    [JsonPropertyName("vocabPath")]
-    public string? VocabPath { get; set; }
 }

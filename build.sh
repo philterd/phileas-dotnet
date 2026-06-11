@@ -13,16 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Builds and tests phileas-net inside the official .NET 10 SDK Docker image, so
+# Builds and tests phileas-dotnet inside the official .NET 10 SDK Docker image, so
 # the only requirement on the host is Docker — no .NET SDK needed.
 #
-# phileas-net references the PhiSQL .NET reference library via a ProjectReference
+# phileas-dotnet references the PhiSQL .NET reference library via a ProjectReference
 # (../../../phisql/reference/dotnet/PhiSql/PhiSql.csproj) because it is not yet on
 # NuGet, so the phisql repository must be checked out as a SIBLING directory named
 # "phisql" next to this repository, e.g.:
 #
 #     code/
-#     ├── phileas-net/   <- this repository
+#     ├── phileas-dotnet/   <- this repository
 #     └── phisql/        <- git clone https://github.com/philterd/phisql
 #
 # The parent directory containing both repos is mounted into the container so the
@@ -44,7 +44,7 @@ fi
 
 if [ ! -f "$parent/phisql/reference/dotnet/PhiSql/PhiSql.csproj" ]; then
   echo "error: the phisql repository was not found at $parent/phisql." >&2
-  echo "       phileas-net references it via a ProjectReference, so clone it as a sibling:" >&2
+  echo "       phileas-dotnet references it via a ProjectReference, so clone it as a sibling:" >&2
   echo "         git clone https://github.com/philterd/phisql \"$parent/phisql\"" >&2
   exit 1
 fi

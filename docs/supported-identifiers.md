@@ -1,6 +1,6 @@
 # Supported Identifiers
 
-phileas-net ships with a comprehensive set of built-in PII identifier types — pattern-based detectors, dictionary-backed name/location detectors, configurable custom dictionaries, custom regex identifiers, section detectors, and an AI-powered **PhEye** filter. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
+phileas-dotnet ships with a comprehensive set of built-in PII identifier types — pattern-based detectors, dictionary-backed name/location detectors, configurable custom dictionaries, custom regex identifiers, section detectors, and an AI-powered **PhEye** filter. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
 
 ## Quick Reference
 
@@ -49,7 +49,7 @@ phileas-net ships with a comprehensive set of built-in PII identifier types — 
 | `CustomDictionaries` | `dictionaries` | Custom term lists with `classification` and `sensitivity`-based fuzzy matching |
 | `CustomIdentifiers` | `identifiers` | Custom regex identifiers |
 | `Sections` | `sections` | Spans of text delimited by a start and end pattern |
-| `PhEyes` | `pheye` | AI-powered NER via remote service or local ONNX model |
+| `PhEyes` | `pheye` | AI-powered NER via a remote PhEye service |
 
 ---
 
@@ -334,9 +334,7 @@ Identifiers = new Identifiers { PassportNumber = new PassportNumber() }
 
 ### PhEye
 
-Detects named entities using AI-powered NLP. Supports both **remote service mode** (connects to a [PhEye](https://github.com/philterd/pheye) service) and **local model mode** (uses a local ONNX BERT-based NER model).
-
-#### Remote Service Mode
+Detects named entities using AI-powered NLP by connecting to a remote [PhEye](https://github.com/philterd/pheye) NER service.
 
 ```csharp
 Identifiers = new Identifiers
@@ -374,58 +372,14 @@ JSON configuration:
 }
 ```
 
-#### Local Model Mode
-
-```csharp
-Identifiers = new Identifiers
-{
-    PhEyes = new List<PhEye>
-    {
-        new PhEye
-        {
-            PhEyeConfiguration = new PhEyeConfiguration
-            {
-                ModelPath = "C:\\models\\model.onnx",
-                VocabPath = "C:\\models\\vocab.txt",
-                Labels = new List<string> { "PER", "ORG", "LOC", "MISC" }
-            }
-        }
-    }
-}
-```
-
-JSON configuration:
-
-```json
-"identifiers": {
-  "pheye": [
-    {
-      "phEyeConfiguration": {
-        "modelPath": "C:\\models\\model.onnx",
-        "vocabPath": "C:\\models\\vocab.txt",
-        "labels": ["PER", "ORG", "LOC", "MISC"]
-      }
-    }
-  ]
-}
-```
-
 **Configuration Options:**
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `endpoint` | `string` | `"http://localhost:8080"` | Base URL of PhEye service (remote mode) |
-| `bearerToken` | `string?` | `null` | Bearer token for authentication (remote mode) |
-| `timeout` | `int` | `30` | Request timeout in seconds (remote mode) |
-| `modelPath` | `string?` | `null` | Path to ONNX model file (local mode) |
-| `vocabPath` | `string?` | `null` | Path to BERT vocabulary file (local mode) |
+| `endpoint` | `string` | `"http://localhost:8080"` | Base URL of the PhEye service |
+| `bearerToken` | `string?` | `null` | Bearer token for authentication |
+| `timeout` | `int` | `30` | Request timeout in seconds |
 | `labels` | `string[]` | `["Person"]` | Entity labels to detect |
-
-**Mode Selection:**
-- If both `modelPath` and `vocabPath` are provided → **local model mode**
-- If only `endpoint` is provided → **remote service mode**
-- If both are provided → prefers local model, falls back to remote on errors
-- If only one of `modelPath` or `vocabPath` is set → uses remote service
 
 **Detected Entity Types:**
 - `PERSON` / `PER` → Mapped to `FilterType.Person`

@@ -10,10 +10,6 @@ Runtime dependencies
 ================================================================================
 These libraries are required by, and distributed alongside, the Phileas library.
 
-- Microsoft.ML.OnnxRuntime 1.24.2
-    License: MIT
-    https://github.com/microsoft/onnxruntime
-
 - JsonSchema.Net 7.0.4  (json-everything)
     License: MIT
     https://github.com/gregsdennis/json-everything

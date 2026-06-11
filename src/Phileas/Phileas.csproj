@@ -12,18 +12,17 @@
         <Description>A .NET library for detecting and redacting Personally Identifiable Information (PII) from text using configurable, policy-based filters.</Description>
         <PackageTags>pii;redaction;privacy;nlp;phileas;philter</PackageTags>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/philterd/phileas-net</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/philterd/phileas-net</RepositoryUrl>
+        <PackageProjectUrl>https://www.github.com/philterd/phileas-dotnet</PackageProjectUrl>
+        <RepositoryUrl>https://www.github.com/philterd/phileas-dotnet</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Copyright>Copyright 2026 Philterd, LLC</Copyright>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Title>Phileas</Title>
-        <PackageLicenseUrl>https://github.com/philterd/phileas-net/blob/main/LICENSE</PackageLicenseUrl>
+        <PackageLicenseUrl>https://www.github.com/philterd/phileas-dotnet/blob/main/LICENSE</PackageLicenseUrl>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.2" />
         <PackageReference Include="JsonSchema.Net" Version="7.0.4" />
         <!-- PDF redaction: PdfPig extracts text with per-glyph coordinates; PDFtoImage (PDFium)
              rasterizes pages; SkiaSharp draws redaction rectangles, encodes JPEG/PNG, and assembles
