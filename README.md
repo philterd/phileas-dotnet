@@ -44,7 +44,7 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 | `IpAddress`            | IPv4 / IPv6 addresses                                                                           |
 | `MacAddress`           | MAC (hardware) addresses                                                                        |
 | `PassportNumber`       | Passport numbers                                                                                |
-| `PhEye`                | AI-powered NER via a remote [PhEye](https://github.com/philterd/pheye) service                  |
+| `PhEye`                | AI-powered NER via a remote [PhEye](https://github.com/philterd/pheye) service or a local GLiNER model |
 | `PhoneNumber`          | Phone numbers                                                                                   |
 | `PhoneNumberExtension` | Phone number extensions                                                                         |
 | `Ssn`                  | US Social Security numbers                                                                      |
@@ -159,7 +159,7 @@ Console.WriteLine(result.FilteredText);
 
 ### Detect named entities with PhEye
 
-The `PhEye` filter provides AI-powered entity recognition using a remote [PhEye](https://github.com/philterd/pheye) NLP service.
+The `PhEye` filter provides AI-powered entity recognition. By default it calls a remote [PhEye](https://github.com/philterd/pheye) NLP service; set `ModelPath` to run a local [GLiNER](https://github.com/urchade/GLiNER) model in-process instead, with no network call (see [local GLiNER inference](#local-gliner-inference) below).
 
 ```csharp
 using Phileas.Policy;
@@ -196,6 +196,21 @@ var result = new FilterService().Filter(
 Console.WriteLine(result.FilteredText);
 // Output: {{{REDACTED-person}}} joined the meeting.
 ```
+
+#### Local GLiNER inference
+
+Point `ModelPath` at a GLiNER model directory to detect entities entirely on-device. The directory must contain the exported ONNX graph (`model.onnx` or `model_quantized.onnx`), the SentencePiece tokenizer (`spm.model`), and `gliner_config.json`. With `ModelPath` set, the filter ignores `Endpoint` and makes no HTTP call. `Labels` becomes the GLiNER detection prompt (GLiNER is zero-shot, so any label works), and `Threshold` (default `0.5`) is the minimum span confidence.
+
+```csharp
+PhEyeConfiguration = new PhEyeConfiguration
+{
+    ModelPath = "/models/ph-eye-pii-base",
+    Labels    = new List<string> { "person", "email address", "social security number" },
+    Threshold = 0.5
+}
+```
+
+This is the configuration produced by the PhiSQL `MODEL` clause (schema 1.1.0). The model is loaded once on first use and reused across calls.
 
 For detailed PhEye documentation and configuration options, see the [PhEye Filter Usage Guide](docs/pheye-filter-usage.md).
 

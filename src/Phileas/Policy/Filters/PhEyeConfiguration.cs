@@ -37,8 +37,23 @@ public class PhEyeConfiguration
 
     /// <summary>
     ///     Gets or sets the list of entity labels the filter should detect (e.g. <c>"Person"</c>). Defaults to
-    ///     <c>["Person"]</c>.
+    ///     <c>["Person"]</c>. For a local GLiNER model these are the detection prompt.
     /// </summary>
     [JsonPropertyName("labels")]
     public List<string> Labels { get; set; } = new() { "Person" };
+
+    /// <summary>
+    ///     Gets or sets the filesystem path to a local GLiNER model directory (the ONNX model, the SentencePiece
+    ///     tokenizer, and the GLiNER config). When set, entities are detected with on-device inference instead of via
+    ///     <see cref="Endpoint" />. Matches PhiSQL schema 1.1.0 <c>modelPath</c> (the <c>MODEL</c> clause).
+    /// </summary>
+    [JsonPropertyName("modelPath")]
+    public string? ModelPath { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the minimum span confidence for the local model to return a detection. Defaults to 0.5.
+    ///     Applies to local inference only. Matches PhiSQL schema 1.1.0 <c>threshold</c>.
+    /// </summary>
+    [JsonPropertyName("threshold")]
+    public double Threshold { get; set; } = 0.5;
 }

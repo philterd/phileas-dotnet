@@ -6,7 +6,7 @@
         <RootNamespace>Phileas</RootNamespace>
         <!-- NuGet package metadata -->
         <PackageId>Phileas</PackageId>
-        <Version>1.0.0</Version>
+        <Version>1.1.0</Version>
         <Authors>Philterd, LLC</Authors>
         <Company>Philterd, LLC</Company>
         <Description>A .NET library for detecting and redacting Personally Identifiable Information (PII) from text using configurable, policy-based filters.</Description>
@@ -19,11 +19,19 @@
         <Copyright>Copyright 2026 Philterd, LLC</Copyright>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Title>Phileas</Title>
-        <PackageLicenseUrl>https://www.github.com/philterd/phileas-dotnet/blob/main/LICENSE</PackageLicenseUrl>
-        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     </PropertyGroup>
     <ItemGroup>
+        <!-- Expose internal GLiNER pipeline stages (word split, input framing, decode) to the test project so they
+             can be unit-tested without a model. -->
+        <InternalsVisibleTo Include="Phileas.Tests" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="JsonSchema.Net" Version="7.0.4" />
+        <!-- Local GLiNER inference (PhEyeFilter local mode): OnnxRuntime runs the exported model in-process;
+             Microsoft.ML.Tokenizers provides the SentencePiece tokenizer that reproduces the deberta-v3 ids. -->
+        <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.26.0" />
+        <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
         <!-- PDF redaction: PdfPig extracts text with per-glyph coordinates; PDFtoImage (PDFium)
              rasterizes pages; SkiaSharp draws redaction rectangles, encodes JPEG/PNG, and assembles
              the image-only output PDF. -->

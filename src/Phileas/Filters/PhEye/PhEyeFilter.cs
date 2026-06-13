@@ -25,7 +25,9 @@ using Phileas.Policy.Filters;
 namespace Phileas.Filters.PhEye;
 
 /// <summary>
-///     Filter that detects named entities using a remote PhEye NLP service via HTTP.
+///     Filter that detects named entities with PhEye. By default it calls a remote PhEye NLP service over HTTP; when
+///     <see cref="PhEyeConfiguration.ModelPath" /> is set it runs a local GLiNER model in-process instead, with no
+///     network call. Both paths feed the same threshold, ignore, replacement, and overlap pipeline.
 /// </summary>
 public class PhEyeFilter : AbstractFilter, IDisposable
 {
@@ -37,8 +39,11 @@ public class PhEyeFilter : AbstractFilter, IDisposable
 
     private readonly PhEyeConfiguration _configuration;
     private readonly HttpClient _httpClient;
+    private readonly bool _localInference;
+    private readonly object _modelLock = new();
     private readonly bool _removePunctuation;
     private readonly Dictionary<string, double> _thresholds;
+    private GlinerModel? _model;
 
     /// <summary>
     ///     Initializes a new <see cref="PhEyeFilter" />.
@@ -61,6 +66,7 @@ public class PhEyeFilter : AbstractFilter, IDisposable
         _configuration = phEyeConfiguration;
         _removePunctuation = removePunctuation;
         _thresholds = thresholds;
+        _localInference = !string.IsNullOrEmpty(_configuration.ModelPath);
 
         _httpClient = httpClient ?? new HttpClient();
         _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout > 0 ? _configuration.Timeout : 30);
@@ -82,42 +88,11 @@ public class PhEyeFilter : AbstractFilter, IDisposable
             ? Regex.Replace(input, @"\p{P}", " ")
             : input;
 
-        var request = new PhEyeRequest
-        {
-            Text = input,
-            Context = context,
-            Piece = piece,
-            Labels = _configuration.Labels
-        };
+        var phEyeSpans = _localInference
+            ? DetectLocal(input)
+            : DetectRemote(input, context, piece);
 
-        var url = _configuration.Endpoint.TrimEnd('/') + "/find";
-
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
-        httpRequest.Content = JsonContent.Create(request, options: JsonOptions);
-        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        if (!string.IsNullOrEmpty(_configuration.BearerToken))
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.BearerToken);
-
-        HttpResponseMessage response;
-        try
-        {
-            response = _httpClient.SendAsync(httpRequest).GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            throw new IOException($"Unable to connect to pheye service at {url}.", ex);
-        }
-
-        if (!response.IsSuccessStatusCode)
-            throw new IOException($"pheye service returned status {(int)response.StatusCode}.");
-
-        var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-        if (string.IsNullOrEmpty(responseBody))
-            return new Filtered(context, piece, spans);
-
-        var phEyeSpans = JsonSerializer.Deserialize<List<PhEyeSpan>>(responseBody, JsonOptions);
-        if (phEyeSpans == null || phEyeSpans.Count == 0)
+        if (phEyeSpans.Count == 0)
             return new Filtered(context, piece, spans);
 
         foreach (var phEyeSpan in phEyeSpans)
@@ -158,10 +133,84 @@ public class PhEyeFilter : AbstractFilter, IDisposable
         return new Filtered(context, piece, Span.DropOverlappingSpans(spans));
     }
 
-    /// <summary>Releases the <see cref="HttpClient" /> used by the filter.</summary>
+    /// <summary>Detects entities locally with the in-process GLiNER model, mapping each to a <see cref="PhEyeSpan" />.</summary>
+    private List<PhEyeSpan> DetectLocal(string input)
+    {
+        var entities = GetModel().Find(input, _configuration.Labels, _configuration.Threshold);
+
+        var phEyeSpans = new List<PhEyeSpan>(entities.Count);
+        foreach (var e in entities)
+            phEyeSpans.Add(new PhEyeSpan
+            {
+                Start = e.Start,
+                End = e.End,
+                Label = e.Label,
+                Text = e.Text,
+                Score = e.Score
+            });
+
+        return phEyeSpans;
+    }
+
+    /// <summary>Detects entities by posting to the remote PhEye service's <c>/find</c> endpoint.</summary>
+    private List<PhEyeSpan> DetectRemote(string input, string context, int piece)
+    {
+        var request = new PhEyeRequest
+        {
+            Text = input,
+            Context = context,
+            Piece = piece,
+            Labels = _configuration.Labels
+        };
+
+        var url = _configuration.Endpoint.TrimEnd('/') + "/find";
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+        httpRequest.Content = JsonContent.Create(request, options: JsonOptions);
+        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        if (!string.IsNullOrEmpty(_configuration.BearerToken))
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.BearerToken);
+
+        HttpResponseMessage response;
+        try
+        {
+            response = _httpClient.SendAsync(httpRequest).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            throw new IOException($"Unable to connect to pheye service at {url}.", ex);
+        }
+
+        if (!response.IsSuccessStatusCode)
+            throw new IOException($"pheye service returned status {(int)response.StatusCode}.");
+
+        var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+        if (string.IsNullOrEmpty(responseBody))
+            return new List<PhEyeSpan>();
+
+        return JsonSerializer.Deserialize<List<PhEyeSpan>>(responseBody, JsonOptions) ?? new List<PhEyeSpan>();
+    }
+
+    /// <summary>Lazily loads the local GLiNER model on first use; the load is shared across calls.</summary>
+    private GlinerModel GetModel()
+    {
+        if (_model != null)
+            return _model;
+
+        lock (_modelLock)
+        {
+            _model ??= new GlinerModel(_configuration.ModelPath!);
+        }
+
+        return _model;
+    }
+
+    /// <summary>Releases the <see cref="HttpClient" /> and the local GLiNER model, if any.</summary>
     public void Dispose()
     {
         _httpClient.Dispose();
+        _model?.Dispose();
         GC.SuppressFinalize(this);
     }
 
