@@ -6,7 +6,7 @@
         <RootNamespace>Phileas</RootNamespace>
         <!-- NuGet package metadata -->
         <PackageId>Phileas</PackageId>
-        <Version>1.1.0</Version>
+        <Version>1.2.0</Version>
         <Authors>Philterd, LLC</Authors>
         <Company>Philterd, LLC</Company>
         <Description>A .NET library for detecting and redacting Personally Identifiable Information (PII) from text using configurable, policy-based filters.</Description>

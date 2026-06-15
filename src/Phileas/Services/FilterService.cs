@@ -374,8 +374,9 @@ public class FilterService : IFilterService
             {
                 var config = BuildDictionaryConfig(identifier, identifier.Strategies, FilterType.Identifier, policy,
                     contextService);
+                var validator = Validators.IdentifierValidators.FromPolicy(identifier.Validator);
                 filters.Add(new IdentifierFilter(config, identifier.Classification, identifier.Pattern,
-                    identifier.CaseSensitive, identifier.GroupNumber));
+                    identifier.CaseSensitive, identifier.GroupNumber, validator));
             }
 
         // Section filters.

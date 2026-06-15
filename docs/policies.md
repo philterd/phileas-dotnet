@@ -132,6 +132,47 @@ Each identifier class extends `AbstractPolicyFilter` and supports these common o
 
 ---
 
+## Custom Identifiers
+
+The `identifiers.identifiers` array holds custom regex-based identifiers. Each detects values with a user-supplied pattern.
+
+| Property | JSON key | Type | Default | Description |
+|---|---|---|---|---|
+| `Classification` | `classification` | `string` | `custom-identifier` | Label applied to matches (used as the filter type). |
+| `Pattern` | `pattern` | `string` | `\b[A-Z0-9_-]{6,}\b` | The regular expression to match. |
+| `CaseSensitive` | `caseSensitive` | `bool` | `true` | Whether matching is case-sensitive. |
+| `GroupNumber` | `groupNumber` | `int` | `0` | The capture group to extract as the matched value (`0` is the whole match). |
+| `Validator` | `validator` | `string` or object | `null` | An optional named, post-match validator (see below). |
+
+### Validators
+
+A regular expression matches a *format*, not a valid value. The optional `validator` runs a named, built-in check on each match and keeps the match only if the check passes, so a generic identifier can reject format-valid but checksum-invalid values without embedding executable code in the policy.
+
+The validator may be written as a string, or as an object when it takes parameters:
+
+```json
+"validator": "luhn"
+```
+
+```json
+"validator": { "name": "mod11", "params": { "variant": "cpf" } }
+```
+
+An unknown or not-yet-implemented validator name is a policy error and the filter raises rather than silently skipping the check. The available validators match the Phileas (Java) implementation for the same input.
+
+| Validator | Parameters | Description |
+|---|---|---|
+| `luhn` | none | Standard mod-10 Luhn checksum over the digits of the match (separators ignored). |
+| `mod11` | `variant`: `cpf` or `cnpj` | Weighted-sum mod-11 check digits for the Brazilian CPF and CNPJ. |
+| `mod97` | `variant`: `nir` or `iban`; `substitutions` (nir) | Control from a value mod 97: the French INSEE/NIR (with Corsica substitutions) or an IBAN (MOD-97-10). |
+| `mod23-letter` | `substitutions` | Control letter from a 23-entry table, for the Spanish DNI and NIE (leading X/Y/Z substitution). |
+| `es-cif` | none | Spanish CIF control character (digit or letter). |
+| `de-steuerid` | none | German tax ID (Steuer-ID): digit-repetition rule plus ISO/IEC 7064 MOD 11,10 check digit. |
+| `de-personalausweis` | none | German ID card number: ICAO 9303 7-3-1 check digit. |
+| `bic-structural` | none | SWIFT/BIC structure (ISO 9362) with a valid ISO 3166 country segment. |
+
+---
+
 ## Ignored Values
 
 Use the `ignored` list on an identifier to whitelist specific values:

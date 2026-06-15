@@ -2,6 +2,33 @@
 
 All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.2.0
+
+Built on PhiSQL 1.1.0.
+
+### Added
+
+- **Validator field on the custom `identifier` filter.** A custom identifier may now declare an optional `validator`,
+  a named, built-in post-match check; a regex match is kept only if the validator passes, so a generic identifier can
+  reject format-valid but checksum-invalid values without embedding any executable code in the policy. The validator may
+  be written as a string (`"validator": "luhn"`) or as an object with a `name` and optional `params`. An unknown or
+  not-yet-implemented validator name is a policy error rather than being silently ignored. This is the parity port of the
+  Phileas (Java) validator field and requires redaction policy schema 1.1.0.
+- **`luhn` validator** (standard mod-10 Luhn checksum), a parity port of the Phileas (Java) implementation.
+- **`mod11` validator** (weighted-sum mod-11 check digits) with `cpf` and `cnpj` variants for the Brazilian CPF and CNPJ.
+- **`mod97` validator** (control derived from the value mod 97) with `iban` and `nir` variants (the French INSEE/NIR
+  includes Corsica substitutions).
+- **`mod23-letter` validator** (control letter from a 23-entry table) for the Spanish DNI and NIE.
+- **`es-cif` validator** for the Spanish CIF (organization tax ID).
+- **`de-steuerid` validator** for the German tax ID (Steuer-ID), using the digit-repetition rule and the ISO/IEC 7064
+  MOD 11,10 check digit.
+- **`de-personalausweis` validator** for the German ID card number (ICAO 9303 7-3-1 check digit).
+- **`bic-structural` validator** for SWIFT/BIC codes (ISO 9362 structure with a valid ISO 3166 country segment).
+
+### Changed
+
+- The PhiSQL dependency is now 1.1.0, which defines the `validator` field in the redaction policy schema.
+
 ## 1.1.0
 
 Built on PhiSQL 1.1.0 and adds local, on-device entity detection.

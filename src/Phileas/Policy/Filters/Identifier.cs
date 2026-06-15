@@ -44,4 +44,13 @@ public class Identifier : AbstractPolicyFilter
     /// <summary>Gets or sets the classification label applied to matches. Defaults to <c>"custom-identifier"</c>.</summary>
     [JsonPropertyName("classification")]
     public string Classification { get; set; } = "custom-identifier";
+
+    /// <summary>
+    ///     Gets or sets an optional post-match validator. A match is kept only if the named validator
+    ///     passes, so a generic identifier can reject format-valid but checksum-invalid values. Accepts
+    ///     both the schema's string form and object form.
+    /// </summary>
+    [JsonPropertyName("validator")]
+    [JsonConverter(typeof(ValidatorJsonConverter))]
+    public Validator? Validator { get; set; }
 }
