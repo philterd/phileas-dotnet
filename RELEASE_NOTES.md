@@ -24,6 +24,12 @@ Built on PhiSQL 1.1.0.
   MOD 11,10 check digit.
 - **`de-personalausweis` validator** for the German ID card number (ICAO 9303 7-3-1 check digit).
 - **`bic-structural` validator** for SWIFT/BIC codes (ISO 9362 structure with a valid ISO 3166 country segment).
+- **Token-aware chunking for local GLiNER inference.** `GlinerModel` now reads the model's `max_len` from
+  `gliner_config.json` (default `384`) and splits long inputs into chunks that each stay within the token limit, so
+  text longer than the model length is no longer silently truncated. Chunks overlap by `max_width - 1` words so an
+  entity on a chunk boundary is still detected, and detections are returned at absolute character offsets. If text
+  genuinely cannot be made to fit (the label prompt leaves no room, or a single unbroken word exceeds one chunk), the
+  filter throws rather than dropping tokens silently. See [docs/pheye-filter-usage.md](docs/pheye-filter-usage.md).
 
 ### Changed
 
