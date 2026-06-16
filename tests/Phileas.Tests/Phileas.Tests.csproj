@@ -23,5 +23,9 @@
         <!-- Shared test documents (copied from the Java test resources). -->
         <Content Include="Resources\*.txt" CopyToOutputDirectory="PreserveNewest"/>
         <Content Include="Resources\*.pdf" CopyToOutputDirectory="PreserveNewest"/>
+        <!-- GLiNER SentencePiece tokenizer parity fixtures: the spm.model and its golden token ids.
+             The generator script stays source-only (not copied to the output). -->
+        <Content Include="Resources\Gliner\spm.model" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="Resources\Gliner\tokenizer_parity.json" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 </Project>
