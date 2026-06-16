@@ -23,9 +23,12 @@
         <!-- Shared test documents (copied from the Java test resources). -->
         <Content Include="Resources\*.txt" CopyToOutputDirectory="PreserveNewest"/>
         <Content Include="Resources\*.pdf" CopyToOutputDirectory="PreserveNewest"/>
-        <!-- GLiNER SentencePiece tokenizer parity fixtures: the spm.model and its golden token ids.
-             The generator script stays source-only (not copied to the output). -->
+        <!-- GLiNER test fixtures. spm.model + tokenizer_parity.json drive the tokenizer parity test;
+             model.onnx + gliner_config.json + spm.model together form a self-contained GLiNER model
+             directory for the synthetic end-to-end inference test. Generator scripts stay source-only. -->
         <Content Include="Resources\Gliner\spm.model" CopyToOutputDirectory="PreserveNewest"/>
         <Content Include="Resources\Gliner\tokenizer_parity.json" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="Resources\Gliner\model.onnx" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include="Resources\Gliner\gliner_config.json" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 </Project>

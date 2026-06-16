@@ -1,0 +1,7 @@
+{
+  "_note": "Minimal GLiNER config for the synthetic CI fixture model (model.onnx). Only the fields GlinerModel reads are meaningful; values mirror the real philterd/ph-eye-pii-base config. Not the production config.",
+  "max_width": 12,
+  "max_len": 384,
+  "class_token_index": 128002,
+  "model_name": "fixture/gliner-mock"
+}
