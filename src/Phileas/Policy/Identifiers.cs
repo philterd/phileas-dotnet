@@ -27,8 +27,12 @@ namespace Phileas.Policy;
 /// </summary>
 public class Identifiers
 {
-    /// <summary>Gets or sets the list of PhEye (NLP-based) filter configurations.</summary>
-    [JsonPropertyName("pheye")]
+    /// <summary>
+    ///     Gets or sets the list of PhEye (NLP-based) filter configurations. Serialized as <c>pheyes</c>, matching the
+    ///     canonical Phileas policy schema and the JSON produced by the PhiSQL <c>DETECT PHEYE</c> / <c>MODEL</c> clause;
+    ///     a policy using the singular <c>pheye</c> key will not bind here.
+    /// </summary>
+    [JsonPropertyName("pheyes")]
     public List<PhEye>? PhEyes { get; set; }
 
     /// <summary>Gets or sets the list of dictionary-based filter configurations.</summary>

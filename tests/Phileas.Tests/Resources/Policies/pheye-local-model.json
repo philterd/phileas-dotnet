@@ -1,0 +1,21 @@
+{
+  "identifiers": {
+    "pheyes": [
+      {
+        "phEyeFilterStrategies": [
+          {
+            "strategy": "REDACT"
+          }
+        ],
+        "phEyeConfiguration": {
+          "labels": [
+            "person",
+            "email address",
+            "phone number"
+          ],
+          "modelPath": "/models/ph-eye-pii-base"
+        }
+      }
+    ]
+  }
+}

@@ -359,7 +359,7 @@ JSON configuration:
 
 ```json
 "identifiers": {
-  "pheye": [
+  "pheyes": [
     {
       "phEyeConfiguration": {
         "endpoint": "http://localhost:8080",

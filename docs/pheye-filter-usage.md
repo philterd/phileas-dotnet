@@ -53,7 +53,7 @@ var policy = new PhileasPolicy
 ```json
 {
   "identifiers": {
-    "pheye": [
+    "pheyes": [
       {
         "phEyeConfiguration": {
           "endpoint": "http://localhost:8080",
@@ -114,7 +114,7 @@ PhEyes = new List<PhEye>
 ```json
 {
   "identifiers": {
-    "pheye": [
+    "pheyes": [
       {
         "phEyeConfiguration": {
           "modelPath": "/models/ph-eye-pii-base",

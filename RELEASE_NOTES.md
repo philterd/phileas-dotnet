@@ -35,6 +35,13 @@ Built on PhiSQL 1.1.0.
 
 - The PhiSQL dependency is now 1.1.0, which defines the `validator` field in the redaction policy schema.
 
+### Fixed
+
+- **PhEye identifier block now reads the canonical `identifiers.pheyes` key.** The policy model bound the singular
+  `pheye`, so a schema-conformant PhEye policy — including a PhiSQL-compiled local GLiNER `MODEL` policy, which emits
+  `identifiers.pheyes` — was silently ignored and no detection ran. It now binds `pheyes`, matching the Phileas policy
+  schema, the Java reference, and PhiSQL output, so local on-device (ONNX) and remote PhEye policies take effect.
+
 ## 1.1.0
 
 Built on PhiSQL 1.1.0 and adds local, on-device entity detection.

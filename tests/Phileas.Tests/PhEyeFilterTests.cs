@@ -53,7 +53,7 @@ public class PhEyeFilterTests
         };
 
         var json = JsonSerializer.Serialize(policy);
-        Assert.Contains("pheye", json);
+        Assert.Contains("\"pheyes\"", json);
         Assert.Contains("pheye.example.com", json);
     }
 
@@ -64,7 +64,7 @@ public class PhEyeFilterTests
                    {
                        "name": "test",
                        "identifiers": {
-                           "pheye": [
+                           "pheyes": [
                                {
                                    "phEyeConfiguration": {
                                        "endpoint": "http://localhost:8080",
@@ -82,6 +82,25 @@ public class PhEyeFilterTests
         Assert.NotNull(policy.Identifiers.PhEyes);
         Assert.Single(policy.Identifiers.PhEyes);
         Assert.Equal("http://localhost:8080", policy.Identifiers.PhEyes[0].PhEyeConfiguration.Endpoint);
+    }
+
+    [Fact]
+    public void Policy_FromPhiSqlCompiledLocalModel_BindsPhEyeAndModelPath()
+    {
+        // A vendored copy of PhiSQL 1.1.0's compiled `pheye-local-model` example: a DETECT PHEYE ... MODEL '<path>'
+        // policy, which compiles to the canonical `identifiers.pheyes` block with `modelPath`. This locks in that a
+        // PhiSQL-produced local-model policy actually reaches the on-device GLiNER (ONNX) path, rather than the PhEye
+        // block being silently dropped because of a key mismatch.
+        var json = File.ReadAllText(
+            Path.Combine(AppContext.BaseDirectory, "Resources", "Policies", "pheye-local-model.json"));
+
+        var policy = PolicySerializer.DeserializeFromJson(json);
+
+        Assert.NotNull(policy.Identifiers.PhEyes);
+        var phEye = Assert.Single(policy.Identifiers.PhEyes);
+        // modelPath set => PhEyeFilter runs local in-process inference instead of calling a remote endpoint.
+        Assert.Equal("/models/ph-eye-pii-base", phEye.PhEyeConfiguration.ModelPath);
+        Assert.Equal(new[] { "person", "email address", "phone number" }, phEye.PhEyeConfiguration.Labels);
     }
 
     [Fact]
