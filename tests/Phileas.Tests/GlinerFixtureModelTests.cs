@@ -83,4 +83,23 @@ public class GlinerFixtureModelTests
         using var model = new GlinerModel(FixtureModelDir);
         Assert.Empty(model.Find("", new List<string> { "person" }, 0.5));
     }
+
+    [Fact]
+    public void Find_InputOverModelLength_ChunksWithCorrectAbsoluteOffsets()
+    {
+        using var model = new GlinerModel(FixtureModelDir);
+
+        // 500 words far exceed the fixture's max_len (384 sub-tokens), forcing token-aware chunking. The fixture
+        // fires near the start of each chunk, so a long input yields detections from multiple chunks -- including
+        // one well past the first chunk, proving later text is processed rather than silently dropped.
+        var input = string.Join(" ", Enumerable.Repeat("alpha", 500));
+
+        var entities = model.Find(input, new List<string> { "person" }, 0.5);
+
+        Assert.True(entities.Count >= 2, "a chunked input should yield detections from more than one chunk");
+        // Every offset maps back to the original text -- detections are corrected to absolute positions, not chunk-local.
+        Assert.All(entities, e => Assert.Equal(e.Text, input.Substring(e.Start, e.End - e.Start)));
+        // A detection lands in the back half of the document: boundary/later words survive the chunking.
+        Assert.Contains(entities, e => e.Start > input.Length / 2);
+    }
 }

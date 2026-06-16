@@ -47,6 +47,7 @@ public sealed class GlinerModel : IDisposable
     private static readonly Regex WordRegex = new(@"\w+(?:[-_]\w+)*|[^\w\s]", RegexOptions.Compiled);
 
     private readonly int _entId;
+    private readonly int _maxLen;
     private readonly int _maxWidth;
     private readonly InferenceSession _session;
     private readonly int _sepId;
@@ -74,6 +75,8 @@ public sealed class GlinerModel : IDisposable
             using var config = JsonDocument.Parse(configStream);
             var root = config.RootElement;
             _maxWidth = root.TryGetProperty("max_width", out var mw) ? mw.GetInt32() : 12;
+            // max_len is the model's sub-token limit; sequences are chunked to never exceed it.
+            _maxLen = root.TryGetProperty("max_len", out var ml) ? ml.GetInt32() : 384;
             // class_token_index is the id of <<ENT>>; <<SEP>> is the next reserved id.
             _entId = root.TryGetProperty("class_token_index", out var ct) ? ct.GetInt32() : 128002;
             _sepId = _entId + 1;
@@ -117,17 +120,63 @@ public sealed class GlinerModel : IDisposable
         if (words.Count == 0)
             return Array.Empty<Entity>();
 
-        var inputs = BuildInputs(words, labels, Encode, _entId, _sepId, _maxWidth);
+        // Memoize sub-token encodings: the labels recur in every chunk, and words recur in chunk overlaps.
+        var cache = new Dictionary<string, IReadOnlyList<int>>();
 
-        using var results = _session.Run(inputs.ToFeeds());
-        var logits = results.First().AsTensor<float>();
+        IReadOnlyList<int> Encode(string s)
+        {
+            if (!cache.TryGetValue(s, out var ids))
+            {
+                ids = _tokenizer.EncodeToIds(s);
+                cache[s] = ids;
+            }
 
-        return Decode(text, words, labels, threshold, _maxWidth, (i, j, l) => logits[0, i, j, l]);
+            return ids;
+        }
+
+        // Split the words into token-aware chunks so no sequence fed to the ONNX graph exceeds the model length.
+        var promptTokens = PromptTokenCount(labels, Encode);
+        var wordTokenCounts = new int[words.Count];
+        for (var i = 0; i < words.Count; i++)
+            wordTokenCounts[i] = Encode(words[i].Text).Count;
+        var chunks = PlanChunks(wordTokenCounts, promptTokens, _maxLen, _maxWidth);
+
+        // Each word already carries its absolute character span, so per-chunk decodes need no offset correction;
+        // overlapping chunks may rediscover the same span, which the global ResolveSpans dedups.
+        var candidates = new List<Entity>();
+        foreach (var chunk in chunks)
+        {
+            var chunkWords = words.GetRange(chunk.Start, chunk.Count);
+            var inputs = BuildInputs(chunkWords, labels, Encode, _entId, _sepId, _maxWidth);
+
+            // Defensive: PlanChunks guarantees this, but never feed the graph a longer-than-supported sequence.
+            var seqLen = inputs.InputIds.Dimensions[1];
+            if (seqLen > _maxLen)
+                throw new InvalidOperationException(
+                    $"GLiNER chunk produced a sequence of {seqLen} sub-tokens, over max_len {_maxLen}.");
+
+            using var results = _session.Run(inputs.ToFeeds());
+            var logits = results.First().AsTensor<float>();
+            candidates.AddRange(CollectSpans(text, chunkWords, labels, threshold, _maxWidth,
+                (i, j, l) => logits[0, i, j, l]));
+        }
+
+        return ResolveSpans(candidates);
     }
 
-    private IReadOnlyList<int> Encode(string text)
+    /// <summary>
+    ///     Sub-token length of the fixed prompt frame <c>[CLS] (&lt;&lt;ENT&gt;&gt; label-pieces)* &lt;&lt;SEP&gt;&gt;</c>:
+    ///     the <c>[CLS]</c>, each label's <c>&lt;&lt;ENT&gt;&gt;</c> marker plus its sub-tokens, and the trailing
+    ///     <c>&lt;&lt;SEP&gt;&gt;</c>. The closing <c>[SEP]</c> is accounted for separately as the per-chunk budget's
+    ///     reserved slot.
+    /// </summary>
+    private static int PromptTokenCount(IReadOnlyList<string> labels, Func<string, IReadOnlyList<int>> encode)
     {
-        return _tokenizer.EncodeToIds(text);
+        var count = 1; // [CLS]
+        foreach (var label in labels)
+            count += 1 + encode(label).Count; // <<ENT>> + label pieces
+        count += 1; // <<SEP>> after the labels
+        return count;
     }
 
     /// <summary>
@@ -243,6 +292,23 @@ public sealed class GlinerModel : IDisposable
         int maxWidth,
         Func<int, int, int, float> logit)
     {
+        return ResolveSpans(CollectSpans(text, words, labels, threshold, maxWidth, logit));
+    }
+
+    /// <summary>
+    ///     Enumerates every candidate span that clears <paramref name="threshold" /> (word <c>i</c>, width <c>j</c>,
+    ///     label <c>l</c> with <c>sigmoid(logit) &gt; threshold</c>) as an <see cref="Entity" /> carrying the absolute
+    ///     character offsets from <paramref name="words" />. No overlap resolution is done here, so candidates from
+    ///     several chunks can be pooled and resolved together by <see cref="ResolveSpans" />.
+    /// </summary>
+    private static List<Entity> CollectSpans(
+        string text,
+        IReadOnlyList<Word> words,
+        IReadOnlyList<string> labels,
+        double threshold,
+        int maxWidth,
+        Func<int, int, int, float> logit)
+    {
         var numWords = words.Count;
         var numLabels = labels.Count;
 
@@ -263,13 +329,75 @@ public sealed class GlinerModel : IDisposable
             }
         }
 
-        // Flat-NER: take spans greedily by descending score, skipping any that overlap one already chosen.
+        return candidates;
+    }
+
+    /// <summary>
+    ///     Resolves pooled candidate spans into the final entities by greedy non-overlapping flat-NER: take spans by
+    ///     descending score, skip any that overlap one already chosen, return ordered by start offset. Because an
+    ///     identical span overlaps its own duplicate, this also dedups the repeats that overlapping chunks produce,
+    ///     keeping the highest-scored copy.
+    /// </summary>
+    internal static List<Entity> ResolveSpans(List<Entity> candidates)
+    {
         var chosen = new List<Entity>();
         foreach (var c in candidates.OrderByDescending(x => x.Score))
             if (!chosen.Any(u => c.Start < u.End && u.Start < c.End))
                 chosen.Add(c);
 
         return chosen.OrderBy(x => x.Start).ToList();
+    }
+
+    /// <summary>
+    ///     Plans contiguous word ranges so each chunk's full sequence — the <paramref name="promptTokens" /> frame, the
+    ///     chunk's word sub-tokens, and the trailing <c>[SEP]</c> — stays within <paramref name="maxLen" /> sub-tokens.
+    ///     Consecutive chunks overlap by <c>maxWidth - 1</c> words so any span up to <paramref name="maxWidth" /> words
+    ///     wide is wholly contained in at least one chunk (the overlap-induced duplicate spans are dropped later by
+    ///     <see cref="ResolveSpans" />). Throws rather than truncate silently when the prompt leaves no room for text,
+    ///     or when a single word's sub-tokens alone exceed the per-chunk budget.
+    /// </summary>
+    internal static List<WordRange> PlanChunks(
+        IReadOnlyList<int> wordTokenCounts,
+        int promptTokens,
+        int maxLen,
+        int maxWidth)
+    {
+        // Sub-tokens left for word pieces once the prompt and the trailing [SEP] are reserved.
+        var budget = maxLen - promptTokens - 1;
+        if (budget < 1)
+            throw new InvalidOperationException(
+                $"GLiNER label prompt needs {promptTokens} sub-tokens, leaving no room for text within max_len " +
+                $"{maxLen}; use fewer or shorter labels.");
+
+        var n = wordTokenCounts.Count;
+        var chunks = new List<WordRange>();
+        var i = 0;
+        while (i < n)
+        {
+            var sum = 0;
+            var j = i;
+            while (j < n)
+            {
+                if (j == i && wordTokenCounts[j] > budget)
+                    throw new InvalidOperationException(
+                        $"A single word encodes to {wordTokenCounts[j]} sub-tokens, over the per-chunk budget of " +
+                        $"{budget} (max_len {maxLen}); it cannot be processed without truncation.");
+                if (j > i && sum + wordTokenCounts[j] > budget)
+                    break;
+                sum += wordTokenCounts[j];
+                j++;
+            }
+
+            chunks.Add(new WordRange(i, j - i));
+            if (j >= n)
+                break;
+
+            // Start the next chunk maxWidth-1 words back so a span straddling the cut stays whole in one chunk;
+            // always advance by at least one word so progress is guaranteed even for tiny chunks.
+            i = Math.Max(j - (maxWidth - 1), i + 1);
+        }
+
+        return chunks;
     }
 
     private static string ResolveOnnxPath(string modelPath)
@@ -299,6 +427,10 @@ public sealed class GlinerModel : IDisposable
 
 /// <summary>A word and its character span within the source text.</summary>
 internal readonly record struct Word(string Text, int Start, int End);
+
+/// <summary>A contiguous range of words (<paramref name="Start" /> index, <paramref name="Count" />) forming one
+///     token-aware inference chunk, as planned by <see cref="GlinerModel.PlanChunks" />.</summary>
+internal readonly record struct WordRange(int Start, int Count);
 
 /// <summary>The six ONNX input tensors of a single GLiNER inference, built by <see cref="GlinerModel.BuildInputs" />.</summary>
 internal sealed class GlinerInputs
