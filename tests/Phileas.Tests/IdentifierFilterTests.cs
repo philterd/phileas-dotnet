@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Diagnostics;
 using Phileas.Filters.Rules.Regex.RegexFilters;
 using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
@@ -181,8 +182,8 @@ public class IdentifierFilterTests
             .Build();
     }
 
-    [Fact(Timeout = 5000)]
-    public async Task CatastrophicPatternIsAbortedByTheRegexBudget()
+    [Fact]
+    public void CatastrophicPatternIsAbortedByTheRegexBudget()
     {
         // Nested greedy .* under a bounded repetition, with a trailing 'b' that never appears, so the
         // match cannot succeed and the engine exhausts an enormous backtracking space (unguarded, this
@@ -190,9 +191,18 @@ public class IdentifierFilterTests
         var filter = new IdentifierFilter(SmallBudgetConfig(), "name", "(.*a){16}b", true, 0);
         var input = "the id is " + new string('a', 30) + "!";
 
-        var filtered = await Task.Run(() => filter.Filter(GetPolicy(), "context", Piece, input));
+        // Run in-thread (no Task.Run) and bound it with an in-thread stopwatch rather than
+        // [Fact(Timeout)]: the configured 200ms regex budget aborts the match deterministically by
+        // wall clock, so the work is self-limiting. A Task.Run + xUnit process-kill timeout instead
+        // measured queueing latency, which on a saturated CI thread pool could exceed the limit even
+        // though the regex itself aborts in ~200ms.
+        var stopwatch = Stopwatch.StartNew();
+        var filtered = filter.Filter(GetPolicy(), "context", Piece, input);
+        stopwatch.Stop();
 
         Assert.Empty(filtered.Spans);
+        Assert.True(stopwatch.ElapsedMilliseconds < 2000,
+            $"Regex budget did not abort the catastrophic pattern (took {stopwatch.ElapsedMilliseconds}ms).");
     }
 
     [Fact]
