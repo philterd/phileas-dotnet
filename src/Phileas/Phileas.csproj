@@ -40,10 +40,9 @@
         <PackageReference Include="SkiaSharp" Version="3.119.4" />
     </ItemGroup>
     <ItemGroup>
-        <!-- PhiSQL .NET reference library. Not yet on NuGet; referenced from the
-             sibling phisql checkout. Provides the PhiSQL compiler and the canonical
-             redaction policy schema used for all policy operations. -->
-        <ProjectReference Include="../../../phisql/reference/dotnet/PhiSql/PhiSql.csproj" />
+        <!-- PhiSQL .NET reference library (Philterd.PhiSql on NuGet). Provides the PhiSQL
+             compiler and the canonical redaction policy schema used for all policy operations. -->
+        <PackageReference Include="Philterd.PhiSql" Version="1.1.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\" />

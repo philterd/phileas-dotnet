@@ -19,18 +19,7 @@ jobs:
     env:
       PHILEAS_DOWNLOAD_MODEL: "1"
     steps:
-      # phileas-dotnet references the PhiSQL .NET reference library via a ProjectReference
-      # (../../../phisql/reference/dotnet/PhiSql/PhiSql.csproj), so phisql is checked out as a sibling.
-      - name: Checkout phileas-dotnet
-        uses: actions/checkout@v4
-        with:
-          path: phileas-dotnet
-
-      - name: Checkout phisql
-        uses: actions/checkout@v4
-        with:
-          repository: philterd/phisql
-          path: phisql
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -38,12 +27,12 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore phileas-dotnet/Phileas.slnx
+        run: dotnet restore Phileas.slnx
 
       - name: Build
-        run: dotnet build --no-restore phileas-dotnet/Phileas.slnx
+        run: dotnet build --no-restore Phileas.slnx
 
       - name: Run the model-download end-to-end tests
         run: >-
-          dotnet test --no-build --verbosity normal phileas-dotnet/Phileas.slnx
+          dotnet test --no-build --verbosity normal Phileas.slnx
           --filter "FullyQualifiedName~XsmallEndToEndTests"
