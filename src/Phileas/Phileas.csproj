@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Phileas</RootNamespace>
@@ -22,6 +22,16 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Title>Phileas</Title>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <!-- Ship a symbols package (.snupkg) and enable SourceLink so consumers can step into
+             Phileas source while debugging. SourceLink for GitHub is bundled with the .NET SDK
+             (8.0.100+), so no PackageReference is needed; these properties turn it on and embed
+             the repository URL and any untracked sources into the symbols. -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <!-- Deterministic, reproducible packages when building on CI. -->
+        <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     </PropertyGroup>
     <ItemGroup>
         <!-- Expose internal GLiNER pipeline stages (word split, input framing, decode) to the test project so they
@@ -44,7 +54,7 @@
     <ItemGroup>
         <!-- PhiSQL .NET reference library (Philterd.PhiSql on NuGet). Provides the PhiSQL
              compiler and the canonical redaction policy schema used for all policy operations. -->
-        <PackageReference Include="Philterd.PhiSql" Version="1.1.0" />
+        <PackageReference Include="Philterd.PhiSql" Version="1.1.1" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\" />

@@ -30,10 +30,12 @@ Built on PhiSQL 1.1.0.
   entity on a chunk boundary is still detected, and detections are returned at absolute character offsets. If text
   genuinely cannot be made to fit (the label prompt leaves no room, or a single unbroken word exceeds one chunk), the
   filter throws rather than dropping tokens silently. See [docs/pheye-filter-usage.md](docs/pheye-filter-usage.md).
+- **Multi-targets .NET 8 and .NET 10.** The package targets `net8.0` and `net10.0`, so it can be consumed from .NET 8 (LTS) as well as .NET 10.
+- **Symbols package and SourceLink.** The package ships a symbols package (`.snupkg`) with SourceLink, so consumers can step into Phileas source while debugging.
 
 ### Changed
 
-- The PhiSQL dependency is now 1.1.0, which defines the `validator` field in the redaction policy schema.
+- The `Philterd.PhiSql` dependency is now 1.1.1 (up from 1.1.0). It defines the `validator` field in the redaction policy schema and adds a `net8.0` build, which is what lets this package target .NET 8.
 
 ### Fixed
 
