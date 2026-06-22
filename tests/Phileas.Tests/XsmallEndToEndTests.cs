@@ -134,13 +134,32 @@ internal static class XsmallModel
                 continue;
 
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-            using var response = http
-                .GetAsync(BaseUrl + remote, HttpCompletionOption.ResponseHeadersRead)
-                .GetAwaiter().GetResult();
-            response.EnsureSuccessStatusCode();
-            using var source = response.Content.ReadAsStream();
-            using var file = File.Create(dest);
-            source.CopyTo(file);
+
+            // Download to a unique temp file and then atomically move it into place. Multi-targeted
+            // test runs (net8.0 and net10.0) execute in parallel and share this cache directory, so a
+            // direct write would let one process read a half-written file, or truncate a complete one
+            // mid-read. Either surfaces as an ONNX "Protobuf parsing failed" error. An atomic rename
+            // guarantees readers only ever see a complete file.
+            var tmp = dest + ".tmp-" + Guid.NewGuid().ToString("N");
+            try
+            {
+                using (var response = http
+                           .GetAsync(BaseUrl + remote, HttpCompletionOption.ResponseHeadersRead)
+                           .GetAwaiter().GetResult())
+                {
+                    response.EnsureSuccessStatusCode();
+                    using var source = response.Content.ReadAsStream();
+                    using var file = File.Create(tmp);
+                    source.CopyTo(file);
+                }
+
+                File.Move(tmp, dest, overwrite: true);
+            }
+            finally
+            {
+                if (File.Exists(tmp))
+                    File.Delete(tmp);
+            }
         }
 
         return dir;
