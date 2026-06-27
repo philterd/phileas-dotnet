@@ -1,6 +1,23 @@
 # Release Notes
 
-All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The current development version is `1.3.0-preview`; `1.2.0` is the latest published release.
+All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The latest release is `1.3.0`.
+
+## 1.3.0
+
+### Changed
+
+- **PDF detection now runs once per page instead of once per line.** `PdfFilterService` previously ran the
+  full detection pipeline on every extracted text line, so a page incurred one detector pass per line. It now
+  concatenates a page's lines into a single detection pass and maps each detected span back to its line for the
+  bounding box. This is a large speedup for the on-device name model (GLiNER), whose fixed per-call cost
+  dominated — e.g. redacting a dense 2-page PDF with name detection enabled dropped from ~72&#160;s to ~3&#160;s
+  (about 25×). The model still chunks each page's text internally to stay within its `max_len`, so dense pages
+  are handled without exceeding the model context.
+
+  Because detection now sees the whole page, an entity that wraps across a line break (e.g. a name split
+  over two lines) is detected and redacted — it is split into one redaction box per line it covers. This is
+  an improvement over the previous per-line behavior, which could not detect a wrapped entity at all.
+  Structured (regex) detection is unaffected: no built-in filter uses line anchors or multiline mode.
 
 ## 1.2.0
 

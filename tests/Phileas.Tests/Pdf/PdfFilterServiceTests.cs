@@ -92,6 +92,45 @@ public class PdfFilterServiceTests
     }
 
     [Fact]
+    public void Filter_MultiPageDocument_AssignsSpansToTheirOwnPage()
+    {
+        // sample.pdf spans several pages; per-page detection must keep each span on its own page
+        // (the fixture name model fires on every page's text, so spans appear across pages).
+        var result = new PdfFilterService().Filter(FixtureNamePolicy(), "ctx", SamplePdf(), MimeType.ApplicationPdf);
+
+        var pages = result.Spans.Select(span => span.PageNumber).Distinct().ToList();
+        Assert.True(pages.Count >= 2, $"expected spans across multiple pages, got pages: {string.Join(",", pages)}");
+        Assert.Contains(2, pages); // spans are correctly attributed to page 2, not all collapsed onto page 1
+    }
+
+    [Fact]
+    public void SplitSpanAcrossLines_SpanWithinOneLine_YieldsOnePortion()
+    {
+        // Page text "Hello world\nGoodbye" -> line 0 = [0,11), line 1 = [12,19).
+        var lines = new List<(int Start, int Length)> { (0, 11), (12, 7) };
+
+        // "world" is at page offsets [6,11), entirely on line 0.
+        var portions = PdfFilterService.SplitSpanAcrossLines(6, 11, lines).ToList();
+
+        var portion = Assert.Single(portions);
+        Assert.Equal((0, 6, 11), portion); // line 0, local offsets 6..11
+    }
+
+    [Fact]
+    public void SplitSpanAcrossLines_SpanStraddlingLineBreak_YieldsOnePortionPerLine()
+    {
+        // "...John\nSmith..." — line 0 = [0,11) ("contact John"), line 1 = [12,21) ("Smith here").
+        var lines = new List<(int Start, int Length)> { (0, 11), (12, 10) };
+
+        // The span "John\nSmith" covers page offsets [8,17): "John" on line 0, "Smith" on line 1.
+        var portions = PdfFilterService.SplitSpanAcrossLines(8, 17, lines).ToList();
+
+        Assert.Equal(2, portions.Count);
+        Assert.Equal((0, 8, 11), portions[0]);  // "John" -> line 0, local 8..11
+        Assert.Equal((1, 0, 5), portions[1]);   // "Smith" -> line 1, local 0..5 (newline at 11 excluded)
+    }
+
+    [Fact]
     public void Filter_DetectsSpansAndLocatesThemOnThePage()
     {
         var result = new PdfFilterService().Filter(Policy(), "ctx", SamplePdf(), MimeType.ApplicationPdf);

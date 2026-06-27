@@ -58,11 +58,11 @@ public sealed class PdfFilterService
 
         // Detect once per page rather than once per line. The text of every line on a page is
         // concatenated (newline-separated) into a single detection pass, and each detected span is mapped
-        // back to the line that contains it for its bounding box. This collapses many detector
-        // invocations into one per page — a large win for the on-device name model (GLiNER), whose
-        // per-call cost dominates, since it already chunks long text internally. Spans are still located
-        // with line-relative offsets, exactly as before, so a span that straddles a line break is skipped
-        // (it could never be located on a single line under the previous per-line approach either).
+        // back to the line(s) it covers for its bounding box. This collapses many detector invocations
+        // into one per page — a large win for the on-device name model (GLiNER), whose per-call cost
+        // dominates, since it already chunks long text internally. A span that straddles a line break
+        // (e.g. a name wrapped across two lines) is split into one located box per line it covers, so it
+        // is still fully redacted.
         foreach (var pageGroup in lines.GroupBy(line => line.PageNumber))
         {
             var pageLines = pageGroup.ToList();
@@ -85,17 +85,7 @@ public sealed class PdfFilterService
             tokens += result.Tokens;
 
             foreach (var span in result.Spans)
-            {
-                var segment = FindContainingSegment(segments, span);
-                if (segment is null)
-                    continue;
-
-                // Convert the page-relative offsets to line-relative ones so the glyph lookup locates it.
-                span.CharacterStart -= segment.Value.Start;
-                span.CharacterEnd -= segment.Value.Start;
-                if (TryLocate(segment.Value.Line, span))
-                    spans.Add(span);
-            }
+                spans.AddRange(LocatePerLine(span, segments));
         }
 
         var redacted = _redactor.Process(input, spans, policy.Config.Pdf, policy.Graphical.BoundingBoxes,
@@ -111,20 +101,43 @@ public sealed class PdfFilterService
     }
 
     /// <summary>
-    ///     Finds the line segment whose page-text range wholly contains the span; returns null when the
-    ///     span straddles a line boundary (and so cannot be placed on a single line's glyphs).
+    ///     Maps a page-relative span onto the line(s) it covers, yielding one located span per line. A span
+    ///     wholly within one line produces a single box; a span that straddles a line break is split so each
+    ///     line's portion gets its own box (so a name wrapped across two lines is still fully redacted).
+    ///     Portions that cover no positioned glyphs are dropped.
     /// </summary>
-    private static (int Start, PdfLine Line)? FindContainingSegment(
-        IReadOnlyList<(int Start, PdfLine Line)> segments, Span span)
+    private static IEnumerable<Span> LocatePerLine(Span span, IReadOnlyList<(int Start, PdfLine Line)> segments)
     {
-        foreach (var segment in segments)
+        var lineRanges = segments.Select(s => (s.Start, Length: s.Line.Text?.Length ?? 0)).ToList();
+        foreach (var (segmentIndex, localStart, localEnd) in SplitSpanAcrossLines(span.CharacterStart, span.CharacterEnd, lineRanges))
         {
-            var segmentEnd = segment.Start + (segment.Line.Text?.Length ?? 0);
-            if (span.CharacterStart >= segment.Start && span.CharacterEnd <= segmentEnd)
-                return segment;
+            var line = segments[segmentIndex].Line;
+            var portion = span.Copy();
+            portion.CharacterStart = localStart;
+            portion.CharacterEnd = localEnd;
+            portion.Text = line.Text!.Substring(localStart, localEnd - localStart);
+            if (TryLocate(line, portion))
+                yield return portion;
         }
+    }
 
-        return null;
+    /// <summary>
+    ///     Splits a span (given by its page-text offsets) into per-line portions, one for each line whose
+    ///     range overlaps the span, returning the line index and the span's offsets expressed within that
+    ///     line. A span within a single line yields one portion; a span straddling a line break yields one
+    ///     portion per line it covers; the newline separators between lines are never included.
+    /// </summary>
+    internal static IEnumerable<(int SegmentIndex, int LocalStart, int LocalEnd)> SplitSpanAcrossLines(
+        int spanStart, int spanEnd, IReadOnlyList<(int Start, int Length)> lines)
+    {
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var (start, length) = lines[i];
+            var overlapStart = Math.Max(spanStart, start);
+            var overlapEnd = Math.Min(spanEnd, start + length);
+            if (overlapEnd > overlapStart)
+                yield return (i, overlapStart - start, overlapEnd - start);
+        }
     }
 
     /// <summary>

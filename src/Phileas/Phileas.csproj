@@ -8,7 +8,7 @@
              (as with Philterd.PhiSql); the assembly name and namespace stay
              Phileas, so the public API (using Phileas) is unchanged. -->
         <PackageId>Philterd.Phileas</PackageId>
-        <Version>1.3.0-preview</Version>
+        <Version>1.3.0</Version>
         <Authors>Philterd, LLC</Authors>
         <Company>Philterd, LLC</Company>
         <Description>A .NET library for detecting and redacting Personally Identifiable Information (PII) from text using configurable, policy-based filters.</Description>
