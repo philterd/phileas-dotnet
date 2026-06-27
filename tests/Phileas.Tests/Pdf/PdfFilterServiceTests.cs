@@ -18,6 +18,7 @@ using System.IO.Compression;
 using System.Text;
 using Phileas.Model;
 using Phileas.Policy.Filters;
+using Phileas.Policy.Filters.Strategies;
 using Phileas.Services.Pdf;
 using SkiaSharp;
 using UglyToad.PdfPig;
@@ -48,6 +49,46 @@ public class PdfFilterServiceTests
     {
         using var document = PdfDocument.Open(pdf);
         return document.NumberOfPages;
+    }
+
+    // A name policy that runs on-device inference using the committed synthetic GLiNER fixture.
+    private static PhileasPolicy FixtureNamePolicy() => new()
+    {
+        Name = "pdf-names",
+        Identifiers = new PolicyIdentifiers
+        {
+            PhEyes = new List<PhEye>
+            {
+                new()
+                {
+                    PhEyeConfiguration = new PhEyeConfiguration
+                    {
+                        ModelPath = Path.Combine(AppContext.BaseDirectory, "Resources", "Gliner"),
+                        Labels = new List<string> { "person" },
+                        Threshold = 0.5
+                    },
+                    Strategies = new List<PhEyeFilterStrategy> { new() }
+                }
+            }
+        }
+    };
+
+    [Fact]
+    public void Filter_DensePage_ChunksNameDetectionWithoutExceedingModelContext()
+    {
+        // sample.pdf has ~1,700 words. Per-page detection feeds each page's full text to the name model
+        // at once, which far exceeds GLiNER's max_len — exercising the model's internal token-aware
+        // chunking. The redaction must complete without a context-overflow error and still locate spans.
+        var result = new PdfFilterService().Filter(FixtureNamePolicy(), "ctx", SamplePdf(), MimeType.ApplicationPdf);
+
+        Assert.NotEmpty(result.Spans); // the fixture fires deterministic name spans across the chunks
+        Assert.All(result.Spans, span =>
+        {
+            Assert.True(span.PageNumber >= 1);
+            Assert.True(span.UpperRightX > span.LowerLeftX, "span should have a positive-width box");
+            Assert.True(span.UpperRightY > span.LowerLeftY, "span should have a positive-height box");
+        });
+        Assert.StartsWith("%PDF", Encoding.ASCII.GetString(result.Document, 0, 4));
     }
 
     [Fact]

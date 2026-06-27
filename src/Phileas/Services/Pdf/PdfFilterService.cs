@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Text;
 using Phileas.Model;
 using PhileasPolicy = Phileas.Policy.Policy;
 
@@ -55,20 +56,46 @@ public sealed class PdfFilterService
         long tokens = 0;
         var piece = 0;
 
-        foreach (var line in lines)
+        // Detect once per page rather than once per line. The text of every line on a page is
+        // concatenated (newline-separated) into a single detection pass, and each detected span is mapped
+        // back to the line that contains it for its bounding box. This collapses many detector
+        // invocations into one per page — a large win for the on-device name model (GLiNER), whose
+        // per-call cost dominates, since it already chunks long text internally. Spans are still located
+        // with line-relative offsets, exactly as before, so a span that straddles a line break is skipped
+        // (it could never be located on a single line under the previous per-line approach either).
+        foreach (var pageGroup in lines.GroupBy(line => line.PageNumber))
         {
-            if (string.IsNullOrWhiteSpace(line.Text))
+            var pageLines = pageGroup.ToList();
+
+            var builder = new StringBuilder();
+            var segments = new List<(int Start, PdfLine Line)>(pageLines.Count);
+            foreach (var line in pageLines)
             {
-                piece++;
-                continue;
+                if (builder.Length > 0)
+                    builder.Append('\n');
+                segments.Add((builder.Length, line));
+                builder.Append(line.Text ?? string.Empty);
             }
 
-            var result = _filterService.Filter(policy, context, piece++, line.Text);
+            var pageText = builder.ToString();
+            if (string.IsNullOrWhiteSpace(pageText))
+                continue;
+
+            var result = _filterService.Filter(policy, context, piece++, pageText);
             tokens += result.Tokens;
 
             foreach (var span in result.Spans)
-                if (TryLocate(line, span))
+            {
+                var segment = FindContainingSegment(segments, span);
+                if (segment is null)
+                    continue;
+
+                // Convert the page-relative offsets to line-relative ones so the glyph lookup locates it.
+                span.CharacterStart -= segment.Value.Start;
+                span.CharacterEnd -= segment.Value.Start;
+                if (TryLocate(segment.Value.Line, span))
                     spans.Add(span);
+            }
         }
 
         var redacted = _redactor.Process(input, spans, policy.Config.Pdf, policy.Graphical.BoundingBoxes,
@@ -81,6 +108,23 @@ public sealed class PdfFilterService
     public byte[] Apply(PhileasPolicy policy, byte[] input, IList<Span> spans, MimeType outputMimeType)
     {
         return _redactor.Process(input, spans, policy.Config.Pdf, policy.Graphical.BoundingBoxes, outputMimeType);
+    }
+
+    /// <summary>
+    ///     Finds the line segment whose page-text range wholly contains the span; returns null when the
+    ///     span straddles a line boundary (and so cannot be placed on a single line's glyphs).
+    /// </summary>
+    private static (int Start, PdfLine Line)? FindContainingSegment(
+        IReadOnlyList<(int Start, PdfLine Line)> segments, Span span)
+    {
+        foreach (var segment in segments)
+        {
+            var segmentEnd = segment.Start + (segment.Line.Text?.Length ?? 0);
+            if (span.CharacterStart >= segment.Start && span.CharacterEnd <= segmentEnd)
+                return segment;
+        }
+
+        return null;
     }
 
     /// <summary>
