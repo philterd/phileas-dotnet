@@ -11,7 +11,9 @@ image with redaction rectangles burned in.
 ## How it works
 
 1. **Extract** — text is extracted line-by-line from the PDF, keeping the position (bounding box) of every
-   character.
+   character. This step is **pluggable** (see [Custom text extraction](#custom-text-extraction-itextextractor)):
+   by default the PDF text layer is read, but any `ITextExtractor` — for example one backed by OCR for scanned
+   pages — can supply the lines.
 2. **Detect** — each line is run through the normal [filter pipeline](supported-identifiers.md), producing
    spans. Each detected span is tagged with its page number and bounding box.
 3. **Redact** — every page is rendered to a raster image at the configured DPI, a filled rectangle (and,
@@ -112,6 +114,59 @@ public class BinaryDocumentFilterResult
 | `Spans` | `IList<Span>` | The detected spans, each carrying its `PageNumber` and bounding box (`LowerLeftX/Y`, `UpperRightX/Y`). |
 | `Tokens` | `long` | The number of whitespace-delimited tokens in the source document. |
 
+## Custom text extraction (`ITextExtractor`)
+
+By default `PdfFilterService` reads the PDF's **text layer** (via `PdfTextExtractor`, backed by PdfPig).
+The extraction step is pluggable: `PdfFilterService` accepts any `ITextExtractor`, so positioned lines can
+come from **any source** — most notably **OCR of scanned pages**, which have no text layer to read.
+
+```csharp
+public PdfFilterService(FilterService? filterService = null, ITextExtractor? textExtractor = null)
+```
+
+An extractor returns positioned lines; each character carries a library-independent bounding box in PDF
+user-space points (bottom-left origin), so detected spans can be located back on the page:
+
+```csharp
+public interface ITextExtractor
+{
+    IReadOnlyList<PdfLine> GetLines(byte[] document);
+}
+
+public sealed class PdfLine
+{
+    public PdfLine(int pageNumber, string text, IReadOnlyList<CharBox?> charBoxes);
+    public int PageNumber { get; }
+    public string Text { get; }
+    public IReadOnlyList<CharBox?> CharBoxes { get; } // null entries are synthesized word separators
+}
+
+public readonly struct CharBox  // PDF user-space points, bottom-left origin
+{
+    public CharBox(double left, double bottom, double right, double top);
+    public double Left { get; }
+    public double Bottom { get; }
+    public double Right { get; }
+    public double Top { get; }
+}
+```
+
+Supply your own extractor to redact scanned PDFs or to integrate an alternative text source. The rest of
+the pipeline (detect → locate → redact) is unchanged regardless of where the lines came from:
+
+```csharp
+var service = new PdfFilterService(filterService: null, textExtractor: new MyOcrTextExtractor());
+var result = service.Filter(policy, "ctx", scannedPdf, MimeType.ApplicationPdf);
+```
+
+phileas-dotnet does **not** ship an OCR implementation; OCR is provided by the host application (for
+example, Philter Desktop uses the operating system's on-device OCR to read scanned pages).
+
+> **Added in 1.4.0.** `PdfLine` now carries `CharBox` (previously the PdfPig `Letter`), decoupling
+> extraction from the PDF text layer so OCR and other sources can feed the same redaction pipeline. This
+> is a breaking change for code that constructed `PdfLine` or read its per-character glyphs; see the
+> release notes.
+
 ## Configuration
 
 PDF rendering is controlled by `Config.Pdf` on the policy (see [Policies — Config](policies.md#config)).
@@ -182,6 +237,10 @@ var result = new PdfFilterService().Filter(policy, "ctx", inputPdf, MimeType.App
 
 - **Rasterized output.** All pages become images. This guarantees no recoverable text, but the output is
   larger than the source and is not text-searchable.
+- **Scanned / image-only PDFs.** A page with no text layer yields nothing from the default extractor, so
+  nothing is detected or redacted on it. To redact scanned pages, supply an OCR-backed `ITextExtractor`
+  (see [Custom text extraction](#custom-text-extraction-itextextractor)); phileas-dotnet does not include
+  OCR itself.
 - **Native dependencies.** PDF rendering uses PDFium (via PDFtoImage) and SkiaSharp, which include native
   binaries. On Linux you may need the appropriate `SkiaSharp.NativeAssets.Linux*` package for your
   deployment. See the [NOTICE](https://www.github.com/philterd/phileas-dotnet/blob/main/NOTICE) file for the full
