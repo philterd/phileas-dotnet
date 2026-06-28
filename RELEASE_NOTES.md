@@ -1,6 +1,15 @@
 # Release Notes
 
-All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The current development version is `1.4.0-preview`; `1.3.0` is the latest published release.
+All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The latest release is `1.4.0`.
+
+## 1.4.0
+
+### Changed
+
+- **PDF text extraction is decoupled from PdfPig** so an `ITextExtractor` can supply positioned lines
+  from any source (a text layer, OCR of scanned pages, etc.); text-layer redaction is unchanged.
+  **Breaking:** `PdfLine.LettersByChar` (PdfPig `Letter?`) is replaced by `PdfLine.CharBoxes` (the new
+  library-independent `CharBox`), and the `PdfLine` constructor changed to match.
 
 ## 1.3.0
 

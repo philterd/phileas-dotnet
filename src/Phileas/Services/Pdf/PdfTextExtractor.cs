@@ -84,7 +84,7 @@ public sealed class PdfTextExtractor : ITextExtractor
     private static PdfLine BuildLine(int pageNumber, List<Word> lineWords)
     {
         var text = new StringBuilder();
-        var lettersByChar = new List<Letter?>();
+        var charBoxes = new List<CharBox?>();
 
         for (var w = 0; w < lineWords.Count; w++)
         {
@@ -92,18 +92,20 @@ public sealed class PdfTextExtractor : ITextExtractor
             {
                 // Words are separated by a single space that has no glyph of its own.
                 text.Append(' ');
-                lettersByChar.Add(null);
+                charBoxes.Add(null);
             }
 
             foreach (var letter in lineWords[w].Letters)
             {
                 var value = letter.Value ?? string.Empty;
                 text.Append(value);
+                var box = letter.BoundingBox;
+                var charBox = new CharBox(box.Left, box.Bottom, box.Right, box.Top);
                 for (var c = 0; c < value.Length; c++)
-                    lettersByChar.Add(letter);
+                    charBoxes.Add(charBox);
             }
         }
 
-        return new PdfLine(pageNumber, text.ToString(), lettersByChar);
+        return new PdfLine(pageNumber, text.ToString(), charBoxes);
     }
 }

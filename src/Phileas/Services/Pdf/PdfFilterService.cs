@@ -154,11 +154,10 @@ public sealed class PdfFilterService
 
         for (var i = start; i < end; i++)
         {
-            var letter = line.LettersByChar[i];
-            if (letter == null)
+            var charBox = line.CharBoxes[i];
+            if (charBox is not { } box)
                 continue;
 
-            var box = letter.BoundingBox;
             if (!located)
             {
                 left = box.Left;

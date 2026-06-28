@@ -19,6 +19,7 @@ using System.Text;
 using Phileas.Model;
 using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Strategies;
+using Phileas.Services;
 using Phileas.Services.Pdf;
 using SkiaSharp;
 using UglyToad.PdfPig;
@@ -44,6 +45,30 @@ public class PdfFilterServiceTests
             Currency = new Currency()
         }
     };
+
+    private static PhileasPolicy SsnPolicy() => new()
+    {
+        Name = "ssn",
+        Identifiers = new PolicyIdentifiers { Ssn = new Ssn() }
+    };
+
+    // An extractor that returns hand-built lines regardless of the document, standing in for any
+    // non-text-layer source (e.g. OCR of a scanned page).
+    private sealed class StubTextExtractor : ITextExtractor
+    {
+        private readonly IReadOnlyList<PdfLine> _lines;
+        public StubTextExtractor(IReadOnlyList<PdfLine> lines) => _lines = lines;
+        public IReadOnlyList<PdfLine> GetLines(byte[] document) => _lines;
+    }
+
+    // One 10x12 pt box per character, laid left-to-right at y [100,112]: char i -> [i*10, i*10+10].
+    private static List<CharBox?> BoxesFor(string text)
+    {
+        var boxes = new List<CharBox?>(text.Length);
+        for (var i = 0; i < text.Length; i++)
+            boxes.Add(new CharBox(i * 10, 100, i * 10 + 10, 112));
+        return boxes;
+    }
 
     private static int PageCount(byte[] pdf)
     {
@@ -128,6 +153,104 @@ public class PdfFilterServiceTests
         Assert.Equal(2, portions.Count);
         Assert.Equal((0, 8, 11), portions[0]);  // "John" -> line 0, local 8..11
         Assert.Equal((1, 0, 5), portions[1]);   // "Smith" -> line 1, local 0..5 (newline at 11 excluded)
+    }
+
+    [Fact]
+    public void Filter_LocatesSpansFromAnyTextExtractor_NotJustThePdfTextLayer()
+    {
+        // The 1.4.0 contract: positioned lines can come from any ITextExtractor (e.g. OCR), carrying
+        // CharBox coordinates, and a detected span is located from those boxes — no PDF text layer
+        // involved. Each character gets a 10x12 pt box laid left-to-right at y [100,112].
+        const string text = "SSN 123-45-6789";
+        var boxes = new List<CharBox?>(text.Length);
+        for (var i = 0; i < text.Length; i++)
+            boxes.Add(new CharBox(i * 10, 100, i * 10 + 10, 112));
+        var extractor = new StubTextExtractor(new[] { new PdfLine(1, text, boxes) });
+
+        var result = new PdfFilterService(new FilterService(), extractor)
+            .Filter(SsnPolicy(), "ctx", SamplePdf(), MimeType.ApplicationPdf);
+
+        var span = Assert.Single(result.Spans);
+        Assert.Equal(1, span.PageNumber);
+
+        // The located box is the union of the SSN characters' CharBoxes ("123-45-6789" at chars 4..14).
+        var start = text.IndexOf("123", StringComparison.Ordinal);
+        Assert.Equal(start * 10, span.LowerLeftX, 3);
+        Assert.Equal(text.Length * 10, span.UpperRightX, 3);
+        Assert.Equal(100, span.LowerLeftY, 3);
+        Assert.Equal(112, span.UpperRightY, 3);
+
+        Assert.StartsWith("%PDF", Encoding.ASCII.GetString(result.Document, 0, 4));
+    }
+
+    [Fact]
+    public void Filter_SplitsAnEntityWrappedAcrossLines_IntoOneBoxPerLine()
+    {
+        // Two visual lines on one page. A custom identifier matches "John\s+Smith", which spans the
+        // newline the per-page concatenation inserts between the lines. The located result must be split
+        // into one box per line (the line-wrap behavior), both on page 1.
+        var extractor = new StubTextExtractor(new[]
+        {
+            new PdfLine(1, "Contact John", BoxesFor("Contact John")),
+            new PdfLine(1, "Smith here", BoxesFor("Smith here"))
+        });
+
+        var policy = new PhileasPolicy
+        {
+            Name = "wrap",
+            Identifiers = new PolicyIdentifiers
+            {
+                CustomIdentifiers = new List<Identifier>
+                {
+                    new()
+                    {
+                        Pattern = @"John\s+Smith",
+                        Classification = "name",
+                        Strategies = new List<IdentifierFilterStrategy> { new() }
+                    }
+                }
+            }
+        };
+
+        var result = new PdfFilterService(new FilterService(), extractor)
+            .Filter(policy, "ctx", SamplePdf(), MimeType.ApplicationPdf);
+
+        Assert.Equal(2, result.Spans.Count);
+        Assert.All(result.Spans, s => Assert.Equal(1, s.PageNumber));
+        // "John" is chars 8..11 of line 0 -> box [80,120]; "Smith" is chars 0..4 of line 1 -> [0,50].
+        Assert.Equal(80, result.Spans[0].LowerLeftX, 3);
+        Assert.Equal(120, result.Spans[0].UpperRightX, 3);
+        Assert.Equal(0, result.Spans[1].LowerLeftX, 3);
+        Assert.Equal(50, result.Spans[1].UpperRightX, 3);
+    }
+
+    [Fact]
+    public void Filter_DropsSpansThatCoverNoPositionedGlyphs()
+    {
+        // A detected span whose characters have no boxes (e.g. a source that returned text but no
+        // geometry) cannot be located, so it is dropped rather than drawn at a wrong/zero position.
+        const string text = "SSN 123-45-6789";
+        var noBoxes = new List<CharBox?>(new CharBox?[text.Length]); // all null
+        var extractor = new StubTextExtractor(new[] { new PdfLine(1, text, noBoxes) });
+
+        var result = new PdfFilterService(new FilterService(), extractor)
+            .Filter(SsnPolicy(), "ctx", SamplePdf(), MimeType.ApplicationPdf);
+
+        Assert.Empty(result.Spans);
+        Assert.StartsWith("%PDF", Encoding.ASCII.GetString(result.Document, 0, 4));
+    }
+
+    [Fact]
+    public void Filter_WithNoExtractedText_ProducesNoSpansButAValidPdf()
+    {
+        var extractor = new StubTextExtractor(Array.Empty<PdfLine>());
+
+        var result = new PdfFilterService(new FilterService(), extractor)
+            .Filter(SsnPolicy(), "ctx", SamplePdf(), MimeType.ApplicationPdf);
+
+        Assert.Empty(result.Spans);
+        Assert.Equal(PageCount(SamplePdf()), PageCount(result.Document));
+        Assert.StartsWith("%PDF", Encoding.ASCII.GetString(result.Document, 0, 4));
     }
 
     [Fact]
