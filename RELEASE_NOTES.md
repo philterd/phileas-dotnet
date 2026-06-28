@@ -1,6 +1,6 @@
 # Release Notes
 
-All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The latest release is `1.4.0`.
+All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The current development version is `1.5.0-preview`; `1.4.0` is the latest published release.
 
 ## 1.4.0
 
