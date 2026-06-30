@@ -8,6 +8,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 - **`FilterService` now accepts an injected `IContextService`** (constructor overload), so consistent RANDOM_REPLACE replacements can be backed by a durable, caller-supplied store instead of only the default in-memory one.
 
+### Fixed
+
+- **The date filter now detects day-first numeric dates** (e.g. `25/12/1980`); previously only month-first numeric dates were matched. Ambiguous dates (e.g. `03/04/1981`) are detected once, and `onlyValidDates` still drops impossible calendar dates.
+
 ## 1.4.0
 
 ### Changed

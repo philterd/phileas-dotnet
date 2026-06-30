@@ -86,6 +86,23 @@ public class DateFilter : RegexFilter
                 .WithInitialConfidence(0.85)
                 .WithFormat($"M{formatDelimiter}d{formatDelimiter}yy")
                 .Build());
+
+            // Day-first numeric dates (e.g. 25/12/1980). The month-first patterns above cannot match
+            // these (the leading day exceeds the month group's max of 12), and these cannot match
+            // month-first-only dates (the middle month value would exceed 12), so an unambiguous date
+            // matches exactly one ordering. Genuinely ambiguous dates (e.g. 03/04/1981) match both and
+            // are collapsed by DropOverlappingSpans.
+            patterns.Add(new FilterPattern.Builder()
+                .WithPattern($@"\b{day}{regexDelimiter}{month}{regexDelimiter}(19|20)\d{{2}}\b")
+                .WithInitialConfidence(0.85)
+                .WithFormat($"d{formatDelimiter}M{formatDelimiter}yyyy")
+                .Build());
+
+            patterns.Add(new FilterPattern.Builder()
+                .WithPattern($@"\b{day}{regexDelimiter}{month}{regexDelimiter}\d{{2}}\b")
+                .WithInitialConfidence(0.85)
+                .WithFormat($"d{formatDelimiter}M{formatDelimiter}yy")
+                .Build());
         }
 
         // Month-name dates are specific enough that they are always treated as valid dates.

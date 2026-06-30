@@ -28,14 +28,14 @@ namespace Phileas.Tests;
 
 public class DateFilterTests
 {
-    private static DateFilter CreateFilter()
+    private static DateFilter CreateFilter(bool onlyValidDates = false)
     {
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { new DateFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new DateFilter(config);
+        return new DateFilter(config, onlyValidDates);
     }
 
     private static PhileasPolicy CreatePolicy()
@@ -104,6 +104,63 @@ public class DateFilterTests
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, string.Empty);
         Assert.Empty(result.Spans);
+    }
+
+    [Theory]
+    [InlineData("DOB: 25/12/1980")]
+    [InlineData("Date: 25-12-1980")]
+    [InlineData("On 25.12.1980")]
+    [InlineData("Filed 31/01/2000")]
+    public void Filter_DetectsDayFirstNumericDate(string input)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.Date, result.Spans[0].FilterType);
+    }
+
+    [Fact]
+    public void Filter_DetectsDayFirst_TwoDigitYear()
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, "DOB 25/12/80");
+        Assert.NotEmpty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_AmbiguousNumericDate_IsKeptOnce()
+    {
+        // 03/04/1981 is valid both month-first (Mar 4) and day-first (4 Mar); the duplicate span over the
+        // same range is collapsed, so the date is detected exactly once.
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, "03/04/1981");
+        Assert.Single(result.Spans);
+    }
+
+    [Theory]
+    [InlineData("13/13/2020")] // neither value is a valid month
+    [InlineData("32/01/2020")] // day out of range
+    public void Filter_DoesNotDetect_ImpossibleNumericDate(string input)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void Filter_OnlyValidDates_KeepsValidDayFirst_DropsImpossibleCalendarDate()
+    {
+        var filter = CreateFilter(onlyValidDates: true);
+        Assert.NotEmpty(filter.Filter(CreatePolicy(), "test", 0, "25/12/1980").Spans); // 25 Dec 1980 is real
+        Assert.Empty(filter.Filter(CreatePolicy(), "test", 0, "31/02/1980").Spans);    // 31 Feb is not
+    }
+
+    [Fact]
+    public void FilterService_RedactsDayFirstDate()
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers { Date = new Date() }
+        };
+        var result = new FilterService().Filter(policy, "test", 0, "DOB: 25/12/1980");
+        Assert.DoesNotContain("25/12/1980", result.FilteredText);
     }
 
     [Fact]
