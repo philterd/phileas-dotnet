@@ -43,6 +43,7 @@ public class FilterService : IFilterService
 
     private readonly bool _incrementalRedactionsEnabled;
     private readonly ISpanDisambiguationService _disambiguationService;
+    private readonly IContextService? _contextService;
     private static readonly WhitespaceTokenCounter TokenCounter = new();
 
     /// <summary>Creates a filter service.</summary>
@@ -58,23 +59,41 @@ public class FilterService : IFilterService
     }
 
     /// <summary>
+    ///     Creates a filter service that uses the supplied <see cref="IContextService" /> for RANDOM_REPLACE
+    ///     referential integrity. Inject a durable implementation (e.g. database-backed) so consistent
+    ///     replacements persist beyond a single call without the default in-memory store growing unbounded.
+    /// </summary>
+    /// <param name="contextService">The context service used for all <see cref="Filter" /> calls that don't pass their own.</param>
+    public FilterService(IContextService contextService)
+        : this(false, new NoOpSpanDisambiguationService(), contextService)
+    {
+    }
+
+    /// <summary>
     ///     Creates a filter service with span disambiguation. When the supplied service is enabled,
     ///     spans competing at the same location are resolved by surrounding context before overlap
     ///     resolution.
     /// </summary>
     /// <param name="incrementalRedactionsEnabled">When <see langword="true" />, each result carries a per-redaction snapshot trail.</param>
     /// <param name="disambiguationService">The span disambiguation service (use a no-op to disable).</param>
-    public FilterService(bool incrementalRedactionsEnabled, ISpanDisambiguationService disambiguationService)
+    /// <param name="contextService">
+    ///     Optional context service used as the default for <see cref="Filter" /> calls that don't pass
+    ///     their own. When null, each <see cref="Filter" /> call falls back to a fresh in-memory store.
+    /// </param>
+    public FilterService(bool incrementalRedactionsEnabled, ISpanDisambiguationService disambiguationService,
+        IContextService? contextService = null)
     {
         _incrementalRedactionsEnabled = incrementalRedactionsEnabled;
         _disambiguationService = disambiguationService;
+        _contextService = contextService;
     }
 
     /// <inheritdoc />
     public TextFilterResult Filter(PhileasPolicy policy, string context, int piece, string input,
         IContextService? contextService = null)
     {
-        contextService ??= new InMemoryContextService();
+        // Use the per-call service if given, otherwise the injected one, otherwise a fresh in-memory store.
+        contextService ??= _contextService ?? new InMemoryContextService();
         var filters = BuildFilters(policy, contextService);
 
         // Split the input when the policy enables splitting and the document is over the threshold,

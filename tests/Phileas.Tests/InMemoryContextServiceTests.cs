@@ -188,4 +188,64 @@ public class InMemoryContextServiceTests
         Assert.NotEmpty(result1.Spans);
         Assert.NotEmpty(result2.Spans);
     }
+
+    private static PhileasPolicy RandomReplaceSsnPolicy() => new()
+    {
+        Name = "test",
+        Identifiers = new Identifiers
+        {
+            Ssn = new Ssn
+            {
+                Strategies = new List<Policy.Filters.Strategies.SsnFilterStrategy>
+                {
+                    new()
+                    {
+                        Strategy = Policy.Filters.Strategies.AbstractFilterStrategy.RandomReplace,
+                        ReplacementScope = Policy.Filters.Strategies.AbstractFilterStrategy.ReplacementScopeContext
+                    }
+                }
+            }
+        }
+    };
+
+    [Fact]
+    public void FilterService_UsesConstructorInjectedContextService()
+    {
+        // A context service injected via the constructor is used for calls that don't pass their own.
+        var contextService = new InMemoryContextService();
+        contextService.Put("ctx", "123-45-6789", "pre-seeded-value");
+
+        var result = new FilterService(contextService).Filter(RandomReplaceSsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
+
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal("pre-seeded-value", result.Spans[0].Replacement);
+    }
+
+    [Fact]
+    public void PerCallContextService_OverridesConstructorInjectedOne()
+    {
+        var injected = new InMemoryContextService();
+        injected.Put("ctx", "123-45-6789", "from-constructor");
+        var perCall = new InMemoryContextService();
+        perCall.Put("ctx", "123-45-6789", "from-call");
+
+        var result = new FilterService(injected).Filter(RandomReplaceSsnPolicy(), "ctx", 0, "SSN: 123-45-6789", perCall);
+
+        Assert.Equal("from-call", result.Spans[0].Replacement);
+    }
+
+    [Fact]
+    public void ConstructorInjectedContextService_GivesConsistencyAcrossSeparateCalls()
+    {
+        // The injected service persists mappings across Filter calls on the same FilterService; the
+        // default (a fresh in-memory store per call) would not.
+        var fs = new FilterService(new InMemoryContextService());
+
+        var r1 = fs.Filter(RandomReplaceSsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
+        var r2 = fs.Filter(RandomReplaceSsnPolicy(), "ctx", 0, "SSN: 123-45-6789");
+
+        Assert.NotEmpty(r1.Spans);
+        Assert.NotEmpty(r2.Spans);
+        Assert.Equal(r1.Spans[0].Replacement, r2.Spans[0].Replacement);
+    }
 }

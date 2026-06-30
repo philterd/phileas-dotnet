@@ -2,6 +2,12 @@
 
 All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The current development version is `1.5.0-preview`; `1.4.0` is the latest published release.
 
+## 1.5.0-preview
+
+### Added
+
+- **`FilterService` now accepts an injected `IContextService`** (constructor overload), so consistent RANDOM_REPLACE replacements can be backed by a durable, caller-supplied store instead of only the default in-memory one.
+
 ## 1.4.0
 
 ### Changed
