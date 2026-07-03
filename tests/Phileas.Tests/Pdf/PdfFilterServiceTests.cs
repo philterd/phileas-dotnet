@@ -388,4 +388,65 @@ public class PdfFilterServiceTests
         using var document = PdfDocument.Open(result.Document);
         Assert.Empty(document.GetPages().SelectMany(p => p.Letters));
     }
+
+    [Fact]
+    public void Filter_DetectsPiiInAnnotationsAndFormFields_WithNoBurnedInBox()
+    {
+        var pdf = BuildAnnotationFormPdf("SSN 123-45-6789", "george@fake.com");
+        var policy = new PhileasPolicy
+        {
+            Name = "es",
+            Identifiers = new PolicyIdentifiers { Ssn = new Ssn(), EmailAddress = new EmailAddress() }
+        };
+
+        var result = new PdfFilterService().Filter(policy, "ctx", pdf, MimeType.ApplicationPdf);
+
+        // The annotation SSN and the form field's email — neither in the page content stream — are detected.
+        Assert.Contains(result.Spans, s => s.Text.Contains("123-45-6789"));
+        Assert.Contains(result.Spans, s => s.Text.Contains("george@fake.com"));
+        // They carry a page but no located box (their text isn't rendered, so there's nothing to burn in).
+        foreach (var s in result.Spans.Where(s => s.Text.Contains("123-45-6789") || s.Text.Contains("george@fake.com")))
+        {
+            Assert.True(s.PageNumber >= 1);
+            Assert.Equal(0, s.LowerLeftX);
+            Assert.Equal(0, s.UpperRightX);
+        }
+        // The output is still a valid, fully-rasterized PDF with no recoverable text.
+        Assert.StartsWith("%PDF", Encoding.ASCII.GetString(result.Document, 0, 4));
+        using var document = PdfDocument.Open(result.Document);
+        Assert.Empty(document.GetPages().SelectMany(p => p.Letters));
+    }
+
+    // A tiny hand-authored 1-page PDF with a FreeText annotation and an AcroForm text field (PdfPig can
+    // read these; it can't write them). ASCII-only, so byte offsets equal character counts.
+    private static byte[] BuildAnnotationFormPdf(string annotationText, string formValue)
+    {
+        string Esc(string t) => t.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
+        const string content = "BT /F1 12 Tf 72 700 Td (Body.) Tj ET";
+        var objects = new[]
+        {
+            "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] >> >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 7 0 R >> >> /Annots [6 0 R 5 0 R] >>",
+            $"<< /Length {Encoding.Latin1.GetByteCount(content)} >>\nstream\n{content}\nendstream",
+            $"<< /Type /Annot /Subtype /Widget /FT /Tx /T (field1) /V ({Esc(formValue)}) /Rect [72 600 300 620] /P 3 0 R >>",
+            $"<< /Type /Annot /Subtype /FreeText /Contents ({Esc(annotationText)}) /Rect [72 650 300 670] /P 3 0 R >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+        };
+        using var stream = new MemoryStream();
+        void W(string s) => stream.Write(Encoding.Latin1.GetBytes(s));
+        W("%PDF-1.7\n");
+        var offsets = new long[objects.Length + 1];
+        for (var i = 0; i < objects.Length; i++)
+        {
+            offsets[i + 1] = stream.Position;
+            W($"{i + 1} 0 obj\n{objects[i]}\nendobj\n");
+        }
+        var xref = stream.Position;
+        W($"xref\n0 {objects.Length + 1}\n0000000000 65535 f \n");
+        for (var i = 1; i <= objects.Length; i++)
+            W($"{offsets[i]:D10} 00000 n \n");
+        W($"trailer\n<< /Size {objects.Length + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF");
+        return stream.ToArray();
+    }
 }

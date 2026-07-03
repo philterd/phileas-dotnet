@@ -71,6 +71,18 @@ public class DriversLicenseFilterTests
         Assert.Equal(FilterType.DriversLicenseNumber, result.Spans[0].FilterType);
     }
 
+    [Theory]
+    [InlineData("DL: A123456789012")] // 1 letter + 12 digits (Florida/Maryland/Michigan-style, 13-char)
+    [InlineData("License S987654321098")]
+    public void Filter_DetectsLetterTwelveDigitLicense(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.DriversLicenseNumber, result.Spans[0].FilterType);
+    }
+
     [Fact]
     public void Filter_EmptyInput_ReturnsNoSpans()
     {

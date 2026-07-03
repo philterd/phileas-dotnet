@@ -16,6 +16,8 @@
 
 using System.Text;
 using Phileas.Model;
+using UglyToad.PdfPig;
+using UglyToad.PdfPig.AcroForms.Fields;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Services.Pdf;
@@ -88,10 +90,58 @@ public sealed class PdfFilterService
                 spans.AddRange(LocatePerLine(span, segments));
         }
 
+        // Annotations and AcroForm fields aren't part of the page content stream, so the pass above misses
+        // them. Their text also isn't rendered into the rasterized image (so it is removed from the
+        // output), but it must still be detected and reported. These spans carry a page number but no
+        // bounding box — the content is already gone, so nothing is burned in (PdfRedactor skips them).
+        foreach (var (page, text) in ExtractAnnotationAndFormText(input))
+        {
+            var result = _filterService.Filter(policy, context, piece++, text);
+            tokens += result.Tokens;
+            foreach (var span in result.Spans)
+            {
+                var located = span.Copy();
+                located.PageNumber = page;
+                located.LowerLeftX = located.LowerLeftY = located.UpperRightX = located.UpperRightY = 0;
+                spans.Add(located);
+            }
+        }
+
         var redacted = _redactor.Process(input, spans, policy.Config.Pdf, policy.Graphical.BoundingBoxes,
             outputMimeType);
 
         return new BinaryDocumentFilterResult(redacted, context, spans, tokens);
+    }
+
+    /// <summary>
+    ///     Extracts text that lives outside the page content stream — annotation contents (sticky notes,
+    ///     free-text, etc.) and AcroForm text-field values — each tagged with its page number. This text is
+    ///     not rendered into the redacted image, so it is removed from the output; extracting it lets the
+    ///     detector still find and report any PII it held. Best effort: a malformed annotation or form must
+    ///     never fail the redaction.
+    /// </summary>
+    private static IEnumerable<(int Page, string Text)> ExtractAnnotationAndFormText(byte[] input)
+    {
+        var results = new List<(int, string)>();
+        try
+        {
+            using var pdf = PdfDocument.Open(input);
+
+            foreach (var page in pdf.GetPages())
+                foreach (var annotation in page.GetAnnotations())
+                    if (!string.IsNullOrWhiteSpace(annotation.Content))
+                        results.Add((page.Number, annotation.Content));
+
+            if (pdf.TryGetForm(out var form))
+                foreach (var field in form.Fields)
+                    if (field is AcroTextField textField && !string.IsNullOrWhiteSpace(textField.Value))
+                        results.Add((textField.PageNumber ?? 1, textField.Value));
+        }
+        catch
+        {
+            // best effort — a malformed annotation/form must not fail the redaction
+        }
+        return results;
     }
 
     /// <summary>Redacts the document using a pre-computed set of spans (which must carry page/coordinates).</summary>

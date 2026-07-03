@@ -15,12 +15,15 @@
  */
 
 using Phileas.Model;
+using Phileas.Services.Validators;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-///     Regex-based filter that detects IBAN code entities in plain text.
+///     Regex-based filter that detects IBAN code entities in plain text. A structural match is kept only
+///     when it passes the IBAN MOD-97-10 checksum, so an IBAN-shaped string with wrong check digits is
+///     rejected rather than redacted.
 /// </summary>
 public class IbanCodeFilter : RegexFilter
 {
@@ -41,6 +44,8 @@ public class IbanCodeFilter : RegexFilter
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
         var spans = FindSpans(policy, IbanAnalyzer, input, context, piece);
+        // Confirm the structural match with the shared IBAN MOD-97-10 checksum; drop shapes that fail it.
+        spans = spans.Where(span => Mod97Validator.IsValidIban(span.Text)).ToList();
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

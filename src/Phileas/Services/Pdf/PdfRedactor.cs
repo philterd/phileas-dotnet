@@ -74,6 +74,10 @@ public sealed class PdfRedactor
                     {
                         var rect = ToPixelRect(span.LowerLeftX, span.LowerLeftY, span.UpperRightX,
                             span.UpperRightY, heightPts, scaleX, scaleY);
+                        // A span with no located box (e.g. one detected in an annotation or form field, whose
+                        // text isn't rendered into the image) has nothing to burn in — skip it.
+                        if (rect.Width <= 0 || rect.Height <= 0)
+                            continue;
                         canvas.DrawRect(rect, redactionPaint);
 
                         if (pdf.ShowReplacement && !string.IsNullOrEmpty(span.Replacement))

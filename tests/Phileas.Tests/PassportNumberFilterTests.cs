@@ -51,12 +51,32 @@ public class PassportNumberFilterTests
     [InlineData("Passport: A12345678")] // 1 letter + 8 digits
     [InlineData("Travel doc: B98765432")]
     [InlineData("Passport No: AB123456")] // 2 letters + 6 digits
+    [InlineData("US passport 123456789 on file")] // all-numeric 9-digit US passport book number
     public void Filter_DetectsPassportNumber(string input)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
         Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.PassportNumber, result.Spans[0].FilterType);
+    }
+
+    [Fact]
+    public void FilterService_BareNineDigits_PreferPassportOverDriversLicense()
+    {
+        // The bare 9-digit US passport number was already redacted (coincidentally as a driver's license
+        // at 0.50); it is now correctly attributed to the passport filter (0.55) when both are enabled.
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers
+            {
+                PassportNumber = new PassportNumber(),
+                DriversLicense = new DriversLicense()
+            }
+        };
+        var result = new FilterService().Filter(policy, "test", 0, "Number 123456789 on file.");
+        Assert.Single(result.Spans);
         Assert.Equal(FilterType.PassportNumber, result.Spans[0].FilterType);
     }
 

@@ -25,7 +25,11 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 public class PassportNumberFilter : RegexFilter
 {
     private static readonly Analyzer PassportAnalyzer = new(
-        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).Build()
+        // 1-2 letter prefix + digits: most alphanumeric passports, plus the US passport card (C + 8 digits).
+        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).Build(),
+        // All-numeric 9-digit US passport book number (no leading letter). Ambiguous with a bare SSN or
+        // driver's-license number, so a lower confidence; it edges out the driver's-license 9-digit shape.
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.55).Build()
     );
 
     /// <summary>

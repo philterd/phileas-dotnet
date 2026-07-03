@@ -63,8 +63,62 @@ public class StreetAddressFilterTests
     }
 
     [Theory]
+    // Directionals (pre-name and post-suffix quadrant)
+    [InlineData("123 N Main St")]
+    [InlineData("123 North Main Street")]
+    [InlineData("Ship to 123 Main St NW")]
+    // Ordinal street names
+    [InlineData("Reg: 123 5th Avenue")]
+    [InlineData("At 42 42nd Street")]
+    // Expanded street types
+    [InlineData("Loc 10 Sunset Loop")]
+    [InlineData("Site 200 Bear Pike")]
+    [InlineData("5 Kings Crossing")]
+    [InlineData("9 Queens Crescent")]
+    [InlineData("12 Harbor Plaza")]
+    [InlineData("34 Oak Point")]
+    [InlineData("77 Rectory Mews")]
+    // House-number range / letter suffix
+    [InlineData("123-125 Main St")]
+    [InlineData("123A Main Street")]
+    // Saint / abbreviated street name
+    [InlineData("100 St. Charles Avenue")]
+    // PO boxes
+    [InlineData("PO Box 1234")]
+    [InlineData("Mail to P.O. Box 56")]
+    [InlineData("Post Office Box 789")]
+    public void Filter_DetectsExpandedFormats(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.StreetAddress, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("123 Main St Apt 4B", "Apt 4B")]
+    [InlineData("456 Oak Ave, Suite 200", "Suite 200")]
+    [InlineData("789 Elm Blvd Unit 12", "Unit 12")]
+    [InlineData("12 Pine Rd #5", "#5")]
+    [InlineData("Ship to 123 Main St NW", "NW")]
+    public void Filter_SpanIncludesUnitOrDirectional(string input, string expectedTail)
+    {
+        // The secondary unit / trailing quadrant is folded into the redacted span, not left behind.
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Contains(expectedTail, result.Spans[0].Text);
+    }
+
+    [Theory]
     [InlineData("No address here.")]
     [InlineData("Chapter 4 summary")]
+    [InlineData("Meeting at 3 PM today")]
+    [InlineData("Section 5 covers everything")]
+    [InlineData("We have 2 dogs and 3 cats")]
+    [InlineData("PO Box without a number")]
     public void Filter_DoesNotDetectNonAddress(string input)
     {
         var filter = CreateFilter();

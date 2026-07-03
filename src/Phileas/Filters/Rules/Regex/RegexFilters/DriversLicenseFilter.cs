@@ -27,6 +27,8 @@ public class DriversLicenseFilter : RegexFilter
     private static readonly Analyzer DriversLicenseAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b[A-Z][0-9]{7}\b").WithInitialConfidence(0.70).Build(),
         new FilterPattern.Builder().WithPattern(@"\b[A-Z]{2}[0-9]{6}\b").WithInitialConfidence(0.70).Build(),
+        // 1 letter + 12 digits (13-char): Florida, Maryland, and Michigan-style license numbers.
+        new FilterPattern.Builder().WithPattern(@"\b[A-Z][0-9]{12}\b").WithInitialConfidence(0.70).Build(),
         new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.50).Build()
     );
 

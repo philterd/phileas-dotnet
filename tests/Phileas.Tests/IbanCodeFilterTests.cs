@@ -50,7 +50,7 @@ public class IbanCodeFilterTests
     [Theory]
     [InlineData("IBAN: GB29NWBK60161331926819")] // UK IBAN
     [InlineData("Account: DE89370400440532013000")] // German IBAN
-    [InlineData("Bank: FR7614508059151234567890185")] // French IBAN
+    [InlineData("Bank: FR1420041010050500013M02606")] // French IBAN (contains a letter in the BBAN)
     public void Filter_DetectsIbanCode(string input)
     {
         var filter = CreateFilter();
@@ -66,6 +66,18 @@ public class IbanCodeFilterTests
     [InlineData("Ref: ABC123")]
     public void Filter_DoesNotDetectNonIban(string input)
     {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
+    [Theory]
+    [InlineData("IBAN: GB28NWBK60161331926819")] // GB29… is valid; the wrong check digits fail MOD-97
+    [InlineData("Account: DE00370400440532013000")] // DE89… is valid; these check digits fail MOD-97
+    public void Filter_RejectsStructurallyValidButChecksumInvalidIban(string input)
+    {
+        // Right shape, wrong MOD-97-10 check digits: rejected rather than redacted.
         var filter = CreateFilter();
         var policy = CreatePolicy();
         var result = filter.Filter(policy, "test", 0, input);
