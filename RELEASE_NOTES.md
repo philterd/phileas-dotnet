@@ -1,16 +1,26 @@
 # Release Notes
 
-All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The current development version is `1.5.0-preview`; `1.4.0` is the latest published release.
+All notable changes to Phileas (.NET) are recorded here. Versions follow [Semantic Versioning](https://semver.org/). The current development version is `1.6.0-preview`; `1.5.0` is the latest published release.
 
-## 1.5.0-preview
+## 1.6.0-preview
+
+## 1.5.0 - 2026-07-03
 
 ### Added
 
 - **`FilterService` now accepts an injected `IContextService`** (constructor overload), so consistent RANDOM_REPLACE replacements can be backed by a durable, caller-supplied store instead of only the default in-memory one.
+- **PDF redaction now detects PII in annotations and AcroForm fields.** Text in annotation contents (sticky notes, free-text, etc.) and form-field values lives outside the page content stream, so it was previously not detected. It is now extracted and run through the detector. Because this text is not rendered into the rasterized output, it is already removed from the redacted document; the detected spans carry a page number but no bounding box, so nothing is burned in. Extraction is best-effort: a malformed annotation or form never fails the redaction.
+
+### Changed
+
+- **Street address detection is substantially broader.** The filter now recognizes leading and trailing directionals (`123 N Main St`, `Main St NW`), ordinal street names (`123 5th Avenue`), house-number ranges and letter suffixes (`123-125`, `123A`), saint/abbreviated names (`100 St. Charles Avenue`), and a much larger set of street types. Secondary unit designators (`Apt 4B`, `Suite 200`, `Unit 12`, `#5`) are folded into the redacted span, and PO boxes (`PO Box 1234`, `P.O. Box 56`, `Post Office Box 789`) are detected.
+- **Driver's license detection adds the 1-letter + 12-digit format** (Florida, Maryland, and Michigan-style, 13-character license numbers).
+- **Passport detection adds the all-numeric 9-digit US passport book number.** It is attributed to the passport filter (at a low confidence, given ambiguity with SSNs and driver's-license numbers) when both filters are enabled.
 
 ### Fixed
 
 - **The date filter now detects day-first numeric dates** (e.g. `25/12/1980`); previously only month-first numeric dates were matched. Ambiguous dates (e.g. `03/04/1981`) are detected once, and `onlyValidDates` still drops impossible calendar dates.
+- **The IBAN filter now confirms the MOD-97-10 checksum.** A structurally IBAN-shaped string with wrong check digits is rejected rather than redacted.
 
 ## 1.4.0
 
