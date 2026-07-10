@@ -4,6 +4,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 ## 1.6.0-preview
 
+### Added
+
+- **Word (`.docx`) and Excel (`.xlsx`) redaction** via the new `WordDocumentRedactor` and `XlsxRedactor` services in `Phileas.Services.Office`. They redact document text in place with the open-source Open XML SDK (no license key) and remain cross-platform (`net8.0;net10.0`, no Windows dependency). Each has file-path and `byte[]` (in-memory) overloads for `Redact`/`Detect`/`ApplySpans`, returning `OfficeRedactionSpan` records. This is .NET-port-specific container-format support (the Java and Python ports remain PDF-only for documents). See [Word & Excel Redaction](docs/office-redaction.md).
+
 ## 1.5.0 - 2026-07-03
 
 ### Added
