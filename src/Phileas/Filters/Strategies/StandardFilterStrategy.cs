@@ -66,6 +66,7 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
                     ? StaticReplacement
                     : GetRedactedToken(token, classification, filterType), salt),
             Mask => new Replacement(MaskToken(token), salt),
+            Abbreviate => new Replacement(AbbreviateToken(token), salt),
             Last4 => new Replacement(token.Length >= 4 ? token[^4..] : token, salt),
             HashSha256Replace => new Replacement(HashSha256(token + salt), salt),
             CryptoReplace => crypto != null
@@ -78,6 +79,15 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
             Truncate => new Replacement(token.Length > 0 ? token[..1] : token, salt),
             _ => new Replacement(GetRedactedToken(token, classification, filterType), salt)
         };
+    }
+
+    private static string AbbreviateToken(string token)
+    {
+        var words = token.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var initials = new StringBuilder(words.Length);
+        foreach (var word in words)
+            initials.Append(char.ToUpperInvariant(word[0]));
+        return initials.ToString();
     }
 
     private string GetOrCreateRandomReplacement(string context, string token)

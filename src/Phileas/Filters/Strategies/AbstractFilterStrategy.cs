@@ -51,6 +51,9 @@ public abstract class AbstractFilterStrategy
     /// <summary>Replacement strategy constant: mask the entity with a repeated mask character.</summary>
     public const string Mask = "MASK";
 
+    /// <summary>Replacement strategy constant: reduce the entity to the initials of its words.</summary>
+    public const string Abbreviate = "ABBREVIATE";
+
     /// <summary>Replacement strategy constant: keep the original entity unchanged.</summary>
     public const string Same = "SAME";
 
