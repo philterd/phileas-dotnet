@@ -50,6 +50,9 @@
         <PackageReference Include="PdfPig" Version="0.1.14" />
         <PackageReference Include="PDFtoImage" Version="5.2.1" />
         <PackageReference Include="SkiaSharp" Version="3.119.4" />
+        <!-- Office redaction (Services/Office): the open-source Open XML SDK reads and rewrites .docx and
+             .xlsx packages. No commercial dependency or license key. Cross-platform (no Windows TFM). -->
+        <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
     </ItemGroup>
     <ItemGroup>
         <!-- PhiSQL .NET reference library (Philterd.PhiSql on NuGet). Provides the PhiSQL

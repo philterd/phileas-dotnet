@@ -11,6 +11,7 @@ phileas-dotnet is a .NET library for detecting and filtering Personally Identifi
 - **Referential integrity** — opt into `CONTEXT` replacement scope to keep random replacements consistent across documents
 - **Span disambiguation** — resolve competing classifications of the same text by surrounding context
 - **PDF redaction** — detect and redact PII in PDFs, rasterizing pages so no text is recoverable
+- **Word & Excel redaction** — detect and redact PII in `.docx`/`.xlsx` documents in place (.NET port only)
 - **Extensible** — implement `IContextService` to persist replacement mappings in any store (Redis, database, etc.)
 
 ## Project
@@ -52,4 +53,5 @@ Console.WriteLine(result.FilteredText);
 - [Context Service](context-service.md) — maintain referential integrity across documents
 - [Span Disambiguation](span-disambiguation.md) — resolve competing classifications by context
 - [PDF Redaction](pdf-redaction.md) — detect and redact PII in PDF documents
+- [Word & Excel Redaction](office-redaction.md) — detect and redact PII in `.docx`/`.xlsx` documents
 - [API Reference](api-reference.md) — detailed API documentation

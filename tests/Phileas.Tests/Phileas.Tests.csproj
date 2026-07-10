@@ -15,6 +15,8 @@
         <!-- SkiaSharp native binaries for headless Linux (no system fontconfig dependency), so the
              PDF rasterization/drawing tests can run in CI and containers. -->
         <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
+        <!-- Office redaction tests build .docx/.xlsx fixtures directly with the Open XML SDK. -->
+        <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="../../src/Phileas/Phileas.csproj"/>
