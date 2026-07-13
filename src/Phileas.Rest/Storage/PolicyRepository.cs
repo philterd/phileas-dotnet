@@ -80,10 +80,14 @@ public sealed class PolicyRepository
         // Round-trip to validate; keep the caller's canonical JSON as stored.
         _ = PolicySerializer.DeserializeFromJson(json);
 
-        _policies.ReplaceOne(
+        // Update via $set (not ReplaceOne) so MongoDB assigns the _id on insert. A replacement document would
+        // carry the default all-zero ObjectId, making the second distinct policy collide on _id (E11000).
+        _policies.UpdateOne(
             p => p.Name == name,
-            new PolicyDocument { Name = name, Json = json },
-            new ReplaceOptions { IsUpsert = true });
+            Builders<PolicyDocument>.Update
+                .Set(p => p.Json, json)
+                .SetOnInsert(p => p.Name, name),
+            new UpdateOptions { IsUpsert = true });
     }
 
     /// <summary>Deletes the named policy. Returns <see langword="true" /> if a policy was removed.</summary>
