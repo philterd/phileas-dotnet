@@ -297,6 +297,7 @@ public class FilterService : IFilterService
                         {
                             Strategy = s.Strategy,
                             RedactionFormat = s.RedactionFormat,
+                            Color = s.Color,
                             StaticReplacement = s.StaticReplacement ?? string.Empty,
                             MaskCharacter = s.MaskCharacter,
                             MaskLength = s.MaskLength,
@@ -339,6 +340,7 @@ public class FilterService : IFilterService
                         {
                             Strategy = s.Strategy,
                             RedactionFormat = s.RedactionFormat,
+                            Color = s.Color,
                             StaticReplacement = s.StaticReplacement ?? string.Empty,
                             MaskCharacter = s.MaskCharacter,
                             MaskLength = s.MaskLength,
@@ -473,6 +475,7 @@ public class FilterService : IFilterService
                 var runtimeStrategy = CreateDictionaryRuntimeStrategy(filterType);
                 runtimeStrategy.Strategy = s.Strategy;
                 runtimeStrategy.RedactionFormat = s.RedactionFormat;
+                runtimeStrategy.Color = s.Color;
                 runtimeStrategy.StaticReplacement = s.StaticReplacement ?? string.Empty;
                 runtimeStrategy.MaskCharacter = s.MaskCharacter;
                 runtimeStrategy.MaskLength = s.MaskLength;

@@ -190,7 +190,7 @@ var policy = new Policy
 
 | Property | JSON key | Default | Description |
 |---|---|---|---|
-| `RedactionColor` | `redactionColor` | `"black"` | Fill color of the redaction rectangles (`black`, `white`, `red`, `yellow`, `blue`, `green`, `gray`). |
+| `RedactionColor` | `redactionColor` | `"black"` | Policy-wide fill color of the redaction bars, used for any span whose strategy does not set its own [`color`](filter-strategies.md#redaction-bar-color). Accepts a named color (`black`, `white`, `red`, `orange`, `yellow`, `green`, `blue`, `gray`) or a 6-digit hex string like `#ff8800`; an unrecognized or malformed value renders as black. |
 | `ShowReplacement` | `showReplacement` | `false` | Draw the strategy's replacement text inside the redaction rectangle. |
 | `ReplacementFont` | `replacementFont` | `"helvetica"` | Font for replacement text (`helvetica`, `times`, `courier`). |
 | `ReplacementMaxFontSize` | `replacementMaxFontSize` | `12` | Maximum replacement-text font size (shrinks to fit the box). |
@@ -200,8 +200,10 @@ var policy = new Policy
 | `CompressionQuality` | `compressionQuality` | `1.0` | JPEG quality (0–1) of the embedded page images. |
 | `PreserveUnredactedPages` | `preserveUnredactedPages` | `false` | *(Not yet implemented in the .NET port — all pages are rasterized.)* |
 
-> **Note on `Scale`.** The default (`0.25`) produces quarter-size pages backed by a high-resolution image —
+> **Note on `Scale`.** The default (`0.25`) produces quarter-size pages backed by a high-resolution image,
 > compact output that stays crisp when zoomed. Set `Scale = 1.0f` to keep the original page dimensions.
+
+> **Per-strategy bar color.** A filter strategy can set its own [`color`](filter-strategies.md#redaction-bar-color) to override `RedactionColor` for the spans it redacts, so different entity types (or the same type at different confidences) can be redacted in different colors. The resolution order for each span's bar is the strategy's `color`, then `RedactionColor`, then black.
 
 ## Graphical bounding boxes
 
@@ -231,7 +233,7 @@ var result = new PdfFilterService().Filter(policy, "ctx", inputPdf, MimeType.App
 | `Page` | `page` | Page the box covers: a 1-based page number (default `1`), `0` for **every** page, or a negative value `-N` for page N through the **last** page (so `-2` is "all but the first page"). |
 | `X`, `Y` | `x`, `y` | Lower-left corner, in PDF user-space points. |
 | `W`, `H` | `w`, `h` | Width and height, in points. |
-| `Color` | `color` | Box color, or `null` to use the policy `RedactionColor`. |
+| `Color` | `color` | Box color (a named color or 6-digit hex, same set as `RedactionColor`; unrecognized renders black), or `null` to use the policy `RedactionColor`. |
 
 ## Notes and limitations
 

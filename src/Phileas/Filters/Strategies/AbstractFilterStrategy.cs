@@ -86,6 +86,12 @@ public abstract class AbstractFilterStrategy
     /// </summary>
     public string RedactionFormat { get; set; } = DefaultRedaction;
 
+    /// <summary>
+    ///     Gets or sets the optional color of the bar drawn over a span this strategy redacts when rendering a PDF or
+    ///     image. When unset, the policy-wide <c>config.pdf.redactionColor</c> applies. Has no effect on text redaction.
+    /// </summary>
+    public string? Color { get; set; }
+
     /// <summary>Gets or sets the static replacement value used by the <see cref="StaticReplace" /> strategy.</summary>
     public string StaticReplacement { get; set; } = string.Empty;
 

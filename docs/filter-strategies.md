@@ -394,6 +394,31 @@ new SsnFilterStrategy
 
 ---
 
+## Redaction Bar Color
+
+Any strategy can set an optional `color` that controls the color of the bar drawn over the spans it redacts when the output is a [PDF or image](pdf-redaction.md). It overrides the policy-wide `config.pdf.redactionColor` for those spans; when unset, the policy-wide color (default black) applies. `color` has no effect on text redaction.
+
+```csharp
+new SsnFilterStrategy
+{
+    Strategy = "REDACT",
+    Color = "red"
+}
+```
+
+Accepted values are a named color (`black`, `white`, `red`, `orange`, `yellow`, `green`, `blue`, `gray`) or a 6-digit hex string matching `^#[0-9A-Fa-f]{6}$` (for example `#ff8800`). An unrecognized or malformed value renders as black, so a detected span is never left un-redacted. Because `color` overrides the policy-wide color, a malformed strategy color renders black rather than falling back to `config.pdf.redactionColor`.
+
+Combined with [strategy conditions](#strategy-conditions), this colors spans by detection confidence or any other condition field:
+
+```json
+"creditCardFilterStrategies": [
+  { "strategy": "REDACT", "color": "green",  "condition": "confidence >= 0.9" },
+  { "strategy": "REDACT", "color": "orange", "condition": "confidence < 0.9" }
+]
+```
+
+---
+
 ## Strategy Conditions
 
 Strategies can include a `condition` property that controls when they are applied. When multiple strategies are defined, phileas-dotnet evaluates their conditions in order and applies the first strategy whose condition evaluates to `true`.

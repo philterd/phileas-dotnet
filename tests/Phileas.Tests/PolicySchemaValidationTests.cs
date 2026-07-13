@@ -72,6 +72,18 @@ public class PolicySchemaValidationTests
     }
 
     [Fact]
+    public void ValidateStrategyColorPolicy()
+    {
+        // The per-strategy color property (named color or 6-digit hex) is part of schema 1.2.0.
+        const string jsonPolicy =
+            "{\"identifiers\": {\"ssn\": {\"ssnFilterStrategies\": [{\"strategy\": \"REDACT\", \"color\": \"red\"}]}, " +
+            "\"phoneNumber\": {\"phoneNumberFilterStrategies\": [{\"strategy\": \"REDACT\", \"color\": \"#ff8800\"}]}}, " +
+            "\"config\": {\"pdf\": {\"redactionColor\": \"blue\"}}}";
+
+        Assert.True(PolicySchema.Validate(jsonPolicy));
+    }
+
+    [Fact]
     public void ValidateMapReplacePolicy()
     {
         // MAP_REPLACE strategy fields and the top-level generators block are part of schema 1.2.0.

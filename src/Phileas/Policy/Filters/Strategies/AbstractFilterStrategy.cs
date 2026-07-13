@@ -176,4 +176,15 @@ public abstract class AbstractFilterStrategy
     /// </summary>
     [JsonPropertyName("fallbackStrategy")]
     public string FallbackStrategy { get; set; } = Redact;
+
+    /// <summary>
+    ///     Gets or sets the optional color of the bar drawn over a span this strategy redacts when rendering a PDF or
+    ///     image. Overrides the policy-wide <c>config.pdf.redactionColor</c> for spans this strategy redacts; when
+    ///     unset the policy-wide color (default black) applies. Accepts a named color (<c>black</c>, <c>white</c>,
+    ///     <c>red</c>, <c>orange</c>, <c>yellow</c>, <c>green</c>, <c>blue</c>, <c>gray</c>) or a 6-digit hex string
+    ///     matching <c>^#[0-9A-Fa-f]{6}$</c>; an unrecognized or malformed value renders as black. Has no effect on
+    ///     text redaction.
+    /// </summary>
+    [JsonPropertyName("color")]
+    public string? Color { get; set; }
 }

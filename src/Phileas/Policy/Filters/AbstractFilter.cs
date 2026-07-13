@@ -194,8 +194,13 @@ public abstract class AbstractFilter
     {
         foreach (var strategy in Strategies)
             if (strategy.EvaluateCondition(context, token, window, confidence, classification, filterPattern))
-                return strategy.GetReplacement(context, token, window, confidence, classification, filterPattern,
-                    Crypto, Fpe);
+            {
+                var replacement = strategy.GetReplacement(context, token, window, confidence, classification,
+                    filterPattern, Crypto, Fpe);
+                // Carry the winning strategy's redaction-bar color so PDF/image rendering can honor it per span.
+                replacement.Color = strategy.Color;
+                return replacement;
+            }
 
         return new Replacement("{{{REDACTED-" + FilterType.GetFilterTypeName() + "}}}", string.Empty);
     }

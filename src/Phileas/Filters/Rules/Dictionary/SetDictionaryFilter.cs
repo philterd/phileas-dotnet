@@ -88,7 +88,8 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
             var replacement = GetReplacement(policy, context, originalToken, window, confidence, Classification, null);
 
             spans.Add(Span.Make(characterStart, characterEnd, FilterType, context, confidence, originalToken,
-                replacement.Value, replacement.Salt, isIgnored, replacement.Applied, window, Priority));
+                replacement.Value, replacement.Salt, isIgnored, replacement.Applied, window, Priority,
+                replacement.Color));
         }
 
         return new Filtered(context, piece, spans);

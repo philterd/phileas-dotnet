@@ -124,7 +124,7 @@ public class PhEyeFilter : AbstractFilter, IDisposable
                 spanFilterType, context, phEyeSpan.Score, phEyeSpan.Text,
                 replacement.Value, replacement.Salt,
                 false, replacement.Applied,
-                window, Priority);
+                window, Priority, replacement.Color);
             span.Classification = phEyeSpan.Label;
 
             spans.Add(span);

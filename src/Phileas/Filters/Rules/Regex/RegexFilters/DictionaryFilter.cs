@@ -96,7 +96,7 @@ public class DictionaryFilter : RegexFilter
                         FilterType, context, confidence, token,
                         replacement.Value, replacement.Salt,
                         false, replacement.Applied,
-                        window, Priority);
+                        window, Priority, replacement.Color);
 
                     allSpans.Add(span);
                     break;
