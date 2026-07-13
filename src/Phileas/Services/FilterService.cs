@@ -220,6 +220,11 @@ public class FilterService : IFilterService
                     contextService));
         if (identifiers.Ssn != null)
             filters.Add(BuildFilter<SsnFilter, SsnFilterStrategy>(identifiers.Ssn, policy, contextService));
+        if (identifiers.Ein != null)
+        {
+            var einConfig = BuildRegexConfig<EinFilterStrategy>(identifiers.Ein, policy, contextService);
+            filters.Add(new EinFilter(einConfig, identifiers.Ein.OnlyValidPrefixes));
+        }
         if (identifiers.ZipCode != null)
         {
             var zipConfig = BuildRegexConfig<ZipCodeFilterStrategy>(identifiers.ZipCode, policy, contextService);

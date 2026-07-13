@@ -39,6 +39,7 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 | `Date`                 | Dates in common formats                                                                         |
 | `Dictionary`           | Custom term list with optional fuzzy matching                                                   |
 | `DriversLicense`       | US driver's license numbers                                                                     |
+| `Ein`                  | US Employer Identification Numbers                                                              |
 | `EmailAddress`         | Email addresses                                                                                 |
 | `IbanCode`             | IBAN bank account codes                                                                         |
 | `IpAddress`            | IPv4 / IPv6 addresses                                                                           |

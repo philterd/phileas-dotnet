@@ -67,6 +67,10 @@ public class Identifiers
     [JsonPropertyName("driversLicense")]
     public DriversLicense? DriversLicense { get; set; }
 
+    /// <summary>Gets or sets the Employer Identification Number (EIN) filter configuration.</summary>
+    [JsonPropertyName("ein")]
+    public Ein? Ein { get; set; }
+
     /// <summary>Gets or sets the email address filter configuration.</summary>
     [JsonPropertyName("emailAddress")]
     public EmailAddress? EmailAddress { get; set; }
@@ -177,6 +181,7 @@ public class Identifiers
             FilterType.Currency => Currency != null,
             FilterType.Date => Date != null,
             FilterType.DriversLicenseNumber => DriversLicense != null,
+            FilterType.Ein => Ein != null,
             FilterType.EmailAddress => EmailAddress != null,
             FilterType.IbanCode => IbanCode != null,
             FilterType.IpAddress => IpAddress != null,

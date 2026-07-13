@@ -217,6 +217,7 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `Currency` | `"currency"` |
 | `CreditCard` | `"credit-card"` |
 | `DriversLicenseNumber` | `"drivers-license-number"` |
+| `Ein` | `"ein"` |
 | `LocationCity` | `"city"` |
 | `LocationState` | `"state"` |
 | `LocationCounty` | `"county"` |

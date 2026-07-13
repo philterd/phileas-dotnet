@@ -59,4 +59,15 @@ public class PolicySchemaValidationTests
         // {} is a valid (empty) policy.
         Assert.True(PolicySchema.Validate("{}"));
     }
+
+    [Fact]
+    public void ValidateEinPolicy()
+    {
+        // The ein identifier and its onlyValidPrefixes option are part of schema 1.2.0.
+        const string jsonPolicy =
+            "{\"identifiers\": {\"ein\": {\"onlyValidPrefixes\": true, " +
+            "\"einFilterStrategies\": [{\"strategy\": \"REDACT\"}]}}}";
+
+        Assert.True(PolicySchema.Validate(jsonPolicy));
+    }
 }

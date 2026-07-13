@@ -15,6 +15,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `Currency` | `currency` | Currency amounts (e.g. "$1,234.56") |
 | `Date` | `date` | Calendar dates in common formats |
 | `DriversLicense` | `driversLicense` | US driver's license numbers |
+| `Ein` | `ein` | US Employer Identification Numbers |
 | `EmailAddress` | `emailAddress` | Email addresses |
 | `IbanCode` | `ibanCode` | International Bank Account Numbers |
 | `IpAddress` | `ipAddress` | IPv4 and IPv6 addresses |
@@ -267,6 +268,29 @@ Detects US state driver's license number formats.
 
 ```csharp
 Identifiers = new Identifiers { DriversLicense = new DriversLicense() }
+```
+
+---
+
+### EIN
+
+Detects US Employer Identification Numbers (federal tax IDs) in the canonical `NN-NNNNNNN` format (two digits, a hyphen, seven digits), matched at word boundaries. The hyphen position distinguishes an EIN from an SSN (`NNN-NN-NNNN`); a bare nine-digit run is left to the SSN filter and span disambiguation rather than claimed as an EIN.
+
+```csharp
+Identifiers = new Identifiers { Ein = new Ein() }
+```
+
+Set `onlyValidPrefixes` to `true` to keep only matches whose two-digit prefix is one the IRS currently issues, which reduces false positives on format-valid but non-issued numbers. It defaults to `false` (match any EIN-formatted value), so a prefix issued after this release is still detected; the strict list is engine-carried and only affects the opt-in mode.
+
+The JSON key for the filter strategies list is `einFilterStrategies`:
+
+```json
+"ein": {
+  "onlyValidPrefixes": true,
+  "einFilterStrategies": [
+    { "strategy": "REDACT" }
+  ]
+}
 ```
 
 ---
