@@ -417,7 +417,7 @@ For detailed documentation, see [PhEye Filter Usage](pheye-filter-usage.md).
 
 ### Phone Number
 
-Detects US and international phone numbers in a variety of formats.
+Detects US and international phone numbers in a variety of formats, backed by Google's [libphonenumber](https://github.com/google/libphonenumber) (the `libphonenumber-csharp` port). Text is scanned with a default region of `US`, so North American Numbering Plan numbers (`(555) 123-4567`, `+1 555 123 4567`, `555.123.4567`) and any `+`-prefixed international number (`+44 20 7946 0958`, `+33 1 42 68 53 00`, `+91 98765 43210`, `+49 30 901820`) are detected regardless of region. National-format foreign numbers with no `+` are not reachable while the region is fixed to `US`.
 
 ```csharp
 Identifiers = new Identifiers { PhoneNumber = new PhoneNumber() }

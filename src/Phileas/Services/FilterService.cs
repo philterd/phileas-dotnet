@@ -18,6 +18,7 @@ using System.Collections;
 using System.Text;
 using Phileas.Filters;
 using Phileas.Filters.PhEye;
+using Phileas.Filters.Rules;
 using Phileas.Filters.Rules.Dictionary;
 using Phileas.Filters.Rules.Regex;
 using Phileas.Filters.Rules.Regex.RegexFilters;
@@ -530,7 +531,7 @@ public class FilterService : IFilterService
 
     private TFilter BuildFilter<TFilter, TStrategy>(
         AbstractPolicyFilter policyFilter, PhileasPolicy policy, IContextService contextService)
-        where TFilter : RegexFilter
+        where TFilter : RulesFilter
         where TStrategy : AbstractFilterStrategy, new()
     {
         var config = BuildRegexConfig<TStrategy>(policyFilter, policy, contextService);

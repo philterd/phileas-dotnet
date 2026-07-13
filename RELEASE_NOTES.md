@@ -14,6 +14,7 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 ### Fixed
 
+- **International phone numbers are now detected** ([#55](https://github.com/philterd/phileas-dotnet/issues/55)). The phone filter now scans with Google's libphonenumber (`libphonenumber-csharp`), matching the Java filter (region `US`, `Leniency.Possible`), so `+`-prefixed international numbers the old NANP-only regex missed are redacted; NANP formats still match. See [Supported Identifiers → Phone Number](docs/supported-identifiers.md#phone-number).
 - **The `ABBREVIATE` strategy now returns a value's initials** (e.g. `John Smith` produces `JS`) for `SURNAME`, `FIRST_NAME`, and the PhEye person path, instead of fully redacting.
 
 ## 1.5.0 - 2026-07-03
