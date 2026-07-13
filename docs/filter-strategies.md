@@ -14,6 +14,7 @@ A **filter strategy** controls what happens to a detected PII token. Each identi
 | `HASH_SHA256_REPLACE` | `AbstractFilterStrategy.HashSha256Replace` | Replace with the SHA-256 hex digest |
 | `LAST_4` | `AbstractFilterStrategy.Last4` | Keep only the last 4 characters |
 | `MASK` | `AbstractFilterStrategy.Mask` | Overwrite characters with a mask character |
+| `ABBREVIATE` | `AbstractFilterStrategy.Abbreviate` | Reduce the token to the initials of its words |
 | `SAME` | `AbstractFilterStrategy.Same` | Leave the token unchanged (mark as detected but not replaced) |
 | `TRUNCATE` | `AbstractFilterStrategy.Truncate` | Keep only the first character |
 | `SHIFT_DATE` | `AbstractFilterStrategy.ShiftDate` | Shift a detected date by a configurable offset (date filters only) |
@@ -229,6 +230,18 @@ Marks the token as detected but leaves the text unchanged. Useful when you want 
 ```csharp
 new PhoneNumberFilterStrategy { Strategy = "SAME" }
 ```
+
+---
+
+### ABBREVIATE
+
+Replaces the token with the uppercase initial of each whitespace-separated word.
+
+```csharp
+new FirstNameFilterStrategy { Strategy = "ABBREVIATE" }
+```
+
+Output example: `JS` (from `John Smith`).
 
 ---
 
