@@ -21,12 +21,14 @@ using Phileas.Filters.PhEye;
 using Phileas.Filters.Rules.Dictionary;
 using Phileas.Filters.Rules.Regex;
 using Phileas.Filters.Rules.Regex.RegexFilters;
+using Phileas.Filters.Strategies;
 using Phileas.Filters.Strategies.Rules;
 using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
 using Phileas.Services.Anonymization;
 using Phileas.Services.Disambiguation;
+using Phileas.Services.Generators;
 using Phileas.Services.Split;
 using Phileas.Services.Tokens;
 using PhileasPolicy = Phileas.Policy.Policy;
@@ -413,7 +415,29 @@ public class FilterService : IFilterService
                     section.EndPattern ?? string.Empty));
             }
 
+        WireReplacementValidators(policy, filters);
+
         return filters;
+    }
+
+    /// <summary>
+    ///     Injects a re-scan validator into every MAP_REPLACE strategy once the full filter set is built. The validator
+    ///     runs all filters over a generated value to reject one that reintroduces PII. A no-op when no MAP_REPLACE
+    ///     strategy is present.
+    /// </summary>
+    private static void WireReplacementValidators(PhileasPolicy policy, IList<AbstractFilter> filters)
+    {
+        IReplacementValidator? validator = null;
+
+        foreach (var filter in filters)
+            foreach (var strategy in filter.GetStrategies())
+                if (strategy is StandardFilterStrategy standard
+                    && string.Equals(standard.Strategy, AbstractFilterStrategy.MapReplace,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    validator ??= new PipelineReplacementValidator(policy, filters);
+                    standard.ReplacementValidator = validator;
+                }
     }
 
     private AbstractFilter BuildDictionaryFilter(AbstractPolicyFilter policyFilter,
@@ -537,6 +561,7 @@ public class FilterService : IFilterService
                     }
 
                     runtimeStrategy.ContextService = contextService;
+                    ResolveMapReplace(runtimeStrategy, policy);
                     strategies.Add(runtimeStrategy);
                 }
         }
@@ -559,6 +584,70 @@ public class FilterService : IFilterService
             .WithPriority(policyFilter.Priority)
             .WithPostFilters(policy.Config.PostFilters)
             .Build();
+    }
+
+    // Shared across generator calls; per-call timeouts are enforced with a CancellationToken in the generator.
+    private static readonly HttpClient GeneratorHttpClient = new();
+
+    /// <summary>
+    ///     Wires a MAP_REPLACE runtime strategy: builds its lookup table (merging any TSV mapping files with the inline
+    ///     mappings) and resolves its generator reference against the policy's <c>generators</c> block. A no-op for any
+    ///     other strategy.
+    /// </summary>
+    private static void ResolveMapReplace(AbstractFilterStrategy strategy, PhileasPolicy policy)
+    {
+        if (strategy is not StandardFilterStrategy standard) return;
+        if (!string.Equals(standard.Strategy, AbstractFilterStrategy.MapReplace, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        standard.InitializeMappings(LoadMappingFiles(standard.MappingFiles));
+
+        var generatorName = standard.Generator;
+        if (string.IsNullOrEmpty(generatorName)) return;
+
+        if (policy.Generators == null
+            || !policy.Generators.TryGetValue(generatorName, out var generator)
+            || generator == null)
+            // The strategy references a generator that is not defined; it will use its fallback strategy.
+            return;
+
+        if (string.Equals(generator.Type, Generator.TypeOllama, StringComparison.OrdinalIgnoreCase))
+            standard.ReplacementGenerator = new OllamaReplacementGenerator(generator, GeneratorHttpClient);
+        // An unsupported generator type is ignored; the strategy uses its fallback strategy.
+    }
+
+    /// <summary>
+    ///     Loads the MAP_REPLACE mapping files into a single lookup table. Each file is a TSV with one tab-delimited
+    ///     key/value pair per row; a row without a tab is skipped. Later files override earlier ones for a duplicate
+    ///     key; inline mappings later override the merged file entries.
+    /// </summary>
+    private static Dictionary<string, string> LoadMappingFiles(List<string>? mappingFiles)
+    {
+        var loaded = new Dictionary<string, string>();
+        if (mappingFiles == null) return loaded;
+
+        foreach (var fileName in mappingFiles)
+        {
+            if (!File.Exists(fileName)) continue;
+
+            try
+            {
+                foreach (var line in File.ReadLines(fileName))
+                {
+                    if (line.Length == 0) continue;
+                    var tab = line.IndexOf('\t');
+                    // A row without a tab has no value; skip it rather than mapping to an empty string.
+                    if (tab < 0) continue;
+                    loaded[line[..tab]] = line[(tab + 1)..];
+                }
+            }
+            catch (IOException)
+            {
+                // An unreadable mapping file is skipped; the strategy still applies inline mappings and its fallback.
+            }
+        }
+
+        return loaded;
     }
 
 

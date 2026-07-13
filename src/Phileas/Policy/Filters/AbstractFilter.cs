@@ -102,6 +102,12 @@ public abstract class AbstractFilter
     /// <returns>A <see cref="Filtered" /> containing all detected and (optionally) replaced spans.</returns>
     public abstract Filtered Filter(Policy.Policy policy, string context, int piece, string input);
 
+    /// <summary>Returns the replacement strategies configured on this filter.</summary>
+    public IList<AbstractFilterStrategy> GetStrategies()
+    {
+        return Strategies;
+    }
+
     /// <summary>Returns the <see cref="FilterType" /> handled by this filter instance.</summary>
     public FilterType GetFilterType()
     {

@@ -15,6 +15,7 @@ A **filter strategy** controls what happens to a detected PII token. Each identi
 | `LAST_4` | `AbstractFilterStrategy.Last4` | Keep only the last 4 characters |
 | `MASK` | `AbstractFilterStrategy.Mask` | Overwrite characters with a mask character |
 | `ABBREVIATE` | `AbstractFilterStrategy.Abbreviate` | Reduce the token to the initials of its words |
+| `MAP_REPLACE` | `AbstractFilterStrategy.MapReplace` | Replace from a lookup table, then a generator, then a fallback strategy |
 | `SAME` | `AbstractFilterStrategy.Same` | Leave the token unchanged (mark as detected but not replaced) |
 | `TRUNCATE` | `AbstractFilterStrategy.Truncate` | Keep only the first character |
 | `SHIFT_DATE` | `AbstractFilterStrategy.ShiftDate` | Shift a detected date by a configurable offset (date filters only) |
@@ -242,6 +243,52 @@ new FirstNameFilterStrategy { Strategy = "ABBREVIATE" }
 ```
 
 Output example: `JS` (from `John Smith`).
+
+---
+
+### MAP_REPLACE
+
+Replaces a detected value using a lookup table, resolving each token in this order:
+
+1. **Lookup table.** If the token is a key in the table, its mapped value is used.
+2. **Generator.** If the token is not in the table and a `generator` is configured, the generator produces a replacement. The value is rejected (and the strategy falls through to the fallback) if the generator fails or times out, returns a blank value, returns the original token again (case-insensitively), or produces a value that itself contains detectable PII (each generated value is re-scanned through the filter pipeline to confirm the generator did not reintroduce sensitive data).
+3. **Fallback strategy.** `fallbackStrategy` (default `REDACT`) is applied. A detected value is never left in the clear.
+
+The table is built from inline `mappings` and/or tab-separated `mappingFiles` (one `key<TAB>value` pair per row), merged once when the filter is built. Inline `mappings` override entries loaded from files; among files, a later file overrides an earlier one for a duplicate key. `caseSensitive` (default `false`) controls whether keys and tokens are matched case-insensitively.
+
+```csharp
+new SurnameFilterStrategy
+{
+    Strategy = "MAP_REPLACE",
+    Mappings = new Dictionary<string, string> { ["Smith"] = "Jones" },
+    MappingFiles = new List<string> { "/etc/phileas/surnames.tsv" },
+    CaseSensitive = false,
+    Generator = "local",          // name of a generator in the policy's generators block
+    FallbackStrategy = "REDACT"
+}
+```
+
+Generated values are routed through the same context-scoped cache as `RANDOM_REPLACE`: when `replacementScope` is `CONTEXT`, a repeated token in the same context reuses its first replacement and the generator is not called again. With `replacementScope` `DOCUMENT` (the default), each occurrence is generated independently.
+
+#### Generators
+
+A generator is declared once in the policy's top-level `generators` block and referenced by name from a `MAP_REPLACE` strategy's `generator` property. Generators target a local model endpoint inside your deployment boundary so detected values are not sent to a third party. The `ollama` type calls a local Ollama-compatible `/api/generate` endpoint.
+
+```json
+{
+  "generators": {
+    "local": {
+      "type": "ollama",
+      "endpoint": "http://localhost:11434",
+      "model": "llama3.1",
+      "prompt": "Rewrite {{token}} as a different but structurally similar value. Return only the value.",
+      "timeoutMs": 2000
+    }
+  }
+}
+```
+
+The `prompt` template supports the `{{token}}` placeholder (the detected value) and `{{label}}` (its entity label). `timeoutMs` is required so a generator can never block the pipeline: on timeout the strategy applies its `fallbackStrategy`. A `generator` name that does not resolve to a defined generator is ignored, and the strategy uses its fallback.
 
 ---
 

@@ -70,4 +70,18 @@ public class PolicySchemaValidationTests
 
         Assert.True(PolicySchema.Validate(jsonPolicy));
     }
+
+    [Fact]
+    public void ValidateMapReplacePolicy()
+    {
+        // MAP_REPLACE strategy fields and the top-level generators block are part of schema 1.2.0.
+        const string jsonPolicy =
+            "{\"generators\": {\"local\": {\"type\": \"ollama\", \"endpoint\": \"http://localhost:11434\", " +
+            "\"model\": \"llama3.1\", \"prompt\": \"Rewrite {{token}}.\", \"timeoutMs\": 2000}}, " +
+            "\"identifiers\": {\"ssn\": {\"ssnFilterStrategies\": [{\"strategy\": \"MAP_REPLACE\", " +
+            "\"mappings\": {\"123-45-6789\": \"000-00-0000\"}, \"caseSensitive\": false, " +
+            "\"generator\": \"local\", \"fallbackStrategy\": \"REDACT\"}]}}}";
+
+        Assert.True(PolicySchema.Validate(jsonPolicy));
+    }
 }
