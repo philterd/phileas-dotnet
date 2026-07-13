@@ -9,6 +9,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 - **PDF graphical bounding boxes support open-ended page ranges.** A box's `page` may now be `0` (covers **every** page) or a negative value `-N` (covers page N through the **last** page, e.g. `-2` is "all but the first page"), in addition to an exact 1-based page number. This lets a single box span a document — a logo, watermark, or footer — without knowing the page count. See [PDF Redaction → Graphical bounding boxes](docs/pdf-redaction.md#graphical-bounding-boxes).
 - **Word (`.docx`) and Excel (`.xlsx`) redaction** via the new `WordDocumentRedactor` and `XlsxRedactor` services in `Phileas.Services.Office`. They redact document text in place with the open-source Open XML SDK (no license key) and remain cross-platform (`net8.0;net10.0`, no Windows dependency). Each has file-path and `byte[]` (in-memory) overloads for `Redact`/`Detect`/`ApplySpans`, returning `OfficeRedactionSpan` records. This is .NET-port-specific container-format support (the Java and Python ports remain PDF-only for documents). See [Word & Excel Redaction](docs/office-redaction.md).
 
+### Fixed
+
+- **The `ABBREVIATE` strategy now returns a value's initials** (e.g. `John Smith` produces `JS`) for `SURNAME`, `FIRST_NAME`, and the PhEye person path, instead of fully redacting.
+
 ## 1.5.0 - 2026-07-03
 
 ### Added
