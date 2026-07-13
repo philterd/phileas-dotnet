@@ -44,7 +44,12 @@ public class BoundingBox : AbstractPolicyFilter
     [JsonPropertyName("h")]
     public float H { get; set; }
 
-    /// <summary>Gets or sets the 1-based page number the box applies to. Defaults to 1.</summary>
+    /// <summary>
+    ///     Gets or sets the page the box applies to. Normally a 1-based page number (defaults to 1). Two
+    ///     values are open-ended, so one box can span pages regardless of the document's length: <c>0</c>
+    ///     covers <b>every</b> page, and a negative value <c>-N</c> covers page <c>N</c> through the last
+    ///     page (so <c>-2</c> is "all but the first page").
+    /// </summary>
     [JsonPropertyName("page")]
     public int Page { get; set; } = 1;
 }

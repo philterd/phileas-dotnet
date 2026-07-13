@@ -228,7 +228,7 @@ var result = new PdfFilterService().Filter(policy, "ctx", inputPdf, MimeType.App
 
 | Property | JSON key | Description |
 |---|---|---|
-| `Page` | `page` | 1-based page number (default `1`). |
+| `Page` | `page` | Page the box covers: a 1-based page number (default `1`), `0` for **every** page, or a negative value `-N` for page N through the **last** page (so `-2` is "all but the first page"). |
 | `X`, `Y` | `x`, `y` | Lower-left corner, in PDF user-space points. |
 | `W`, `H` | `w`, `h` | Width and height, in points. |
 | `Color` | `color` | Box color, or `null` to use the policy `RedactionColor`. |

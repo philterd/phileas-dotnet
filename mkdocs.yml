@@ -54,4 +54,5 @@ nav:
   - Span Disambiguation: span-disambiguation.md
   - PDF Redaction: pdf-redaction.md
   - Word & Excel Redaction: office-redaction.md
+  - REST Service: rest-service.md
   - API Reference: api-reference.md

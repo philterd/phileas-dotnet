@@ -1,8 +1,10 @@
 <Solution>
     <Folder Name="/src/">
         <Project Path="src/Phileas/Phileas.csproj"/>
+        <Project Path="src/Phileas.Rest/Phileas.Rest.csproj"/>
     </Folder>
     <Folder Name="/tests/">
         <Project Path="tests/Phileas.Tests/Phileas.Tests.csproj"/>
+        <Project Path="tests/Phileas.Rest.Tests/Phileas.Rest.Tests.csproj"/>
     </Folder>
 </Solution>

@@ -192,7 +192,11 @@ public class PhEyeFilter : AbstractFilter, IDisposable
         return JsonSerializer.Deserialize<List<PhEyeSpan>>(responseBody, JsonOptions) ?? new List<PhEyeSpan>();
     }
 
-    /// <summary>Lazily loads the local GLiNER model on first use; the load is shared across calls.</summary>
+    /// <summary>
+    ///     Resolves the local GLiNER model. The model is loaded once per model directory and shared
+    ///     process-wide (see <see cref="GlinerModel.GetShared" />), so building a fresh <see cref="PhEyeFilter" />
+    ///     per request — as <c>FilterService</c> does — does not reload the model each time.
+    /// </summary>
     private GlinerModel GetModel()
     {
         if (_model != null)
@@ -200,17 +204,19 @@ public class PhEyeFilter : AbstractFilter, IDisposable
 
         lock (_modelLock)
         {
-            _model ??= new GlinerModel(_configuration.ModelPath!);
+            _model ??= GlinerModel.GetShared(_configuration.ModelPath!);
         }
 
         return _model;
     }
 
-    /// <summary>Releases the <see cref="HttpClient" /> and the local GLiNER model, if any.</summary>
+    /// <summary>
+    ///     Releases the <see cref="HttpClient" />. The local GLiNER model is a process-shared instance owned by
+    ///     <see cref="GlinerModel.GetShared" /> and is deliberately not disposed here.
+    /// </summary>
     public void Dispose()
     {
         _httpClient.Dispose();
-        _model?.Dispose();
         GC.SuppressFinalize(this);
     }
 

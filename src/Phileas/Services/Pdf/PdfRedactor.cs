@@ -84,7 +84,7 @@ public sealed class PdfRedactor
                             DrawReplacement(canvas, span.Replacement, rect, pdf, scaleY);
                     }
 
-                    foreach (var box in boundingBoxes.Where(b => b.Page == pageNumber))
+                    foreach (var box in boundingBoxes.Where(b => BoxAppliesToPage(b, pageNumber)))
                     {
                         var rect = ToPixelRect(box.X, box.Y, box.X + box.W, box.Y + box.H,
                             heightPts, scaleX, scaleY);
@@ -107,6 +107,19 @@ public sealed class PdfRedactor
                 bitmap.Dispose();
         }
     }
+
+    /// <summary>
+    ///     Whether a bounding box applies to a given 1-based page. A box's <see cref="BoundingBoxModel.Page" />
+    ///     is normally the exact page it covers, but two values are open-ended so a single box can span pages
+    ///     without knowing the page count up front: <c>0</c> covers <b>every</b> page, and a negative value
+    ///     <c>-N</c> covers page <c>N</c> through the last page (so <c>-2</c> is "all but the first page").
+    /// </summary>
+    internal static bool BoxAppliesToPage(BoundingBoxModel box, int pageNumber) => box.Page switch
+    {
+        0 => true,                     // all pages
+        < 0 => pageNumber >= -box.Page, // from page N to the last page
+        _ => box.Page == pageNumber     // an exact page
+    };
 
     /// <summary>Maps a PDF-user-space rectangle (bottom-left origin) to a pixel rectangle on the rasterized page (top-left origin).</summary>
     private static SKRect ToPixelRect(double lowerLeftX, double lowerLeftY, double upperRightX,

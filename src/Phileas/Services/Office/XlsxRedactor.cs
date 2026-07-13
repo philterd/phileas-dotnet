@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Text;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Office2019.Excel.ThreadedComments;
 using DocumentFormat.OpenXml.Packaging;
@@ -63,12 +64,14 @@ namespace Phileas.Services.Office
             bool redactCharts = true,
             bool redactFormulaValues = true,
             bool redactPivotCaches = true,
-            bool removeUninspectableEmbeddedObjects = true)
+            bool removeUninspectableEmbeddedObjects = true,
+            bool useHeaderContext = false)
         {
             // Redact in memory, then write once so a failure never leaves the original or a partial file.
             (byte[] document, List<OfficeRedactionSpan> captured) = Redact(
                 File.ReadAllBytes(inputPath), filter, fullyRedactedColumns, worksheet,
-                redactHeadersFooters, redactCharts, redactFormulaValues, redactPivotCaches, removeUninspectableEmbeddedObjects);
+                redactHeadersFooters, redactCharts, redactFormulaValues, redactPivotCaches,
+                removeUninspectableEmbeddedObjects, useHeaderContext);
             SafeOutput.Write(outputPath, document);
             return captured;
         }
@@ -88,13 +91,14 @@ namespace Phileas.Services.Office
             bool redactCharts = true,
             bool redactFormulaValues = true,
             bool redactPivotCaches = true,
-            bool removeUninspectableEmbeddedObjects = true)
+            bool removeUninspectableEmbeddedObjects = true,
+            bool useHeaderContext = false)
         {
             using MemoryStream buffer = SafeOutput.ToEditableStream(input);
             using SpreadsheetDocument document = SpreadsheetDocument.Open(buffer, isEditable: true);
             List<OfficeRedactionSpan> captured = RedactOpenDocument(
                 document, filter, fullyRedactedColumns, worksheet,
-                redactHeadersFooters, redactCharts, redactFormulaValues, redactPivotCaches);
+                redactHeadersFooters, redactCharts, redactFormulaValues, redactPivotCaches, useHeaderContext);
             // A chart's embedded source workbook holds the FULL source data, not just the plotted cache —
             // recurse into it. Done only at top level so it can't recurse endlessly through nested embeds.
             int embedOrder = captured.Count;
@@ -110,7 +114,8 @@ namespace Phileas.Services.Office
         private static List<OfficeRedactionSpan> RedactOpenDocument(
             SpreadsheetDocument document, Func<string, TextFilterResult> filter,
             IReadOnlyCollection<int>? fullyRedactedColumns, string? worksheet,
-            bool redactHeadersFooters, bool redactCharts, bool redactFormulaValues, bool redactPivotCaches)
+            bool redactHeadersFooters, bool redactCharts, bool redactFormulaValues, bool redactPivotCaches,
+            bool useHeaderContext = false)
         {
             var fullColumns = fullyRedactedColumns is { Count: > 0 }
                 ? new HashSet<int>(fullyRedactedColumns)
@@ -120,6 +125,10 @@ namespace Phileas.Services.Office
             int order = 0;
             int cellIndex = 0;
             bool anyCellRedacted = false;
+
+            // Column index -> its header (first-row) text, captured as the header row is enumerated (it comes
+            // first). Used only when useHeaderContext is on, to give the detector leading context for data cells.
+            var columnHeaders = new Dictionary<int, string>();
 
             WorkbookPart? workbookPart = document.WorkbookPart;
             if (workbookPart is null)
@@ -143,6 +152,11 @@ namespace Phileas.Services.Office
                 if (string.IsNullOrEmpty(original))
                 {
                     continue;
+                }
+
+                if (useHeaderContext && isHeaderRow)
+                {
+                    columnHeaders[column] = original;
                 }
 
                 bool fullColumn = fullColumns.Contains(column);
@@ -174,17 +188,21 @@ namespace Phileas.Services.Office
                     continue; // boolean/error cells carry no free-text PII
                 }
 
-                TextFilterResult result = filter(original);
-                if (string.Equals(result.FilteredText, original, StringComparison.Ordinal))
+                // Detect on the cell's text, optionally using the column header as leading context to help the
+                // detector (e.g. an "SSN" header over a bare number). Detected spans are mapped back onto the
+                // cell's own text so only the cell — never the header prefix — is rewritten.
+                string? headerContext = useHeaderContext && !isHeaderRow
+                    ? columnHeaders.GetValueOrDefault(column)
+                    : null;
+                (string filteredText, List<Span> cellSpans) = DetectCell(original, headerContext, filter);
+                if (string.Equals(filteredText, original, StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                SetCellText(cell, result.FilteredText); // for a formula cell this drops the formula too
+                SetCellText(cell, filteredText); // for a formula cell this drops the formula too
                 anyCellRedacted = true;
-                foreach (Span s in result.Spans
-                    .Where(s => s.CharacterStart >= 0 && s.CharacterEnd <= original.Length && s.CharacterEnd > s.CharacterStart)
-                    .OrderBy(s => s.CharacterStart))
+                foreach (Span s in cellSpans.OrderBy(s => s.CharacterStart))
                 {
                     var entity = new OfficeRedactionSpan
                     {
@@ -238,6 +256,71 @@ namespace Phileas.Services.Office
             // orphaned so the original text can't be recovered from xl/sharedStrings.xml.
             PruneUnusedSharedStrings(workbookPart);
             return captured;
+        }
+
+        /// <summary>The separator inserted between a column header and the cell value when header context is used.</summary>
+        private const string HeaderContextSeparator = ": ";
+
+        /// <summary>
+        /// Detects PII in a single cell. When <paramref name="header"/> is non-empty it is prepended as leading
+        /// context (so the detector sees e.g. <c>"SSN: 123-45-6789"</c>); the resulting spans are then remapped
+        /// onto the cell's own text and any span falling within the header prefix is dropped. Returns the redacted
+        /// cell text and the cell-relative spans that were applied. With no header this is a plain per-cell detect.
+        /// </summary>
+        private static (string FilteredText, List<Span> Spans) DetectCell(
+            string cellText, string? header, Func<string, TextFilterResult> filter)
+        {
+            if (string.IsNullOrEmpty(header))
+            {
+                TextFilterResult plain = filter(cellText);
+                List<Span> plainSpans = plain.Spans
+                    .Where(s => s.CharacterStart >= 0 && s.CharacterEnd <= cellText.Length && s.CharacterEnd > s.CharacterStart)
+                    .ToList();
+                return (plain.FilteredText, plainSpans);
+            }
+
+            string prefix = header + HeaderContextSeparator;
+            int cellStart = prefix.Length;
+            int cellEnd = cellStart + cellText.Length;
+
+            TextFilterResult result = filter(prefix + cellText);
+
+            var cellSpans = new List<Span>();
+            foreach (Span s in result.Spans)
+            {
+                // Keep only spans wholly inside the cell portion; shift them back onto the cell's own text so the
+                // header prefix is never redacted and offsets are relative to the cell.
+                if (s.CharacterStart < cellStart || s.CharacterEnd > cellEnd || s.CharacterEnd <= s.CharacterStart)
+                {
+                    continue;
+                }
+
+                Span shifted = s.Copy();
+                shifted.CharacterStart = s.CharacterStart - cellStart;
+                shifted.CharacterEnd = s.CharacterEnd - cellStart;
+                cellSpans.Add(shifted);
+            }
+
+            return (ApplyCellSpans(cellText, cellSpans), cellSpans);
+        }
+
+        /// <summary>Rewrites <paramref name="cellText"/> by replacing each (non-overlapping) span with its replacement.</summary>
+        private static string ApplyCellSpans(string cellText, List<Span> spans)
+        {
+            if (spans.Count == 0)
+            {
+                return cellText;
+            }
+
+            var builder = new StringBuilder(cellText);
+            // Apply right-to-left so earlier offsets stay valid as the text length changes.
+            foreach (Span s in spans.OrderByDescending(s => s.CharacterStart))
+            {
+                builder.Remove(s.CharacterStart, s.CharacterEnd - s.CharacterStart);
+                builder.Insert(s.CharacterStart, s.Replacement ?? string.Empty);
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>

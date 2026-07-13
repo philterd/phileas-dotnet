@@ -1,0 +1,72 @@
+# Copyright 2026 Philterd, LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# One-command local stack for the Phileas.Rest service ("lite Philter") with its MongoDB store and
+# Valkey context cache:
+#
+#     docker compose up --build
+#
+# Then browse http://localhost:8080/swagger
+#
+# The service host names below (mongo, valkey) match the defaults baked into the Dockerfile.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    command: ["valkey-server", "--save", "60", "1"]
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  phileas-rest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      Phileas__MongoConnectionString: mongodb://mongo:27017
+      Phileas__MongoDatabase: phileas
+      Phileas__ValkeyConnectionString: valkey:6379
+      Phileas__ContextCacheTtlSeconds: "3600"
+      # Local GLiNER model baked into the image by the Dockerfile.
+      Phileas__PhEyeModelPath: /models/ph-eye-pii-en-small
+      # OCR for scanned/image PDFs. tesseract-ocr + English tessdata are installed in the image;
+      # Fallback OCRs only pages with no text layer. Set to Off to disable, or Always to OCR every page.
+      Phileas__Ocr__Mode: Fallback
+      Phileas__Ocr__Language: eng
+      Phileas__Ocr__TessDataPath: /usr/share/tesseract-ocr/5/tessdata
+      Phileas__Ocr__Dpi: "300"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
+  valkey-data:

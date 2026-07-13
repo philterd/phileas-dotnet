@@ -97,6 +97,22 @@ public sealed class GlinerModel : IDisposable
         _session = new InferenceSession(ResolveOnnxPath(modelPath));
     }
 
+    // Process-wide cache of loaded models keyed by absolute model directory. Loading a GLiNER model
+    // (ONNX session + SentencePiece tokenizer) is expensive and the loaded model is safe to use
+    // concurrently, so a long-lived host (e.g. a REST service) shares one instance across all requests
+    // instead of reloading per call. Shared instances live for the process lifetime.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, GlinerModel> SharedInstances = new();
+
+    /// <summary>
+    ///     Returns a process-wide shared <see cref="GlinerModel" /> for <paramref name="modelPath" />, loading it once
+    ///     on first request and reusing the same instance thereafter. Use this from long-lived hosts that would
+    ///     otherwise reload the model on every call. The returned instance is owned by the process and must
+    ///     <b>not</b> be disposed by the caller.
+    /// </summary>
+    /// <param name="modelPath">Filesystem path to the GLiNER model directory.</param>
+    public static GlinerModel GetShared(string modelPath) =>
+        SharedInstances.GetOrAdd(Path.GetFullPath(modelPath), static p => new GlinerModel(p));
+
     /// <summary>Releases the underlying ONNX inference session.</summary>
     public void Dispose()
     {

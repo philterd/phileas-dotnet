@@ -1,0 +1,9 @@
+# Keep the build context small and reproducible: let the SDK stage restore/publish from source only.
+# Note: README.md and NOTICE are intentionally NOT ignored — Phileas.csproj references them.
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/.idea/
+docs/
+tests/

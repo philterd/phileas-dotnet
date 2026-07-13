@@ -12,6 +12,7 @@ phileas-dotnet is a .NET library for detecting and filtering Personally Identifi
 - **Span disambiguation** — resolve competing classifications of the same text by surrounding context
 - **PDF redaction** — detect and redact PII in PDFs, rasterizing pages so no text is recoverable
 - **Word & Excel redaction** — detect and redact PII in `.docx`/`.xlsx` documents in place (.NET port only)
+- **REST service** — an optional cross-platform HTTP service (`Phileas.Rest`) for filtering text and documents, with MongoDB-backed policy/context management and OCR
 - **Extensible** — implement `IContextService` to persist replacement mappings in any store (Redis, database, etc.)
 
 ## Project
@@ -54,4 +55,5 @@ Console.WriteLine(result.FilteredText);
 - [Span Disambiguation](span-disambiguation.md) — resolve competing classifications by context
 - [PDF Redaction](pdf-redaction.md) — detect and redact PII in PDF documents
 - [Word & Excel Redaction](office-redaction.md) — detect and redact PII in `.docx`/`.xlsx` documents
+- [REST Service](rest-service.md) — run phileas-dotnet as an HTTP service for text and document redaction
 - [API Reference](api-reference.md) — detailed API documentation

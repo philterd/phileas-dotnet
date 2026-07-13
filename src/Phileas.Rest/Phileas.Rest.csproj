@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <!-- Single TFM: the service is deployed as a container, not shipped as a multi-target library. -->
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>Phileas.Rest</RootNamespace>
+        <AssemblyName>Phileas.Rest</AssemblyName>
+        <!-- "Lite Philter": a thin REST wrapper around the Phileas library. Not packed to NuGet. -->
+        <IsPackable>false</IsPackable>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- Swashbuckle's generated XML-doc lookups are optional; don't fail the build on missing docs. -->
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Phileas\Phileas.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Persistent store for policies, contexts, and context entries (mirrors Philter's MongoDB). -->
+        <PackageReference Include="MongoDB.Driver" Version="3.10.0" />
+        <!-- Valkey context cache (Valkey speaks the Redis protocol, so the Redis client connects unchanged). -->
+        <PackageReference Include="StackExchange.Redis" Version="3.0.17" />
+        <!-- OpenAPI document + Swagger UI at /swagger. -->
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+        <!-- OCR for scanned/image PDFs: Tesseract recognizes text; PDFtoImage (PDFium) rasterizes pages and
+             SkiaSharp encodes them; PdfPig supplies page dimensions for the pixel→PDF-point mapping. The
+             rasterization/PdfPig packages match the versions Phileas.csproj uses. -->
+        <PackageReference Include="Tesseract" Version="5.2.0" />
+        <PackageReference Include="PDFtoImage" Version="5.2.1" />
+        <PackageReference Include="SkiaSharp" Version="3.119.4" />
+        <PackageReference Include="PdfPig" Version="0.1.14" />
+    </ItemGroup>
+</Project>
