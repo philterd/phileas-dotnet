@@ -79,7 +79,7 @@ namespace Phileas.Services.Office
         /// <summary>
         /// Redacts the in-memory workbook bytes with <paramref name="filter"/> and returns the redacted
         /// workbook bytes plus the applied spans. The <c>byte[]</c> overload of
-        /// <see cref="Redact(string, string, Func{string, TextFilterResult}, IReadOnlyCollection{int}, string, bool, bool, bool, bool, bool)"/>,
+        /// <see cref="Redact(string, string, Func{string, TextFilterResult}, IReadOnlyCollection{int}, string, bool, bool, bool, bool, bool, bool)"/>,
         /// for callers (a service, a stream pipeline) that never touch the file system.
         /// </summary>
         public static (byte[] Document, List<OfficeRedactionSpan> Spans) Redact(
