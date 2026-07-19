@@ -46,6 +46,7 @@ public abstract class AbstractFilterStrategy
     public const string Leading = "LEADING";
     public const string Trailing = "TRAILING";
     public const string Abbreviate = "ABBREVIATE";
+    public const string MapReplace = "MAP_REPLACE";
     public const string TruncateToYear = "TRUNCATE_TO_YEAR";
     public const string Shift = "SHIFT";
     public const string Relative = "RELATIVE";
@@ -139,4 +140,51 @@ public abstract class AbstractFilterStrategy
     /// </summary>
     [JsonPropertyName("replacementScope")]
     public string ReplacementScope { get; set; } = ReplacementScopeDocument;
+
+    /// <summary>
+    ///     <c>MAP_REPLACE</c> inline lookup table mapping a detected value to its replacement. Inline entries take
+    ///     precedence over any loaded from <see cref="MappingFiles" />.
+    /// </summary>
+    [JsonPropertyName("mappings")]
+    public Dictionary<string, string>? Mappings { get; set; }
+
+    /// <summary>
+    ///     <c>MAP_REPLACE</c> local TSV file paths (one tab-delimited key/value pair per row) merged into the lookup
+    ///     table at policy-load time. Inline <see cref="Mappings" /> override entries loaded from files.
+    /// </summary>
+    [JsonPropertyName("mappingFiles")]
+    public List<string>? MappingFiles { get; set; }
+
+    /// <summary>
+    ///     <c>MAP_REPLACE</c> whether lookup-table keys are matched case-sensitively. Defaults to
+    ///     <see langword="false" />.
+    /// </summary>
+    [JsonPropertyName("caseSensitive")]
+    public bool CaseSensitive { get; set; } = false;
+
+    /// <summary>
+    ///     <c>MAP_REPLACE</c> name of a generator declared in the policy's top-level <c>generators</c> block, invoked to
+    ///     produce a replacement for a detected value absent from the lookup table.
+    /// </summary>
+    [JsonPropertyName("generator")]
+    public string? Generator { get; set; }
+
+    /// <summary>
+    ///     <c>MAP_REPLACE</c> terminal strategy applied when a detected value is absent from the lookup table and no
+    ///     generator is set, or when the generator fails, times out, or returns invalid output. Defaults to
+    ///     <c>"REDACT"</c>. A detected value is never left in the clear.
+    /// </summary>
+    [JsonPropertyName("fallbackStrategy")]
+    public string FallbackStrategy { get; set; } = Redact;
+
+    /// <summary>
+    ///     Gets or sets the optional color of the bar drawn over a span this strategy redacts when rendering a PDF or
+    ///     image. Overrides the policy-wide <c>config.pdf.redactionColor</c> for spans this strategy redacts; when
+    ///     unset the policy-wide color (default black) applies. Accepts a named color (<c>black</c>, <c>white</c>,
+    ///     <c>red</c>, <c>orange</c>, <c>yellow</c>, <c>green</c>, <c>blue</c>, <c>gray</c>) or a 6-digit hex string
+    ///     matching <c>^#[0-9A-Fa-f]{6}$</c>; an unrecognized or malformed value renders as black. Has no effect on
+    ///     text redaction.
+    /// </summary>
+    [JsonPropertyName("color")]
+    public string? Color { get; set; }
 }

@@ -174,6 +174,46 @@ public class PhEyeFilterTests
         Assert.Equal(FilterType.Person, result.Spans[0].FilterType);
     }
 
+    [Theory]
+    [InlineData("John Smith", "JS")]
+    [InlineData("john", "J")]
+    public void PhEyeFilter_Abbreviate_ReturnsInitials(string token, string expected)
+    {
+        var phEyeResponseJson = JsonSerializer.Serialize(new[]
+        {
+            new { start = 0, end = token.Length, label = "PERSON", text = token, score = 0.99 }
+        });
+
+        var config = new FilterConfiguration.Builder()
+            .WithStrategies(new List<AbstractFilterStrategy>
+            {
+                new Phileas.Filters.Strategies.Rules.PhEyeFilterStrategy
+                {
+                    Strategy = AbstractFilterStrategy.Abbreviate
+                }
+            })
+            .WithIgnored(new HashSet<string>(StringComparer.OrdinalIgnoreCase))
+            .WithIgnoredPatterns(new List<IgnoredPattern>())
+            .WithWindowSize(5)
+            .WithPriority(0)
+            .Build();
+
+        var phEyeConfig = new PhEyeConfiguration
+        {
+            Endpoint = "http://localhost:8080",
+            Labels = new List<string> { "PERSON" }
+        };
+
+        using var filter = new PhEyeFilter(config, phEyeConfig, false, new Dictionary<string, double>(),
+            new HttpClient(new FakeHttpMessageHandler(phEyeResponseJson)));
+
+        var result = filter.Filter(new PhileasPolicy(), "ctx", 0, token);
+
+        var span = Assert.Single(result.Spans);
+        Assert.Equal(FilterType.Person, span.FilterType);
+        Assert.Equal(expected, span.Replacement);
+    }
+
     [Fact]
     public void PhEyeFilter_FiltersOutSpansBelowThreshold()
     {

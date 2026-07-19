@@ -15,6 +15,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `Currency` | `currency` | Currency amounts (e.g. "$1,234.56") |
 | `Date` | `date` | Calendar dates in common formats |
 | `DriversLicense` | `driversLicense` | US driver's license numbers |
+| `Ein` | `ein` | US Employer Identification Numbers |
 | `EmailAddress` | `emailAddress` | Email addresses |
 | `IbanCode` | `ibanCode` | International Bank Account Numbers |
 | `IpAddress` | `ipAddress` | IPv4 and IPv6 addresses |
@@ -271,6 +272,29 @@ Identifiers = new Identifiers { DriversLicense = new DriversLicense() }
 
 ---
 
+### EIN
+
+Detects US Employer Identification Numbers (federal tax IDs) in the canonical `NN-NNNNNNN` format (two digits, a hyphen, seven digits), matched at word boundaries. The hyphen position distinguishes an EIN from an SSN (`NNN-NN-NNNN`); a bare nine-digit run is left to the SSN filter and span disambiguation rather than claimed as an EIN.
+
+```csharp
+Identifiers = new Identifiers { Ein = new Ein() }
+```
+
+Set `onlyValidPrefixes` to `true` to keep only matches whose two-digit prefix is one the IRS currently issues, which reduces false positives on format-valid but non-issued numbers. It defaults to `false` (match any EIN-formatted value), so a prefix issued after this release is still detected; the strict list is engine-carried and only affects the opt-in mode.
+
+The JSON key for the filter strategies list is `einFilterStrategies`:
+
+```json
+"ein": {
+  "onlyValidPrefixes": true,
+  "einFilterStrategies": [
+    { "strategy": "REDACT" }
+  ]
+}
+```
+
+---
+
 ### Email Address
 
 Detects RFC-compliant email addresses.
@@ -393,7 +417,7 @@ For detailed documentation, see [PhEye Filter Usage](pheye-filter-usage.md).
 
 ### Phone Number
 
-Detects US and international phone numbers in a variety of formats.
+Detects US and international phone numbers in a variety of formats, backed by Google's [libphonenumber](https://github.com/google/libphonenumber) (the `libphonenumber-csharp` port). Text is scanned with a default region of `US`, so North American Numbering Plan numbers (`(555) 123-4567`, `+1 555 123 4567`, `555.123.4567`) and any `+`-prefixed international number (`+44 20 7946 0958`, `+33 1 42 68 53 00`, `+91 98765 43210`, `+49 30 901820`) are detected regardless of region. National-format foreign numbers with no `+` are not reachable while the region is fixed to `US`.
 
 ```csharp
 Identifiers = new Identifiers { PhoneNumber = new PhoneNumber() }

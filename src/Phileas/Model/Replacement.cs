@@ -50,4 +50,10 @@ public class Replacement
     ///     kept (<see langword="false" />).
     /// </summary>
     public bool Applied { get; }
+
+    /// <summary>
+    ///     Gets or sets the optional PDF/image redaction-bar color of the strategy that produced this replacement, so it
+    ///     can flow to the span and be honored by the renderer. <see langword="null" /> when the strategy set no color.
+    /// </summary>
+    public string? Color { get; set; }
 }

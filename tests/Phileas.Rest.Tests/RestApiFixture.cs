@@ -34,6 +34,7 @@ public sealed class RestApiFixture : IAsyncLifetime
     private MongoDbContainer? _mongo;
     private IContainer? _valkey;
     private WebApplicationFactory<Program>? _factory;
+    private Dictionary<string, string?>? _settings;
 
     public bool DockerAvailable { get; private set; }
 
@@ -64,21 +65,24 @@ public sealed class RestApiFixture : IAsyncLifetime
 
         var valkeyEndpoint = $"{_valkey.Hostname}:{_valkey.GetMappedPublicPort(6379)}";
 
-        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        // Program.cs binds PhileasRestOptions from configuration *before* the host is built and the DI
+        // registrations close over that bound instance, so config added via ConfigureAppConfiguration
+        // would be applied too late to be seen (the app would fall back to the localhost defaults and
+        // fail to reach the containers). Environment variables are read by WebApplication.CreateBuilder
+        // up front, so they reach that binding. The "Phileas__" prefix maps each value onto the section.
+        _settings = new Dictionary<string, string?>
         {
-            builder.ConfigureAppConfiguration((_, config) =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["Phileas:MongoConnectionString"] = _mongo.GetConnectionString(),
-                    ["Phileas:MongoDatabase"] = "phileas_test",
-                    ["Phileas:ValkeyConnectionString"] = valkeyEndpoint,
-                    ["Phileas:ContextCacheTtlSeconds"] = "3600",
-                    // No local GLiNER model in tests; the policies used here don't need PhEye.
-                    ["Phileas:PhEyeModelPath"] = ""
-                });
-            });
-        });
+            ["Phileas__MongoConnectionString"] = _mongo.GetConnectionString(),
+            ["Phileas__MongoDatabase"] = "phileas_test",
+            ["Phileas__ValkeyConnectionString"] = valkeyEndpoint,
+            ["Phileas__ContextCacheTtlSeconds"] = "3600",
+            // No local GLiNER model in tests; the policies used here don't need PhEye.
+            ["Phileas__PhEyeModelPath"] = ""
+        };
+        foreach (var (key, value) in _settings)
+            Environment.SetEnvironmentVariable(key, value);
+
+        _factory = new WebApplicationFactory<Program>();
 
         // Building the client starts the host (creating Mongo indexes, connecting to Valkey).
         Client = _factory.CreateClient();
@@ -87,6 +91,11 @@ public sealed class RestApiFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        // Clear the process-wide environment variables set for the host so they don't leak to other tests.
+        if (_settings != null)
+            foreach (var key in _settings.Keys)
+                Environment.SetEnvironmentVariable(key, null);
+
         if (_factory != null)
             await _factory.DisposeAsync();
         if (_valkey != null)

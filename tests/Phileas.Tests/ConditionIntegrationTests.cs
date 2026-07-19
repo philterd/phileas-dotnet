@@ -136,13 +136,13 @@ public class ConditionIntegrationTests
                 {
                     Strategies = new List<PhoneNumberFilterStrategy>
                     {
-                        // High confidence (>=0.95): full redaction
+                        // Very high confidence (>=0.99): full redaction
                         new()
                         {
                             Strategy = "REDACT",
-                            Condition = "confidence >= 0.95"
+                            Condition = "confidence >= 0.99"
                         },
-                        // Medium confidence (>=0.8): mask
+                        // High confidence (>=0.8): mask
                         new()
                         {
                             Strategy = "MASK",
@@ -158,7 +158,8 @@ public class ConditionIntegrationTests
             }
         };
 
-        // Phone numbers have confidence 0.90, so second strategy (MASK) should match
+        // A cleanly NANP-formatted number scores 0.95, so the first strategy (>=0.99) is skipped and the
+        // second (MASK, >=0.8) is applied, confirming the first *matching* condition wins.
         var result = new FilterService().Filter(policy, "ctx", 0, "Call 555-123-4567 today");
 
         Assert.Contains("*", result.FilteredText);

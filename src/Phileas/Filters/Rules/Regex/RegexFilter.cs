@@ -105,7 +105,7 @@ public abstract class RegexFilter : RulesFilter
                     FilterType, context, confidence, matchText,
                     replacement.Value, replacement.Salt,
                     false, replacement.Applied,
-                    window, Priority);
+                    window, Priority, replacement.Color);
                 span.AlwaysValid = filterPattern.AlwaysValid;
                 span.Classification = filterPattern.Classification ?? Classification;
                 span.Pattern = filterPattern.Format;

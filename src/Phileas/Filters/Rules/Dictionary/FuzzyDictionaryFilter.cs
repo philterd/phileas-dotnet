@@ -115,7 +115,7 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
         var window = GetWindow(text, characterStart, characterEnd);
         var replacement = GetReplacement(policy, context, token, window, confidence, Classification, null);
         return Span.Make(characterStart, characterEnd, FilterType, context, confidence, token, replacement.Value,
-            replacement.Salt, ignored, replacement.Applied, window, Priority);
+            replacement.Salt, ignored, replacement.Applied, window, Priority, replacement.Color);
     }
 
     private int GetMaxNgrams()

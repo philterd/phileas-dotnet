@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Globalization;
 using System.IO.Compression;
 using PDFtoImage;
 using Phileas.Model;
@@ -67,9 +68,6 @@ public sealed class PdfRedactor
 
                 using (var canvas = new SKCanvas(bitmap))
                 {
-                    using var redactionPaint = new SKPaint
-                        { Color = ParseColor(pdf.RedactionColor, SKColors.Black), Style = SKPaintStyle.Fill };
-
                     foreach (var span in spans.Where(s => s.PageNumber == pageNumber))
                     {
                         var rect = ToPixelRect(span.LowerLeftX, span.LowerLeftY, span.UpperRightX,
@@ -78,6 +76,10 @@ public sealed class PdfRedactor
                         // text isn't rendered into the image) has nothing to burn in — skip it.
                         if (rect.Width <= 0 || rect.Height <= 0)
                             continue;
+                        // The bar uses the redacting strategy's color when set, else the policy-wide PDF color,
+                        // else black. A set-but-unrecognized color renders black (never left un-redacted).
+                        using var redactionPaint = new SKPaint
+                            { Color = ParseColor(span.Color ?? pdf.RedactionColor, SKColors.Black), Style = SKPaintStyle.Fill };
                         canvas.DrawRect(rect, redactionPaint);
 
                         if (pdf.ShowReplacement && !string.IsNullOrEmpty(span.Replacement))
@@ -211,19 +213,38 @@ public sealed class PdfRedactor
         return Math.Clamp((int)(compressionQuality * 100), 1, 100);
     }
 
-    private static SKColor ParseColor(string? name, SKColor fallback)
+    /// <summary>
+    ///     Resolves a policy color string to an <see cref="SKColor" />. Accepts the named colors black, white, red,
+    ///     orange, yellow, green, blue, and gray (grey), or a 6-digit hex string matching <c>^#[0-9A-Fa-f]{6}$</c>. A
+    ///     <see langword="null" />, empty, unrecognized, or malformed value resolves to <paramref name="fallback" />.
+    /// </summary>
+    internal static SKColor ParseColor(string? name, SKColor fallback)
     {
-        return (name?.Trim().ToLowerInvariant()) switch
+        var value = name?.Trim();
+        if (string.IsNullOrEmpty(value))
+            return fallback;
+
+        switch (value.ToLowerInvariant())
         {
-            "black" => SKColors.Black,
-            "white" => SKColors.White,
-            "red" => SKColors.Red,
-            "yellow" => SKColors.Yellow,
-            "blue" => SKColors.Blue,
-            "green" => SKColors.Green,
-            "gray" or "grey" => SKColors.Gray,
-            _ => fallback
-        };
+            case "black": return SKColors.Black;
+            case "white": return SKColors.White;
+            case "red": return SKColors.Red;
+            case "orange": return SKColors.Orange;
+            case "yellow": return SKColors.Yellow;
+            case "green": return SKColors.Green;
+            case "blue": return SKColors.Blue;
+            case "gray":
+            case "grey": return SKColors.Gray;
+        }
+
+        // 6-digit hex, e.g. "#ff8800". Anything else (short hex, bad digits, unknown name) falls back.
+        if (value.Length == 7 && value[0] == '#'
+            && byte.TryParse(value.AsSpan(1, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var r)
+            && byte.TryParse(value.AsSpan(3, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var g)
+            && byte.TryParse(value.AsSpan(5, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
+            return new SKColor(r, g, b);
+
+        return fallback;
     }
 
     private static string MapFont(string? font)

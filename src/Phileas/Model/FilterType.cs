@@ -40,6 +40,9 @@ public enum FilterType
     /// <summary>Driver's license numbers.</summary>
     DriversLicenseNumber,
 
+    /// <summary>US Employer Identification Numbers (EIN, federal tax ID).</summary>
+    Ein,
+
     /// <summary>City names.</summary>
     LocationCity,
 
@@ -155,6 +158,7 @@ public static class FilterTypeExtensions
             FilterType.Currency => "currency",
             FilterType.CreditCard => "credit-card",
             FilterType.DriversLicenseNumber => "drivers-license-number",
+            FilterType.Ein => "ein",
             FilterType.LocationCity => "city",
             FilterType.LocationState => "state",
             FilterType.LocationCounty => "county",

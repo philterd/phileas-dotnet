@@ -90,4 +90,12 @@ public class Policy
     /// <summary>Gets or sets the graphical redaction configuration (fixed bounding boxes).</summary>
     [JsonPropertyName("graphical")]
     public Graphical Graphical { get; set; } = new();
+
+    /// <summary>
+    ///     Gets or sets the named, reusable replacement generators referenced by <c>MAP_REPLACE</c> filter strategies
+    ///     (keyed by generator name). A <c>MAP_REPLACE</c> strategy references a generator by name via its
+    ///     <c>generator</c> property to produce a replacement for a detected value absent from its lookup table.
+    /// </summary>
+    [JsonPropertyName("generators")]
+    public Dictionary<string, Generator>? Generators { get; set; }
 }

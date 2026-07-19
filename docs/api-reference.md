@@ -217,6 +217,7 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `Currency` | `"currency"` |
 | `CreditCard` | `"credit-card"` |
 | `DriversLicenseNumber` | `"drivers-license-number"` |
+| `Ein` | `"ein"` |
 | `LocationCity` | `"city"` |
 | `LocationState` | `"state"` |
 | `LocationCounty` | `"county"` |
@@ -346,3 +347,8 @@ var config = new FilterConfiguration.Builder()
 | `AnonymizationMethod` | `string?` | `null` | Generation method for `RANDOM_REPLACE`. |
 | `AnonymizationCandidates` | `List<string>?` | `null` | Explicit value pool for `RANDOM_REPLACE`. |
 | `ReplacementScope` | `string` | `"DOCUMENT"` | `"DOCUMENT"` (fresh each occurrence) or `"CONTEXT"` (reuse per token). |
+| `Mappings` | `Dictionary<string,string>?` | `null` | `MAP_REPLACE` inline lookup table (overrides `MappingFiles`). |
+| `MappingFiles` | `List<string>?` | `null` | `MAP_REPLACE` tab-separated lookup-table files. |
+| `CaseSensitive` | `bool` | `false` | `MAP_REPLACE` whether lookup keys are matched case-sensitively. |
+| `Generator` | `string?` | `null` | `MAP_REPLACE` name of a generator in the policy's `generators` block. |
+| `FallbackStrategy` | `string` | `"REDACT"` | `MAP_REPLACE` strategy applied when the token is unmapped and no generator produces a value. |

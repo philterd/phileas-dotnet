@@ -108,6 +108,13 @@ public class Span
     public double UpperRightY { get; set; }
 
     /// <summary>
+    ///     Gets or sets the redaction-bar color for this span, taken from the strategy that redacted it. When
+    ///     <see langword="null" /> the renderer falls back to the policy-wide PDF redaction color. Not serialized.
+    /// </summary>
+    [JsonIgnore]
+    public string? Color { get; set; }
+
+    /// <summary>
     ///     Creates a new <see cref="Span" /> with the specified values.
     /// </summary>
     /// <param name="characterStart">Zero-based start index of the entity in the input text.</param>
@@ -122,6 +129,7 @@ public class Span
     /// <param name="applied">Whether the replacement was applied.</param>
     /// <param name="window">Surrounding context words.</param>
     /// <param name="priority">Priority of the producing filter.</param>
+    /// <param name="color">Optional PDF/image redaction-bar color from the redacting strategy.</param>
     /// <returns>A fully initialized <see cref="Span" />.</returns>
     public static Span Make(
         int characterStart,
@@ -135,7 +143,8 @@ public class Span
         bool ignored,
         bool applied,
         string[]? window,
-        int priority)
+        int priority,
+        string? color = null)
     {
         return new Span
         {
@@ -150,7 +159,8 @@ public class Span
             Ignored = ignored,
             Applied = applied,
             Window = window,
-            Priority = priority
+            Priority = priority,
+            Color = color
         };
     }
 
@@ -178,7 +188,8 @@ public class Span
             LowerLeftX = LowerLeftX,
             LowerLeftY = LowerLeftY,
             UpperRightX = UpperRightX,
-            UpperRightY = UpperRightY
+            UpperRightY = UpperRightY,
+            Color = Color
         };
     }
 

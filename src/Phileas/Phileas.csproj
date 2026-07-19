@@ -53,11 +53,14 @@
         <!-- Office redaction (Services/Office): the open-source Open XML SDK reads and rewrites .docx and
              .xlsx packages. No commercial dependency or license key. Cross-platform (no Windows TFM). -->
         <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
+        <!-- Phone number detection (PhoneNumberFilter): the maintained C# port of Google's libphonenumber
+             scans text with FindNumbers, detecting international formats the NANP-only regex missed. -->
+        <PackageReference Include="libphonenumber-csharp" Version="9.0.34" />
     </ItemGroup>
     <ItemGroup>
         <!-- PhiSQL .NET reference library (Philterd.PhiSql on NuGet). Provides the PhiSQL
              compiler and the canonical redaction policy schema used for all policy operations. -->
-        <PackageReference Include="Philterd.PhiSql" Version="1.1.1" />
+        <PackageReference Include="Philterd.PhiSql" Version="1.2.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\" />

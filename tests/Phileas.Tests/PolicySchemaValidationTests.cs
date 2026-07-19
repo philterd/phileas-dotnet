@@ -59,4 +59,41 @@ public class PolicySchemaValidationTests
         // {} is a valid (empty) policy.
         Assert.True(PolicySchema.Validate("{}"));
     }
+
+    [Fact]
+    public void ValidateEinPolicy()
+    {
+        // The ein identifier and its onlyValidPrefixes option are part of schema 1.2.0.
+        const string jsonPolicy =
+            "{\"identifiers\": {\"ein\": {\"onlyValidPrefixes\": true, " +
+            "\"einFilterStrategies\": [{\"strategy\": \"REDACT\"}]}}}";
+
+        Assert.True(PolicySchema.Validate(jsonPolicy));
+    }
+
+    [Fact]
+    public void ValidateStrategyColorPolicy()
+    {
+        // The per-strategy color property (named color or 6-digit hex) is part of schema 1.2.0.
+        const string jsonPolicy =
+            "{\"identifiers\": {\"ssn\": {\"ssnFilterStrategies\": [{\"strategy\": \"REDACT\", \"color\": \"red\"}]}, " +
+            "\"phoneNumber\": {\"phoneNumberFilterStrategies\": [{\"strategy\": \"REDACT\", \"color\": \"#ff8800\"}]}}, " +
+            "\"config\": {\"pdf\": {\"redactionColor\": \"blue\"}}}";
+
+        Assert.True(PolicySchema.Validate(jsonPolicy));
+    }
+
+    [Fact]
+    public void ValidateMapReplacePolicy()
+    {
+        // MAP_REPLACE strategy fields and the top-level generators block are part of schema 1.2.0.
+        const string jsonPolicy =
+            "{\"generators\": {\"local\": {\"type\": \"ollama\", \"endpoint\": \"http://localhost:11434\", " +
+            "\"model\": \"llama3.1\", \"prompt\": \"Rewrite {{token}}.\", \"timeoutMs\": 2000}}, " +
+            "\"identifiers\": {\"ssn\": {\"ssnFilterStrategies\": [{\"strategy\": \"MAP_REPLACE\", " +
+            "\"mappings\": {\"123-45-6789\": \"000-00-0000\"}, \"caseSensitive\": false, " +
+            "\"generator\": \"local\", \"fallbackStrategy\": \"REDACT\"}]}}}";
+
+        Assert.True(PolicySchema.Validate(jsonPolicy));
+    }
 }
