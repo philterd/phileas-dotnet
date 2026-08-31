@@ -12,7 +12,7 @@ This guide walks you through adding phileas-dotnet to a .NET project and running
 Add the NuGet package to your project:
 
 ```shell
-dotnet add package Phileas
+dotnet add package Philterd.Phileas
 ```
 
 Or add a project reference directly:
