@@ -30,6 +30,10 @@ public class IpAddressFilter : RegexFilter
                 @"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b")
             .WithInitialConfidence(0.95).Build(),
         new FilterPattern.Builder().WithPattern(@"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b")
+            .WithInitialConfidence(0.95).Build(),
+        new FilterPattern.Builder().WithPattern(@"((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)(?:%[A-Za-z0-9_.-]+)?")
+            .WithInitialConfidence(0.95).Build(),
+        new FilterPattern.Builder().WithPattern(@"(?:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::(?:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?(?:%[A-Za-z0-9_.-]+)?):(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)")
             .WithInitialConfidence(0.95).Build()
     );
 

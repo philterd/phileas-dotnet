@@ -62,15 +62,29 @@ public class IpAddressFilterTests
     }
 
     [Theory]
-    [InlineData("IPv6: 2001:0db8:85a3:0000:0000:8a2e:0370:7334")]
-    [InlineData("Address: fe80:0000:0000:0000:0202:b3ff:fe1e:8329")]
-    public void Filter_DetectsIPv6Address(string input)
+    [InlineData(
+        "IPv6: 2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+        "2001:0db8:85a3:0000:0000:8a2e:0370:7334")]
+    [InlineData(
+        "Address: fe80:0000:0000:0000:0202:b3ff:fe1e:8329",
+        "fe80:0000:0000:0000:0202:b3ff:fe1e:8329")]
+    [InlineData("IPv6: 1::", "1::")]
+    [InlineData("IPv6: ::1", "::1")]
+    [InlineData("IPv6: 2001:db8::1", "2001:db8::1")]
+    [InlineData("IPv6: fe80::0202:B3FF:FE1E:8329", "fe80::0202:B3FF:FE1E:8329")]
+    [InlineData("IPv6: ::ffff:192.168.1.1", "::ffff:192.168.1.1")]
+    [InlineData("IPv6: fe80::1%eth0", "fe80::1%eth0")]
+    [InlineData("IPv6: FE80::1", "FE80::1")]
+    public void Filter_DetectsIPv6Address(string input, string expected)
     {
         var filter = CreateFilter();
         var policy = CreatePolicy();
+
         var result = filter.Filter(policy, "test", 0, input);
-        Assert.NotEmpty(result.Spans);
+
+        Assert.Single(result.Spans);
         Assert.Equal(FilterType.IpAddress, result.Spans[0].FilterType);
+        Assert.Equal(expected, result.Spans[0].Text);
     }
 
     [Theory]
