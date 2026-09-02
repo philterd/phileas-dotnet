@@ -17,6 +17,7 @@
 using Phileas.Model;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
+using System.Text.Json.Nodes;
 using Xunit;
 using PStrat = Phileas.Policy.Filters.Strategies;
 using PhileasPolicy = Phileas.Policy.Policy;
@@ -117,5 +118,68 @@ public class PolicyModelTests
         Assert.True(policy.Identifiers.CustomDictionaries is null || policy.Identifiers.CustomDictionaries.Count == 0);
         Assert.Empty(policy.Ignored);
         Assert.False(policy.Identifiers.HasFilter(FilterType.CustomDictionary));
+    }
+
+    [Theory]
+    [InlineData("zipCodeFilterStrategies")]
+    [InlineData("zipCodeFilterStrategy")]
+    public void ZipCode_AcceptsBothStrategyKeys(string key)
+    {
+        // The singular was the only accepted name before schema 1.3.0, so a policy written
+        // against an earlier schema must still deserialize its strategies.
+        var json = $$"""
+                     { "identifiers": { "zipCode": { "{{key}}": [ { "strategy": "REDACT" } ] } } }
+                     """;
+
+        var policy = PolicySerializer.DeserializeFromJson(json);
+
+        Assert.Equal(1, policy.Identifiers.ZipCode?.Strategies?.Count);
+
+        // The plural is the canonical name, so it is the only one written back out.
+        var serialized = PolicySerializer.SerializeToJson(policy);
+        Assert.Contains("zipCodeFilterStrategies", serialized);
+        Assert.DoesNotContain("\"zipCodeFilterStrategy\"", serialized);
+    }
+
+    [Fact]
+    public void Metadata_RoundTrips()
+    {
+        // Keys beyond description are allowed by the schema, so they have to survive too.
+        const string json = """
+                            {
+                              "metadata": {
+                                "description": "Client intake forms.",
+                                "author": "records team",
+                                "labels": [ "intake", "pii" ]
+                              },
+                              "identifiers": {
+                                "ssn": { "ssnFilterStrategies": [ { "strategy": "REDACT" } ] }
+                              }
+                            }
+                            """;
+
+        var policy = PolicySerializer.DeserializeFromJson(json);
+
+        Assert.NotNull(policy.Metadata);
+        Assert.Equal("Client intake forms.", (string?)policy.Metadata!["description"]);
+        Assert.Equal("records team", (string?)policy.Metadata["author"]);
+
+        // Re-serializing must not drop or alter any of it.
+        var before = JsonNode.Parse(json)!["metadata"]!.ToJsonString();
+        var after = JsonNode.Parse(PolicySerializer.SerializeToJson(policy))!["metadata"]!.ToJsonString();
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public void Metadata_OmittedWhenAbsent()
+    {
+        const string json = """
+                            { "identifiers": { "ssn": { "ssnFilterStrategies": [ { "strategy": "REDACT" } ] } } }
+                            """;
+
+        var policy = PolicySerializer.DeserializeFromJson(json);
+
+        Assert.Null(policy.Metadata);
+        Assert.DoesNotContain("metadata", PolicySerializer.SerializeToJson(policy));
     }
 }

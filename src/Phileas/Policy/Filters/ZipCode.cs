@@ -39,6 +39,21 @@ public class ZipCode : AbstractPolicyFilter
     public bool Validate { get; set; } = false;
 
     /// <summary>Gets or sets the list of ZIP code filter strategies to apply.</summary>
-    [JsonPropertyName("zipCodeFilterStrategy")]
+    [JsonPropertyName("zipCodeFilterStrategies")]
     public List<ZipCodeFilterStrategy>? Strategies { get; set; }
+
+    /// <summary>
+    ///     The name <see cref="Strategies" /> went by before schema 1.3.0, when the singular was the
+    ///     only accepted name. Deserialization only: the setter feeds <see cref="Strategies" /> and the
+    ///     getter is always <see langword="null" />, so a policy written against an earlier schema is
+    ///     read but the legacy name is never written back. This mirrors the Java model, where gson's
+    ///     <c>@SerializedName(alternate = ...)</c> accepts both names for one field.
+    /// </summary>
+    [JsonPropertyName("zipCodeFilterStrategy")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<ZipCodeFilterStrategy>? LegacyStrategies
+    {
+        get => null;
+        set => Strategies = value;
+    }
 }
