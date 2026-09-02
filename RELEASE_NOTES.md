@@ -6,6 +6,20 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 _Unreleased._
 
+Built on PhiSQL 1.3.0.
+
+### Changed
+
+- **The `Philterd.PhiSql` dependency is now 1.3.0** (up from 1.2.0), moving policy operations to redaction policy
+  schema 1.3.0. It adds an optional top-level `metadata` object and makes the plural `zipCodeFilterStrategies` the
+  canonical key; the singular `zipCodeFilterStrategy` is deprecated but still validates.
+
+### Removed
+
+- **The `PhysicianName` filter type**, following PhiSQL 1.3.0's removal of the `PHYSICIAN_NAME` entity type. It was
+  an unused enum member here (no policy field, filter, or strategy), so only code naming it breaks. Use PhEye
+  detection instead: `DETECT PHEYE LABELS ('physician name') WITH REDACT;`.
+
 ## 1.6.0 - 2026-07-19
 
 ### Added

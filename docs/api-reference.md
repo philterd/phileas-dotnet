@@ -234,7 +234,6 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `PhEye` | `"ph-eye"` |
 | `PhoneNumber` | `"phone-number"` |
 | `PhoneNumberExtension` | `"phone-number-extension"` |
-| `PhysicianName` | `"physician-name"` |
 | `Section` | `"section"` |
 | `Ssn` | `"ssn"` |
 | `StateAbbreviation` | `"state-abbreviation"` |

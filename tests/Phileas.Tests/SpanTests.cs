@@ -170,10 +170,10 @@ public class SpanTests
     {
         var result = Span.DropOverlappingSpans(new List<Span>
         {
-            S(10, 38, FilterType.PhysicianName),
-            S(20, 38, FilterType.PhysicianName),
-            S(24, 38, FilterType.PhysicianName),
-            S(29, 38, FilterType.PhysicianName)
+            S(10, 38, FilterType.Surname),
+            S(20, 38, FilterType.Surname),
+            S(24, 38, FilterType.Surname),
+            S(29, 38, FilterType.Surname)
         });
 
         Assert.Single(result);
@@ -186,9 +186,9 @@ public class SpanTests
     {
         var result = Span.DropOverlappingSpans(new List<Span>
         {
-            S(0, 6, FilterType.PhysicianName),
-            S(0, 12, FilterType.PhysicianName),
-            S(0, 18, FilterType.PhysicianName)
+            S(0, 6, FilterType.Surname),
+            S(0, 12, FilterType.Surname),
+            S(0, 18, FilterType.Surname)
         });
 
         Assert.Single(result);

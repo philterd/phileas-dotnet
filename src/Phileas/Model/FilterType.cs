@@ -91,9 +91,6 @@ public enum FilterType
     /// <summary>Phone number extensions.</summary>
     PhoneNumberExtension,
 
-    /// <summary>Physician names.</summary>
-    PhysicianName,
-
     /// <summary>Document sections.</summary>
     Section,
 
@@ -175,7 +172,6 @@ public static class FilterTypeExtensions
             FilterType.PhEye => "ph-eye",
             FilterType.PhoneNumber => "phone-number",
             FilterType.PhoneNumberExtension => "phone-number-extension",
-            FilterType.PhysicianName => "physician-name",
             FilterType.Section => "section",
             FilterType.Ssn => "ssn",
             FilterType.StateAbbreviation => "state-abbreviation",
