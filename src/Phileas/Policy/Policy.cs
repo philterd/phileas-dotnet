@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Philterd.PhiSql;
 
@@ -62,6 +63,13 @@ public class Policy
     /// </summary>
     [JsonIgnore]
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets descriptive information carried with the policy. Held as raw JSON so keys the
+    ///     engine does not know about survive a load-and-save round trip. Never read during filtering.
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public JsonObject? Metadata { get; set; }
 
     /// <summary>Gets or sets the global configuration settings for the policy.</summary>
     [JsonPropertyName("config")]
