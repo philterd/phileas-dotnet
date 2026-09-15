@@ -24,15 +24,31 @@ namespace Phileas.Policy.Filters.Strategies;
 /// </summary>
 public class DateFilterStrategy : AbstractFilterStrategy
 {
-    /// <summary>Gets or sets the number of days to shift the date when using the <c>SHIFT_DATE</c> strategy.</summary>
-    [JsonPropertyName("days")]
-    public int Days { get; set; } = 0;
+    /// <summary>Gets or sets the number of days to shift the date when using the <c>SHIFT</c> strategy.</summary>
+    [JsonPropertyName("shiftDays")]
+    public int ShiftDays { get; set; } = 0;
 
-    /// <summary>Gets or sets the number of months to shift the date when using the <c>SHIFT_DATE</c> strategy.</summary>
-    [JsonPropertyName("months")]
-    public int Months { get; set; } = 0;
+    /// <summary>Gets or sets the number of months to shift the date when using the <c>SHIFT</c> strategy.</summary>
+    [JsonPropertyName("shiftMonths")]
+    public int ShiftMonths { get; set; } = 0;
 
-    /// <summary>Gets or sets the number of years to shift the date when using the <c>SHIFT_DATE</c> strategy.</summary>
-    [JsonPropertyName("years")]
-    public int Years { get; set; } = 0;
+    /// <summary>Gets or sets the number of years to shift the date when using the <c>SHIFT</c> strategy.</summary>
+    [JsonPropertyName("shiftYears")]
+    public int ShiftYears { get; set; } = 0;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether the date is shifted by a random amount rather than by
+    ///     the configured offsets. Matches the Java filter's range: one to twenty-nine days forward, one
+    ///     to eleven months forward, and one or two years back. Defaults to <see langword="false" />.
+    /// </summary>
+    [JsonPropertyName("shiftRandom")]
+    public bool ShiftRandom { get; set; } = false;
+
+    /// <summary>
+    ///     Gets or sets a value indicating whether a shifted date may land in the future. When
+    ///     <see langword="false" />, which is the default, a shift that would move a past date beyond
+    ///     today is applied in the opposite direction instead, so the result stays in the past.
+    /// </summary>
+    [JsonPropertyName("futureDates")]
+    public bool FutureDates { get; set; } = false;
 }

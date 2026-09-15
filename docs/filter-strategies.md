@@ -18,7 +18,7 @@ A **filter strategy** controls what happens to a detected PII token. Each identi
 | `MAP_REPLACE` | `AbstractFilterStrategy.MapReplace` | Replace from a lookup table, then a generator, then a fallback strategy |
 | `SAME` | `AbstractFilterStrategy.Same` | Leave the token unchanged (mark as detected but not replaced) |
 | `TRUNCATE` | `AbstractFilterStrategy.Truncate` | Keep only the first character |
-| `SHIFT_DATE` | `AbstractFilterStrategy.ShiftDate` | Shift a detected date by a configurable offset (date filters only) |
+| `SHIFT` | `AbstractFilterStrategy.Shift` | Shift a detected date by a configurable offset (date filters only). `SHIFT_DATE` is accepted as an alias |
 
 ---
 
@@ -302,11 +302,13 @@ new EmailAddressFilterStrategy { Strategy = "TRUNCATE" }
 
 ---
 
-### SHIFT_DATE
+### SHIFT
 
 > **Date filters only.** Applies to `DateFilterStrategy`; ignored by all other filter types.
 
 Shifts a detected date forward or backward by a configurable number of days, months, and/or years while preserving the original date format. All three offsets default to `0` and can be combined freely. Negative values shift the date into the past.
+
+The strategy is named `SHIFT` in the redaction policy schema and by the PhiSQL compiler. `SHIFT_DATE`, the name this port used previously, is still accepted so existing policies keep working.
 
 **Supported date formats**
 
@@ -317,15 +319,17 @@ Shifts a detected date forward or backward by a configurable number of days, mon
 | `15-Jan-1990` | Day-abbreviated-month-year |
 | `Jan 15, 1990` | Abbreviated month name |
 
-If the detected token cannot be parsed as a date, or if the `Date` filter type is not active, `SHIFT_DATE` falls back to `REDACT`.
+If the detected token cannot be parsed as a date, or if the `Date` filter type is not active, `SHIFT` falls back to `REDACT`.
 
 **Properties**
 
 | Property | JSON key | Type | Default | Description |
 |---|---|---|---|---|
-| `Days` | `days` | `int` | `0` | Days to add (negative to subtract) |
-| `Months` | `months` | `int` | `0` | Months to add (negative to subtract) |
-| `Years` | `years` | `int` | `0` | Years to add (negative to subtract) |
+| `ShiftDays` | `shiftDays` | `int` | `0` | Days to add (negative to subtract) |
+| `ShiftMonths` | `shiftMonths` | `int` | `0` | Months to add (negative to subtract) |
+| `ShiftYears` | `shiftYears` | `int` | `0` | Years to add (negative to subtract) |
+| `ShiftRandom` | `shiftRandom` | `bool` | `false` | Shift by a random amount instead of the configured offsets: one to twenty-nine days forward, one to eleven months forward, and one or two years back |
+| `FutureDates` | `futureDates` | `bool` | `false` | Whether a shifted date may land in the future. When `false`, a shift that would move a past date beyond today is applied in the opposite direction instead |
 
 **C# example**
 
@@ -344,9 +348,9 @@ var policy = new Policy
             {
                 new DateFilterStrategy
                 {
-                    Strategy = "SHIFT_DATE",
-                    Years  = -1,
-                    Days   = 14
+                    Strategy = "SHIFT",
+                    ShiftYears = -1,
+                    ShiftDays  = 14
                 }
             }
         }
@@ -362,9 +366,9 @@ var policy = new Policy
   "identifiers": {
     "date": {
       "dateFilterStrategies": [{
-        "strategy": "SHIFT_DATE",
-        "years": -1,
-        "days": 14
+        "strategy": "SHIFT",
+        "shiftYears": -1,
+        "shiftDays": 14
       }]
     }
   }

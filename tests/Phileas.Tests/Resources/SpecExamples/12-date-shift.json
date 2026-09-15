@@ -1,0 +1,10 @@
+{
+  "identifiers" : {
+    "date" : {
+      "dateFilterStrategies" : [ {
+        "strategy" : "SHIFT",
+        "shiftDays" : 30
+      } ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "identifiers": {
+    "ssn": {
+      "ssnFilterStrategies": [
+        { "strategy": "MASK", "maskCharacter": "#", "salt": true }
+      ]
+    },
+    "date": {
+      "dateFilterStrategies": [
+        { "strategy": "SHIFT", "shiftDays": 30, "futureDates": false }
+      ]
+    },
+    "emailAddress": {
+      "emailAddressFilterStrategies": [
+        { "strategy": "RANDOM_REPLACE", "anonymizationCandidates": [ "a@example.com", "b@example.com" ] }
+      ]
+    }
+  }
+}
