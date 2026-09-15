@@ -69,18 +69,22 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
             {
                 // Every occurrence, not just the first: a term repeated in the document was reported
                 // once and the rest were left in place. See philterd/phileas-dotnet#119.
-                var matched = false;
+                var covered = new List<Position>();
                 foreach (Match match in pattern.Matches(input))
                 {
-                    matched = true;
-                    if (!_requireCapitalization || char.IsUpper(input[match.Index]))
-                    {
-                        spans.Add(CreateSpan(input, match.Index, match.Index + match.Length, 1.0, context, piece,
-                            entry, policy));
-                    }
+                    if (_requireCapitalization && !char.IsUpper(input[match.Index])) continue;
+
+                    // The document's own text, not the dictionary's spelling of it, so a span's text is
+                    // what sits at its offsets. SetDictionaryFilter has always done this.
+                    spans.Add(CreateSpan(input, match.Index, match.Index + match.Length, 1.0, context, piece,
+                        match.Value, policy));
+                    covered.Add(new Position(match.Index, match.Index + match.Length));
                 }
 
-                if (!matched && _sensitivityLevel != SensitivityLevel.Off)
+                // The near-match scan runs whichever way the exact scan went. Gating it on the term
+                // having no exact match anywhere meant a document holding a name both correctly and
+                // misspelled kept the misspelling, which is the case fuzzy matching is for.
+                if (_sensitivityLevel != SensitivityLevel.Off)
                 {
                     var wordsInEntry = entry.Split(' ').Length;
                     if (!ngramsByLength.TryGetValue(wordsInEntry, out var ngrams)) continue;
@@ -89,6 +93,12 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
                     {
                         if (ngram.Length <= 2) continue;
                         if (_requireCapitalization && !char.IsUpper(ngram[0])) continue;
+
+                        // An n-gram equal to the entry is also at distance 0, so without this the exact
+                        // occurrences would each be reported twice. This filter does not drop
+                        // overlapping spans, so nothing downstream would collapse them.
+                        if (covered.Any(range => position.Start < range.End && range.Start < position.End))
+                            continue;
 
                         var distance = Levenshtein.Distance(entry.ToLowerInvariant(), ngram.ToLowerInvariant());
                         if (_sensitivityLevel == SensitivityLevel.High && distance == 0)
@@ -114,7 +124,9 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
     private Span CreateSpan(string text, int characterStart, int characterEnd, double confidence, string context,
         int piece, string token, PhileasPolicy policy)
     {
-        var ignored = IsIgnored(text);
+        // The matched value, not the whole document: passing the input meant the check never fired and
+        // every span came back not ignored.
+        var ignored = IsIgnored(token);
         var window = GetWindow(text, characterStart, characterEnd);
         var replacement = GetReplacement(policy, context, token, window, confidence, Classification, null);
         return Span.Make(characterStart, characterEnd, FilterType, context, confidence, token, replacement.Value,
