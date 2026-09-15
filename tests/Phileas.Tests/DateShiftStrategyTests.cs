@@ -225,19 +225,41 @@ public class DateShiftStrategyTests
         Assert.Contains("RELATIVE", ex.Message);
     }
 
-    [Fact]
-    public void ALowercaseStrategyName_Raises()
+    [Theory]
+    [InlineData("relative")]
+    [InlineData("Relative")]
+    [InlineData("rElAtIvE")]
+    public void ALowercaseStrategyName_IsAccepted(string strategy)
     {
-        // The schema's enum is uppercase, and matching here is case-sensitive as it already was for
-        // every other strategy. What changed is that a name that does not match now says so instead
-        // of redacting, so a casing mistake is visible rather than silent. The Java filter compares
-        // case-insensitively, which is a deliberate difference.
-        var json = PolicyJson("relative", "\"futureDates\": false");
+        // Strategy names are matched without regard to case, as the Java filters do, so a policy is
+        // not silently broken by its casing. The schema's enum is uppercase; this is leniency toward
+        // a hand-written policy, not a second spelling to document.
+        var threeMonthsAgo = DateTime.Today.AddMonths(-3).ToString("M/d/yyyy");
+        var json = PolicyJson(strategy, "\"futureDates\": false");
 
-        var ex = Assert.Throws<ArgumentException>(() => new FilterService()
-            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, Text));
+        var filtered = new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, "seen on " + threeMonthsAgo + " today")
+            .FilteredText;
 
-        Assert.Contains("RELATIVE", ex.Message);
+        Assert.Equal("seen on 3 months ago today", filtered);
+    }
+
+    [Theory]
+    [InlineData("shift")]
+    [InlineData("shift_date")]
+    [InlineData("truncate_to_year")]
+    public void TheOtherDateStrategyNames_AreAlsoCaseInsensitive(string strategy)
+    {
+        Assert.DoesNotContain("REDACTED", Filter(PolicyJson(strategy, "\"shiftDays\": 30")));
+    }
+
+    [Fact]
+    public void ACaseInsensitiveNameReachesTheStandardStrategiesToo()
+    {
+        // The date filter shares the standard switch with every other filter, so the leniency has to
+        // hold on both sides of the dispatch or "relative" would work while "same" still redacted.
+        Assert.Equal(Text, Filter(PolicyJson("same", "\"shiftDays\": 0")));
+        Assert.Equal("seen on 0 today", Filter(PolicyJson("truncate", "\"shiftDays\": 0")));
     }
 
     [Fact]

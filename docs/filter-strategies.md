@@ -2,6 +2,12 @@
 
 A **filter strategy** controls what happens to a detected PII token. Each identifier type supports a `Strategies` list; the first strategy whose `condition` evaluates to `true` is applied. If the list is empty, the default `REDACT` strategy is used.
 
+Strategy names are matched without regard to case, so `MASK`, `mask` and `Mask` all select the same strategy. The names below are the canonical form and what the redaction policy schema declares; write them uppercase in a new policy.
+
+A date filter raises on a name that is not one of the strategies below, rather than falling back to
+`REDACT`, so a policy asking for a year or an interval cannot silently get a destroyed date instead.
+Every other filter type still falls back to `REDACT`.
+
 ## Available Strategies
 
 | Strategy | Constant | Description |
@@ -440,12 +446,12 @@ A detected token that cannot be parsed as a date falls back to `REDACT`.
 > under `SHIFT` it decides whether a shift that would move a past date beyond today is applied in the
 > opposite direction instead.
 
-**Example transformation**
+**Example transformation**, with today taken as 15 September 2026:
 
 | Input | Output |
 |---|---|
-| `DOB: January 15, 1990` | `DOB: January 29, 1989` |
-| `Admitted: 3/1/2024` | `Admitted: 3/15/2023` |
+| `DOB: January 15, 1990` | `DOB: 36 years 8 months ago` |
+| `Admitted: 3/1/2024` | `Admitted: 2 years 6 months ago` |
 
 ---
 
