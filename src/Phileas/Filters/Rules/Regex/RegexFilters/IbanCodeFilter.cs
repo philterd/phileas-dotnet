@@ -50,7 +50,6 @@ public class IbanCodeFilter : RegexFilter
     ///     Initializes a new <see cref="IbanCodeFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    /// <param name="configuration">Runtime filter configuration.</param>
     /// <param name="onlyValidIbanCodes">Keep only codes passing the MOD-97-10 checksum.</param>
     /// <param name="allowSpaces">Also detect a code written in space-separated groups.</param>
     public IbanCodeFilter(FilterConfiguration configuration, bool onlyValidIbanCodes = true,

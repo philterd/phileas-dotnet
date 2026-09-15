@@ -72,7 +72,6 @@ public class UrlFilter : RegexFilter
     ///     Initializes a new <see cref="UrlFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    /// <param name="configuration">Runtime filter configuration.</param>
     /// <param name="requireHttpWwwPrefix">
     ///     Require a <c>http://</c>, <c>https://</c> or <c>www.</c> prefix. When false a bare host is
     ///     also detected.

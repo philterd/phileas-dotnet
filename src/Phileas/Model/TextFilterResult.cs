@@ -42,6 +42,9 @@ public class TextFilterResult
     /// <param name="spans">The spans that were identified in the input.</param>
     /// <param name="incrementalRedactions">The per-redaction snapshot trail (empty when disabled).</param>
     /// <param name="tokens">The number of tokens in the input.</param>
+    /// <param name="regexTimeouts">
+    ///     The patterns that exceeded their match budget, empty when none did.
+    /// </param>
     public TextFilterResult(string filteredText, string context, int piece, IList<Span> spans,
         IList<IncrementalRedaction> incrementalRedactions, long tokens,
         IList<string>? regexTimeouts = null)
