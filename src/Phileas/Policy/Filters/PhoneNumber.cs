@@ -24,7 +24,29 @@ namespace Phileas.Policy.Filters;
 /// </summary>
 public class PhoneNumber : AbstractPolicyFilter
 {
+    /// <summary>The default region used to interpret phone numbers written without an international "+" country code.</summary>
+    public const string DefaultRegion = "US";
+
     /// <summary>Gets or sets the list of phone number filter strategies to apply.</summary>
     [JsonPropertyName("phoneNumberFilterStrategies")]
     public List<PhoneNumberFilterStrategy>? Strategies { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the default region(s), ISO 3166-1 alpha-2, used to detect national-format phone numbers
+    ///     written without an international "+" country code. The policy may give either a single string or an
+    ///     array of strings; both bind here. Numbers with a "+" prefix are detected regardless of this value.
+    ///     Requires policy schema 1.2.0.
+    /// </summary>
+    [JsonPropertyName("region")]
+    [JsonConverter(typeof(StringOrStringListConverter))]
+    public List<string>? Region { get; set; }
+
+    /// <summary>
+    ///     Gets the configured regions, or a single <see cref="DefaultRegion" /> when the policy set none.
+    /// </summary>
+    /// <returns>The regions to scan for national-format phone numbers.</returns>
+    public List<string> GetRegionOrDefault()
+    {
+        return Region is { Count: > 0 } ? Region : new List<string> { DefaultRegion };
+    }
 }

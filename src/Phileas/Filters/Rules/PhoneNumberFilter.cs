@@ -18,6 +18,8 @@ using System.Text.RegularExpressions;
 using Phileas.Model;
 using PhoneNumbers;
 using PhileasPolicy = Phileas.Policy.Policy;
+// Alias the policy model: the libphonenumber namespace PhoneNumbers declares its own PhoneNumber type.
+using PolicyPhoneNumber = Phileas.Policy.Filters.PhoneNumber;
 // Alias the BCL type: the sibling namespace Phileas.Filters.Rules.Regex otherwise shadows the name `Regex`.
 using SysRegex = System.Text.RegularExpressions.Regex;
 
@@ -26,8 +28,9 @@ namespace Phileas.Filters.Rules;
 /// <summary>
 ///     Detects phone numbers with Google's libphonenumber (the maintained <c>libphonenumber-csharp</c> port),
 ///     scanning text with <see cref="PhoneNumberUtil.FindNumbers(string, string, PhoneNumberUtil.Leniency, long)" />.
-///     A default region of <c>US</c> and <see cref="PhoneNumberUtil.Leniency.POSSIBLE" /> find NANP numbers and
-///     any <c>+</c>-prefixed international number regardless of region, matching the Java Phileas phone filter.
+///     Text is scanned once per configured region (the policy's <c>region</c> property, <c>US</c> by default) with
+///     <see cref="PhoneNumberUtil.Leniency.POSSIBLE" />, and the results are merged and de-duplicated. A
+///     <c>+</c>-prefixed international number is found regardless of region, matching the Java Phileas phone filter.
 ///     This is a scanner, not a regex filter: it extends <see cref="RulesFilter" /> directly.
 /// </summary>
 public class PhoneNumberFilter : RulesFilter
@@ -40,10 +43,30 @@ public class PhoneNumberFilter : RulesFilter
 
     private static readonly PhoneNumberUtil PhoneUtil = PhoneNumberUtil.GetInstance();
 
-    /// <summary>Initializes a new <see cref="PhoneNumberFilter" /> with the given configuration.</summary>
+    private readonly List<string> _regions;
+
+    /// <summary>
+    ///     Initializes a new <see cref="PhoneNumberFilter" /> with the given configuration and the default
+    ///     region (<see cref="PolicyPhoneNumber.DefaultRegion" />).
+    /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public PhoneNumberFilter(FilterConfiguration configuration) : base(FilterType.PhoneNumber, configuration)
+    public PhoneNumberFilter(FilterConfiguration configuration) : this(configuration, null)
     {
+    }
+
+    /// <summary>Initializes a new <see cref="PhoneNumberFilter" /> with the given configuration and regions.</summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
+    /// <param name="regions">
+    ///     The ISO 3166-1 alpha-2 region(s) used to interpret numbers written without a <c>+</c> country code.
+    ///     <see langword="null" /> or empty falls back to <see cref="PolicyPhoneNumber.DefaultRegion" />.
+    /// </param>
+    public PhoneNumberFilter(FilterConfiguration configuration, IEnumerable<string>? regions)
+        : base(FilterType.PhoneNumber, configuration)
+    {
+        var configured = regions?.Where(region => !string.IsNullOrWhiteSpace(region)).ToList();
+        _regions = configured is { Count: > 0 }
+            ? configured
+            : new List<string> { PolicyPhoneNumber.DefaultRegion };
     }
 
     /// <inheritdoc />
@@ -54,7 +77,13 @@ public class PhoneNumberFilter : RulesFilter
         if (!policy.Identifiers.HasFilter(FilterType))
             return new Filtered(context, piece, spans);
 
-        foreach (var match in PhoneUtil.FindNumbers(input, "US", PhoneNumberUtil.Leniency.POSSIBLE, long.MaxValue))
+        // Scan once per configured region and merge the results. A "+"-prefixed number is found under every
+        // region and a bare national-format number may match in several, so overlapping matches are de-duplicated.
+        var matches = new List<PhoneNumberMatch>();
+        foreach (var region in _regions)
+            matches.AddRange(PhoneUtil.FindNumbers(input, region, PhoneNumberUtil.Leniency.POSSIBLE, long.MaxValue));
+
+        foreach (var match in Dedupe(matches))
         {
             var text = match.RawString;
             var start = match.Start;
@@ -75,5 +104,39 @@ public class PhoneNumberFilter : RulesFilter
         var filtered = PostFilter(spans, input);
         filtered = Span.DropOverlappingSpans(filtered);
         return new Filtered(context, piece, filtered);
+    }
+
+    /// <summary>
+    ///     Merges the matches found across the configured regions, removing overlapping ones. When two matches
+    ///     overlap the better one is kept: a valid number beats a merely-possible one, and among equally-valid
+    ///     matches the longer span wins. Mirrors the Java <c>PhoneNumberRulesFilter</c>.
+    /// </summary>
+    private static List<PhoneNumberMatch> Dedupe(List<PhoneNumberMatch> matches)
+    {
+        // Best-first ordering so a greedy sweep keeps the strongest match in each overlapping cluster.
+        var sorted = new List<PhoneNumberMatch>(matches);
+        sorted.Sort((a, b) =>
+        {
+            var aValid = PhoneUtil.IsValidNumber(a.Number);
+            var bValid = PhoneUtil.IsValidNumber(b.Number);
+            if (aValid != bValid) return aValid ? -1 : 1;
+            if (a.Length != b.Length) return b.Length.CompareTo(a.Length);
+            return a.Start.CompareTo(b.Start);
+        });
+
+        var kept = new List<PhoneNumberMatch>();
+        foreach (var candidate in sorted)
+        {
+            var overlaps = kept.Any(accepted =>
+                candidate.Start < accepted.Start + accepted.Length &&
+                accepted.Start < candidate.Start + candidate.Length);
+
+            if (!overlaps) kept.Add(candidate);
+        }
+
+        // Restore document order so emitted spans are left-to-right.
+        kept.Sort((a, b) => a.Start.CompareTo(b.Start));
+
+        return kept;
     }
 }

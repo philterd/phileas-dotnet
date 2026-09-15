@@ -220,9 +220,11 @@ public class FilterService : IFilterService
                 BuildFilter<EmailAddressFilter, EmailAddressFilterStrategy>(identifiers.EmailAddress, policy,
                     contextService));
         if (identifiers.PhoneNumber != null)
-            filters.Add(
-                BuildFilter<PhoneNumberFilter, PhoneNumberFilterStrategy>(identifiers.PhoneNumber, policy,
-                    contextService));
+        {
+            var phoneConfig =
+                BuildRegexConfig<PhoneNumberFilterStrategy>(identifiers.PhoneNumber, policy, contextService);
+            filters.Add(new PhoneNumberFilter(phoneConfig, identifiers.PhoneNumber.GetRegionOrDefault()));
+        }
         if (identifiers.Ssn != null)
             filters.Add(BuildFilter<SsnFilter, SsnFilterStrategy>(identifiers.Ssn, policy, contextService));
         if (identifiers.Ein != null)
