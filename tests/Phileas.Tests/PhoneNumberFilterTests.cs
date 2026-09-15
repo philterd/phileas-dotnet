@@ -28,22 +28,35 @@ namespace Phileas.Tests;
 
 public class PhoneNumberFilterTests
 {
-    private static PhoneNumberFilter CreateFilter()
+    private static FilterConfiguration CreateConfiguration()
     {
-        var config = new FilterConfiguration.Builder()
+        return new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { new PhoneNumberFilterStrategy() })
             .WithIgnored(new HashSet<string>())
             .WithIgnoredPatterns(new List<IgnoredPattern>())
             .Build();
-        return new PhoneNumberFilter(config);
     }
 
-    private static PhileasPolicy CreatePolicy()
+    /// <summary>A filter left on the default region, built through the configuration-only constructor.</summary>
+    private static PhoneNumberFilter CreateFilter()
+    {
+        return new PhoneNumberFilter(CreateConfiguration());
+    }
+
+    private static PhoneNumberFilter CreateFilter(params string[] regions)
+    {
+        return new PhoneNumberFilter(CreateConfiguration(), regions);
+    }
+
+    private static PhileasPolicy CreatePolicy(params string[] regions)
     {
         return new PhileasPolicy
         {
             Name = "test",
-            Identifiers = new Identifiers { PhoneNumber = new PhoneNumber() }
+            Identifiers = new Identifiers
+            {
+                PhoneNumber = new PhoneNumber { Region = regions.Length > 0 ? regions.ToList() : null }
+            }
         };
     }
 
@@ -184,5 +197,115 @@ public class PhoneNumberFilterTests
         // Only the non-ignored number survives.
         var span = Assert.Single(result.Spans);
         Assert.Equal("555-867-5309", span.Text);
+    }
+
+    // The policy's region property (issue #53) sets the region(s) used to read numbers written without a
+    // "+" country code. These mirror the Java PhoneNumberRulesFilterTest region cases.
+    [Fact]
+    public void Filter_DetectsNationalFormatNumbersForTheConfiguredRegion()
+    {
+        var filter = CreateFilter("GB");
+
+        var result = filter.Filter(CreatePolicy("GB"), "test", 0, "the number is 020 7946 0958.");
+
+        var span = Assert.Single(result.Spans);
+        Assert.Equal("020 7946 0958", span.Text);
+    }
+
+    [Fact]
+    public void Filter_DoesNotDetectForeignNationalFormatNumbersUnderTheDefaultRegion()
+    {
+        // Under the default US region the UK number is not read as a phone number: only the 7-digit
+        // fragment "020 7946" is extracted (possible-but-invalid under the NANP), so the number itself
+        // is missed. Java finds nothing at all for this input; libphonenumber-csharp's matcher is more
+        // permissive about 7-digit candidates, a port difference that predates region support.
+        var filter = CreateFilter();
+
+        var span = Assert.Single(filter.Filter(CreatePolicy(), "test", 0, "the number is 020 7946 0958.").Spans);
+
+        Assert.Equal("020 7946", span.Text);
+    }
+
+    [Fact]
+    public void Filter_DetectsNationalFormatNumbersFromEveryConfiguredRegion()
+    {
+        var filter = CreateFilter("US", "GB", "FR");
+
+        var result = filter.Filter(CreatePolicy("US", "GB", "FR"), "test", 0,
+            "call 123-456-7890 or 020 7946 0958 or 01 42 68 53 00.");
+
+        // One number per region, in document order. The UK number is kept whole: the US scan also yields the
+        // 7-digit fragment "020 7946", and de-duplication prefers the valid, longer match over it.
+        Assert.Equal(new[] { "123-456-7890", "020 7946 0958", "01 42 68 53 00" },
+            result.Spans.Select(span => span.Text).ToArray());
+    }
+
+    [Fact]
+    public void Filter_FallsBackToTheDefaultRegionForAnEmptyRegionList()
+    {
+        // An empty array (or a blank code) is treated as "not set" rather than as "no regions", which would
+        // otherwise scan nothing and silently detect only "+"-prefixed numbers.
+        var filter = CreateFilter();
+        var empty = CreateFilter(Array.Empty<string>());
+        var blank = CreateFilter(" ");
+
+        const string input = "Call 555-123-4567";
+
+        Assert.Equal(Assert.Single(filter.Filter(CreatePolicy(), "test", 0, input).Spans).Text,
+            Assert.Single(empty.Filter(CreatePolicy(), "test", 0, input).Spans).Text);
+        Assert.Equal("555-123-4567", Assert.Single(blank.Filter(CreatePolicy(), "test", 0, input).Spans).Text);
+    }
+
+    [Fact]
+    public void Filter_WithAnUnrecognizedRegionDetectsOnlyInternationalNumbers()
+    {
+        // libphonenumber matches region codes exactly (uppercase ISO 3166-1 alpha-2), so "gb" and "ZZ" are
+        // both unknown regions: national-format numbers are then unreachable and only "+"-prefixed numbers
+        // are found. Verified to be the same in the Java port, which is given the region code unchanged too.
+        const string input = "call 555-123-4567 or +44 20 7946 0958 now";
+
+        foreach (var region in new[] { "gb", "ZZ" })
+        {
+            var result = CreateFilter(region).Filter(CreatePolicy(region), "test", 0, input);
+
+            Assert.Equal("+44 20 7946 0958", Assert.Single(result.Spans).Text);
+        }
+    }
+
+    [Fact]
+    public void Filter_DetectsInternationalNumbersRegardlessOfRegion()
+    {
+        // A "+"-prefixed number is detected even though the configured region is GB.
+        var filter = CreateFilter("GB");
+
+        var result = filter.Filter(CreatePolicy("GB"), "test", 0, "the number is +1 202-555-0182.");
+
+        var span = Assert.Single(result.Spans);
+        Assert.Equal("+1 202-555-0182", span.Text);
+    }
+
+    [Fact]
+    public void Filter_DeduplicatesAcrossRegions()
+    {
+        // A single "+"-prefixed number is found under every region; the merged result must not double it.
+        var filter = CreateFilter("US", "GB", "FR");
+
+        var result = filter.Filter(CreatePolicy("US", "GB", "FR"), "test", 0, "the number is +1 202-555-0182.");
+
+        var span = Assert.Single(result.Spans);
+        Assert.Equal("+1 202-555-0182", span.Text);
+    }
+
+    [Fact]
+    public void FilterService_UsesTheRegionFromThePolicy()
+    {
+        // The region reaches the filter through FilterService, not just the filter's own constructor.
+        const string input = "the number is 020 7946 0958.";
+
+        var withRegion = new FilterService().Filter(CreatePolicy("GB"), "ctx", 0, input);
+        var withDefault = new FilterService().Filter(CreatePolicy(), "ctx", 0, input);
+
+        Assert.Equal("020 7946 0958", Assert.Single(withRegion.Spans).Text);
+        Assert.Equal("020 7946", Assert.Single(withDefault.Spans).Text);
     }
 }

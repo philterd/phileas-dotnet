@@ -71,6 +71,19 @@ public class PolicySchemaValidationTests
         Assert.True(PolicySchema.Validate(jsonPolicy));
     }
 
+    [Theory]
+    [InlineData("\"GB\"")]
+    [InlineData("[\"US\", \"GB\", \"FR\"]")]
+    public void ValidatePhoneNumberRegionPolicy(string region)
+    {
+        // The phone number region property is part of schema 1.2.0 and takes a string or an array of them.
+        var jsonPolicy =
+            "{\"identifiers\": {\"phoneNumber\": {\"region\": " + region + ", " +
+            "\"phoneNumberFilterStrategies\": [{\"strategy\": \"REDACT\"}]}}}";
+
+        Assert.True(PolicySchema.Validate(jsonPolicy));
+    }
+
     [Fact]
     public void ValidateStrategyColorPolicy()
     {

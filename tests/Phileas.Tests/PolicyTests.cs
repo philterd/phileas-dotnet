@@ -21,6 +21,7 @@ using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Strategies;
 using Xunit;
 using PhileasPolicy = Phileas.Policy.Policy;
+using PolicySchema = Phileas.Policy.PolicySchema;
 using Serializer = Phileas.Policy.PolicySerializer;
 
 namespace Phileas.Tests;
@@ -68,6 +69,84 @@ public class PolicyTests
         var policy = JsonSerializer.Deserialize<PhileasPolicy>(json);
         Assert.NotNull(policy);
         Assert.NotNull(policy.Identifiers.EmailAddress);
+    }
+
+    // The phone number filter's region property (policy schema 1.2.0) accepts either a single string or an
+    // array of them; both shapes normalize to a list, matching the Java StringOrArrayListDeserializer.
+    [Fact]
+    public void PhoneNumber_DeserializesRegionString()
+    {
+        var json = """
+                   {
+                       "identifiers": {
+                           "phoneNumber": {
+                               "region": "GB",
+                               "phoneNumberFilterStrategies": []
+                           }
+                       }
+                   }
+                   """;
+
+        var policy = Serializer.DeserializeFromJson(json);
+
+        Assert.Equal(new List<string> { "GB" }, policy.Identifiers.PhoneNumber!.GetRegionOrDefault());
+    }
+
+    [Fact]
+    public void PhoneNumber_DeserializesRegionArray()
+    {
+        var json = """
+                   {
+                       "identifiers": {
+                           "phoneNumber": {
+                               "region": ["US", "GB", "FR"],
+                               "phoneNumberFilterStrategies": []
+                           }
+                       }
+                   }
+                   """;
+
+        var policy = Serializer.DeserializeFromJson(json);
+
+        Assert.Equal(new List<string> { "US", "GB", "FR" }, policy.Identifiers.PhoneNumber!.GetRegionOrDefault());
+    }
+
+    [Fact]
+    public void PhoneNumber_DefaultsRegionToUs()
+    {
+        var json = """
+                   {
+                       "identifiers": {
+                           "phoneNumber": {
+                               "phoneNumberFilterStrategies": []
+                           }
+                       }
+                   }
+                   """;
+
+        var policy = Serializer.DeserializeFromJson(json);
+
+        Assert.Null(policy.Identifiers.PhoneNumber!.Region);
+        Assert.Equal(new List<string> { "US" }, policy.Identifiers.PhoneNumber.GetRegionOrDefault());
+    }
+
+    [Fact]
+    public void PhoneNumber_SerializesRegionAsAnArray()
+    {
+        // Both input shapes are written back out as an array, as the Java implementation does. A policy with
+        // no region set emits none, so a round trip does not bake the default into the document.
+        var policy = new PhileasPolicy
+        {
+            Identifiers = new Identifiers { PhoneNumber = new PhoneNumber { Region = new List<string> { "GB" } } }
+        };
+
+        var json = Serializer.SerializeToJson(policy);
+
+        Assert.Contains("\"region\":[\"GB\"]", json);
+        Assert.True(PolicySchema.Validate(json));
+
+        policy.Identifiers.PhoneNumber!.Region = null;
+        Assert.DoesNotContain("region", Serializer.SerializeToJson(policy));
     }
 
     [Fact]

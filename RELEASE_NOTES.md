@@ -6,6 +6,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 _Unreleased._
 
+### Added
+
+- **Locale-aware phone number detection via the policy's `region`** ([#53](https://github.com/philterd/phileas-dotnet/issues/53)). The `phoneNumber` filter accepts an optional `region`, one ISO 3166-1 alpha-2 code or an array of them (default `US`), setting the region(s) used to read numbers written without an international `+` country code. Each configured region is scanned and the results are merged with overlapping matches de-duplicated, so `region: "GB"` detects UK national-format numbers and `region: ["US","GB","FR"]` detects all three. `+`-prefixed numbers are detected regardless. Additive and non-breaking: a policy with no `region` behaves as before. Requires redaction-policy schema 1.2.0 (Philterd.PhiSql 1.2.0). See [Supported Identifiers → Phone Number](docs/supported-identifiers.md#phone-number).
+
 ### Fixed
 
 - **The EIN filter accepts the same separators as the SSN filter, and ASCII digits only** ([#95](https://github.com/philterd/phileas-dotnet/issues/95)). `NN-NNNNNNN` is the taxpayer identification number format, and this port detects it as `ein` rather than folding a TIN pattern into `ssn` the way the Java and Python ports do, so the `ein` filter is the one that has to be robust. It now accepts every hyphen substitute the SSN filter accepts and detects an identifier wrapped across a line break after its hyphen. Two narrowings come with that: digits are ASCII only, so a value written in fullwidth, Arabic-Indic or Devanagari digits is no longer matched, and the boundaries reject an adjacent hyphen, so `45-6789123` is no longer found inside `123-45-6789123-45-6789`. The separator, digit and boundary definitions are now shared with the SSN filter in one internal type so the two cannot drift apart. See [Supported Identifiers → EIN](docs/supported-identifiers.md#ein).
