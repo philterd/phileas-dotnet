@@ -27,14 +27,16 @@ public class IgnoredPattern
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
-    /// <summary>Gets or sets the regular expression string. Tokens matching this pattern will not be filtered.</summary>
+    /// <summary>
+    ///     Gets or sets the regular expression string. Tokens matching this pattern will not be filtered.
+    ///     <para>
+    ///         Matching is case-sensitive, as the Java filter's <c>Pattern.compile</c> is. Write
+    ///         <c>(?i)</c> at the start of the pattern for a case-insensitive match. The redaction
+    ///         policy schema defines only <c>name</c> and <c>pattern</c> here and is
+    ///         additionalProperties:false, so the <c>caseSensitive</c> this port used to accept made a
+    ///         policy fail validation.
+    ///     </para>
+    /// </summary>
     [JsonPropertyName("pattern")]
     public string? Pattern { get; set; }
-
-    /// <summary>
-    ///     Gets or sets a value indicating whether the pattern matching is case-sensitive. Defaults to
-    ///     <see langword="false" />.
-    /// </summary>
-    [JsonPropertyName("caseSensitive")]
-    public bool CaseSensitive { get; set; } = false;
 }

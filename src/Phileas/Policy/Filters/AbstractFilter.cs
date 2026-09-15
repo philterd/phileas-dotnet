@@ -160,12 +160,10 @@ public abstract class AbstractFilter
         foreach (var pattern in IgnoredPatterns)
         {
             if (pattern.Pattern == null) continue;
-            var options = pattern.CaseSensitive
-                ? RegexOptions.None
-                : RegexOptions.IgnoreCase;
             try
             {
-                if (Regex.IsMatch(token, pattern.Pattern, options, RegexTimeout))
+                // Case-sensitive, matching the Java filter. A pattern needing otherwise starts with (?i).
+                if (Regex.IsMatch(token, pattern.Pattern, RegexOptions.None, RegexTimeout))
                     return true;
             }
             catch (RegexMatchTimeoutException)

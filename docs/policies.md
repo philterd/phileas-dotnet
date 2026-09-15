@@ -235,8 +235,7 @@ var policy = new Policy
                 new IgnoredPattern
                 {
                     Name = "internal-emails",
-                    Pattern = @"^[\w.+-]+@internal\.corp$",
-                    CaseSensitive = false
+                    Pattern = @"^[\w.+-]+@internal\.corp$"
                 }
             }
         }
@@ -248,7 +247,11 @@ var policy = new Policy
 |---|---|---|---|---|
 | `Name` | `name` | `string?` | `null` | Human-readable name for the pattern. |
 | `Pattern` | `pattern` | `string?` | `null` | Regular expression to match against the detected token. |
-| `CaseSensitive` | `caseSensitive` | `bool` | `false` | Whether the pattern match is case-sensitive. |
+
+Matching is case-sensitive, as the Java filter's `Pattern.compile` is. Start the pattern with `(?i)`
+for a case-insensitive match. An earlier `caseSensitive` field on this object has been removed: the
+redaction policy schema declares only `name` and `pattern` here, so a policy carrying it did not
+validate. **This changes behavior:** patterns previously matched case-insensitively by default.
 
 ---
 

@@ -124,8 +124,6 @@ public enum FilterType
     /// <summary>Entities matched by a custom dictionary.</summary>
     CustomDictionary,
 
-    /// <summary>Entities matched by a built-in dictionary.</summary>
-    Dictionary,
 
     /// <summary>Person names detected by an NLP model.</summary>
     Person,
@@ -186,7 +184,6 @@ public static class FilterTypeExtensions
             FilterType.Vin => "vin",
             FilterType.ZipCode => "zip-code",
             FilterType.CustomDictionary => "custom-dictionary",
-            FilterType.Dictionary => "dictionary",
             FilterType.Person => "person",
             FilterType.MedicalCondition => "medical-condition",
             FilterType.Other => "other",

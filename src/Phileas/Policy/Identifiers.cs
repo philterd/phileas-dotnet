@@ -35,9 +35,22 @@ public class Identifiers
     [JsonPropertyName("pheyes")]
     public List<PhEye>? PhEyes { get; set; }
 
-    /// <summary>Gets or sets the list of dictionary-based filter configurations.</summary>
+    /// <summary>
+    ///     Gets or sets the deprecated <c>dictionary</c> filter configurations.
+    ///     <para>
+    ///         The redaction policy schema declares only <c>dictionaries</c> and is
+    ///         additionalProperties:false, so a policy carrying this .NET-only key did not validate.
+    ///         Entries set here are folded into <see cref="CustomDictionaries" />, so an existing
+    ///         policy keeps working, and the key is never written back: the getter returns
+    ///         <see langword="null" /> and the serializer omits nulls.
+    ///     </para>
+    /// </summary>
     [JsonPropertyName("dictionary")]
-    public List<Dictionary>? Dictionaries { get; set; }
+    public List<Dictionary>? Dictionaries
+    {
+        get => null;
+        set => _legacyDictionaries = value;
+    }
 
     /// <summary>Gets or sets the age-expression filter configuration.</summary>
     [JsonPropertyName("age")]
@@ -154,7 +167,23 @@ public class Identifiers
     /// <summary>Gets or sets the list of user-supplied custom dictionaries. This is the canonical
     ///     <c>"dictionaries"</c> identifier (matching the PhiSQL <c>DEFINE DICTIONARY</c> output).</summary>
     [JsonPropertyName("dictionaries")]
-    public List<CustomDictionary>? CustomDictionaries { get; set; }
+    public List<CustomDictionary>? CustomDictionaries
+    {
+        get
+        {
+            // The stored list itself when there is no deprecated key to fold in, so nothing about the
+            // ordinary path changes.
+            if (_legacyDictionaries == null || _legacyDictionaries.Count == 0) return _customDictionaries;
+
+            var merged = new List<CustomDictionary>(_customDictionaries ?? new List<CustomDictionary>());
+            merged.AddRange(_legacyDictionaries.Select(dictionary => dictionary.ToCustomDictionary()));
+            return merged;
+        }
+        set => _customDictionaries = value;
+    }
+
+    private List<CustomDictionary>? _customDictionaries;
+    private List<Dictionary>? _legacyDictionaries;
 
     /// <summary>Gets or sets the list of custom regex-based identifier filters.</summary>
     [JsonPropertyName("identifiers")]
@@ -188,7 +217,6 @@ public class Identifiers
             FilterType.MacAddress => MacAddress != null,
             FilterType.PassportNumber => PassportNumber != null,
             FilterType.PhEye => PhEyes != null && PhEyes.Count > 0,
-            FilterType.Dictionary => Dictionaries != null && Dictionaries.Count > 0,
             FilterType.PhoneNumber => PhoneNumber != null,
             FilterType.PhoneNumberExtension => PhoneNumberExtension != null,
             FilterType.Ssn => Ssn != null,

@@ -161,7 +161,7 @@ public class PostFilterTests
     {
         var patterns = new List<IgnoredPattern>
         {
-            new() { Pattern = @"^\d{3}-\d{2}-\d{4}$", CaseSensitive = false }
+            new() { Pattern = @"^\d{3}-\d{2}-\d{4}$" }
         };
         var spans = new List<Span>
         {
@@ -174,27 +174,23 @@ public class PostFilterTests
     }
 
     [Fact]
-    public void IgnoredPatterns_CaseInsensitivePattern()
+    public void IgnoredPatterns_AreCaseSensitive()
     {
-        var patterns = new List<IgnoredPattern>
-        {
-            new() { Pattern = "^ABC$", CaseSensitive = false }
-        };
+        // The schema defines only name and pattern on an ignoredPattern, so the caseSensitive this
+        // port accepted is gone and matching follows Java's Pattern.compile, which is case-sensitive.
+        var patterns = new List<IgnoredPattern> { new() { Pattern = "^ABC$" } };
         var spans = new List<Span> { MakeSpan(0, 3, "abc") };
-        var result = IgnoredPatternsPostFilter.Apply(spans, patterns);
-        Assert.Empty(result);
+
+        Assert.Single(IgnoredPatternsPostFilter.Apply(spans, patterns));
     }
 
     [Fact]
-    public void IgnoredPatterns_CaseSensitivePattern_NoMatch()
+    public void IgnoredPatterns_CaseInsensitivityIsWrittenIntoThePattern()
     {
-        var patterns = new List<IgnoredPattern>
-        {
-            new() { Pattern = "^ABC$", CaseSensitive = true }
-        };
+        var patterns = new List<IgnoredPattern> { new() { Pattern = "(?i)^ABC$" } };
         var spans = new List<Span> { MakeSpan(0, 3, "abc") };
-        var result = IgnoredPatternsPostFilter.Apply(spans, patterns);
-        Assert.Single(result);
+
+        Assert.Empty(IgnoredPatternsPostFilter.Apply(spans, patterns));
     }
 
     [Fact]
@@ -228,7 +224,7 @@ public class PostFilterTests
     {
         var patterns = new List<IgnoredPattern>
         {
-            new() { Pattern = @"^\d{3}-\d{2}-\d{4}$", CaseSensitive = false }
+            new() { Pattern = @"^\d{3}-\d{2}-\d{4}$" }
         };
         var config = new FilterConfiguration.Builder()
             .WithStrategies(new List<AbstractFilterStrategy> { new SsnFilterStrategy() })

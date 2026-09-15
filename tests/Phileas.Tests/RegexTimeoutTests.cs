@@ -206,7 +206,7 @@ public class RegexTimeoutTests
             Array.Empty<string>(), 0, null);
         var ignored = new List<IgnoredPattern>
         {
-            new() { Pattern = CatastrophicPattern, CaseSensitive = false }
+            new() { Pattern = CatastrophicPattern }
         };
         var reported = new List<string>();
 
@@ -230,7 +230,7 @@ public class RegexTimeoutTests
     {
         var span = Span.Make(0, 11, FilterType.Ssn, "ctx", 0.9, "078-05-1120",
             "{{{REDACTED-ssn}}}", string.Empty, false, true, Array.Empty<string>(), 0, null);
-        var ignored = new List<IgnoredPattern> { new() { Pattern = @"^078", CaseSensitive = false } };
+        var ignored = new List<IgnoredPattern> { new() { Pattern = @"^078" } };
         var reported = new List<string>();
 
         var kept = IgnoredPatternsPostFilter.Apply(new List<Span> { span }, ignored, null, reported.Add);

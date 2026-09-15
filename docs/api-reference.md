@@ -247,7 +247,6 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `Vin` | `"vin"` |
 | `ZipCode` | `"zip-code"` |
 | `CustomDictionary` | `"custom-dictionary"` |
-| `Dictionary` | `"dictionary"` |
 | `Person` | `"person"` |
 | `MedicalCondition` | `"medical-condition"` |
 | `Other` | `"other"` |
@@ -386,6 +385,6 @@ does not suppress the detection it was being tested against, so the value is sti
 | `ReplacementScope` | `string` | `"DOCUMENT"` | `"DOCUMENT"` (fresh each occurrence) or `"CONTEXT"` (reuse per token). |
 | `Mappings` | `Dictionary<string,string>?` | `null` | `MAP_REPLACE` inline lookup table (overrides `MappingFiles`). |
 | `MappingFiles` | `List<string>?` | `null` | `MAP_REPLACE` tab-separated lookup-table files. |
-| `CaseSensitive` | `bool` | `false` | `MAP_REPLACE` whether lookup keys are matched case-sensitively. |
+| `CaseSensitive` | `bool?` | unset (`false`) | `MAP_REPLACE` whether lookup keys are matched case-sensitively. Omitted from a serialized policy when unset. |
 | `Generator` | `string?` | `null` | `MAP_REPLACE` name of a generator in the policy's `generators` block. |
 | `FallbackStrategy` | `string` | `"REDACT"` | `MAP_REPLACE` strategy applied when the token is unmapped and no generator produces a value. |
