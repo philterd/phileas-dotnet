@@ -143,6 +143,140 @@ public class DateShiftStrategyTests
         Assert.Equal(ahead.AddDays(5).Date, shifted.Date);
     }
 
+    // ---------------- TRUNCATE_TO_YEAR and RELATIVE (#109) ----------------
+
+    [Theory]
+    [InlineData("01/15/1990", "1990")]
+    [InlineData("January 15, 1990", "1990")]
+    public void TruncateToYear_ReplacesTheDateWithItsYear(string date, string year)
+    {
+        var json = PolicyJson("TRUNCATE_TO_YEAR", "\"shiftDays\": 0");
+
+        var filtered = new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, "seen on " + date + " today")
+            .FilteredText;
+
+        Assert.Equal("seen on " + year + " today", filtered);
+    }
+
+    [Fact]
+    public void Relative_PhrasesAPastDateAsAnElapsedInterval()
+    {
+        var threeMonthsAgo = DateTime.Today.AddMonths(-3);
+
+        Assert.Equal("seen on 3 months ago today", RelativeOf(threeMonthsAgo, futureDates: false));
+    }
+
+    [Fact]
+    public void Relative_RoundsUpFromTheFifteenthDay()
+    {
+        // Java adds a month once fifteen days have passed, and the phrasing follows it exactly.
+        var older = DateTime.Today.AddMonths(-3).AddDays(-20);
+
+        Assert.Equal("seen on 4 months ago today", RelativeOf(older, futureDates: false));
+    }
+
+    [Fact]
+    public void Relative_IncludesYearsOnceAYearHasPassed()
+    {
+        var older = DateTime.Today.AddYears(-2).AddMonths(-1);
+
+        // "1 months" rather than "1 month" is the Java filter's wording, kept for parity.
+        Assert.Equal("seen on 2 years 1 months ago today", RelativeOf(older, futureDates: false));
+    }
+
+    [Fact]
+    public void Relative_RedactsAFutureDateWhenFutureDatesIsOff()
+    {
+        var ahead = DateTime.Today.AddMonths(4);
+
+        Assert.Equal("seen on {{{REDACTED-date}}} today", RelativeOf(ahead, futureDates: false));
+    }
+
+    [Fact]
+    public void Relative_PhrasesAFutureDateWhenFutureDatesIsOn()
+    {
+        Assert.Equal("seen on in 4 months today", RelativeOf(DateTime.Today.AddMonths(4), futureDates: true));
+        Assert.Equal("seen on in 2 years 3 months today",
+            RelativeOf(DateTime.Today.AddYears(2).AddMonths(3), futureDates: true));
+    }
+
+    private static string RelativeOf(DateTime date, bool futureDates)
+    {
+        var json = PolicyJson("RELATIVE", "\"futureDates\": " + (futureDates ? "true" : "false"));
+        return new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0,
+                "seen on " + date.ToString("M/d/yyyy") + " today")
+            .FilteredText;
+    }
+
+    [Fact]
+    public void AnUnimplementedStrategyName_RaisesRatherThanRedacting()
+    {
+        // It used to fall through to redaction, so a policy asking for a year or an interval had the
+        // date destroyed instead, with nothing reported. See #109.
+        var json = PolicyJson("NOT_A_STRATEGY", "\"shiftDays\": 0");
+
+        var ex = Assert.Throws<ArgumentException>(() => new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, Text));
+
+        Assert.Contains("NOT_A_STRATEGY", ex.Message);
+        Assert.Contains("TRUNCATE_TO_YEAR", ex.Message);
+        Assert.Contains("RELATIVE", ex.Message);
+    }
+
+    [Fact]
+    public void ALowercaseStrategyName_Raises()
+    {
+        // The schema's enum is uppercase, and matching here is case-sensitive as it already was for
+        // every other strategy. What changed is that a name that does not match now says so instead
+        // of redacting, so a casing mistake is visible rather than silent. The Java filter compares
+        // case-insensitively, which is a deliberate difference.
+        var json = PolicyJson("relative", "\"futureDates\": false");
+
+        var ex = Assert.Throws<ArgumentException>(() => new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, Text));
+
+        Assert.Contains("RELATIVE", ex.Message);
+    }
+
+    [Fact]
+    public void AStrategyEntryWithNoNameStillRedacts()
+    {
+        // An omitted strategy is not an unknown one; the schema defaults it to REDACT.
+        var json = "{\"identifiers\":{\"date\":{\"dateFilterStrategies\":[{}]}}}";
+
+        Assert.Equal("seen on {{{REDACTED-date}}} today", new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, Text).FilteredText);
+    }
+
+    [Theory]
+    [InlineData("1/31/2026")] // a month-end date, where the day rounding matters
+    [InlineData("3/1/2026")]
+    public void Relative_HandlesMonthLengthBoundaries(string date)
+    {
+        // The period decomposition is a hand-written port of Java's Period.between, so the
+        // month-end cases are worth holding: the result must parse as an interval, never a redaction.
+        var json = PolicyJson("RELATIVE", "\"futureDates\": false");
+
+        var filtered = new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, "seen on " + date + " today")
+            .FilteredText;
+
+        Assert.Matches(@"^seen on \d+ (years \d+ )?months ago today$", filtered);
+    }
+
+    [Theory]
+    [InlineData("MASK", "seen on ********** today")]
+    [InlineData("REDACT", "seen on {{{REDACTED-date}}} today")]
+    public void TheOrdinaryStrategies_StillApplyToDates(string strategy, string expected)
+    {
+        var json = PolicyJson(strategy, "\"shiftDays\": 0");
+
+        Assert.Equal(expected, new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, Text).FilteredText);
+    }
+
     [Theory]
     [InlineData("12-date-shift.json")]
     [InlineData("27-strategy-params.json")]

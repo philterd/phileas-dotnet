@@ -61,8 +61,128 @@ public class DateFilterStrategy : StandardFilterStrategy
             return new Replacement(shifted, string.Empty, shifted != token);
         }
 
+        if (Strategy == AbstractFilterStrategy.TruncateToYear)
+        {
+            var truncated = TruncateToYearValue(token, classification);
+            return new Replacement(truncated, string.Empty, truncated != token);
+        }
+
+        if (Strategy == AbstractFilterStrategy.Relative)
+        {
+            var relative = RelativeValue(token, classification, FutureDates);
+            return new Replacement(relative, string.Empty, relative != token);
+        }
+
+        // A name this build does not implement is a policy error rather than a reason to redact:
+        // silently substituting redaction gave the policy author a destroyed date instead of the
+        // year or the interval they asked for, with nothing to tell them. Mirrors the identifier
+        // validators, which have always raised on a name they do not recognise.
+        if (!IsKnownStrategy(Strategy))
+            throw new ArgumentException(
+                $"Unsupported date filter strategy '{Strategy}'. The date filter accepts: "
+                + string.Join(", ", KnownStrategies) + ".");
+
         return GetStandardReplacement(context, token, window, confidence, classification, filterPattern, crypto, fpe,
             FilterType.Date);
+    }
+
+    /// <summary>The strategy names a date filter accepts, in the order they are documented.</summary>
+    private static readonly string[] KnownStrategies =
+    {
+        Redact, RandomReplace, StaticReplace, CryptoReplace, FpeEncryptReplace, HashSha256Replace,
+        Last4, Mask, Abbreviate, MapReplace, Same, Truncate,
+        AbstractFilterStrategy.TruncateToYear, AbstractFilterStrategy.Shift, ShiftDate,
+        AbstractFilterStrategy.Relative
+    };
+
+    private static bool IsKnownStrategy(string? strategy)
+    {
+        return string.IsNullOrEmpty(strategy)
+               || KnownStrategies.Any(k => string.Equals(k, strategy, StringComparison.Ordinal));
+    }
+
+    /// <summary>Replaces a parsed date with its year; an unparseable token falls back to redaction.</summary>
+    private string TruncateToYearValue(string token, string? classification)
+    {
+        return DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            ? date.Year.ToString(CultureInfo.InvariantCulture)
+            : GetRedactedToken(token, classification, FilterType.Date);
+    }
+
+    /// <summary>
+    ///     Replaces a parsed date with a readable interval from today, matching the Java filter's
+    ///     phrasing: <c>3 months ago</c>, or <c>2 years 1 months ago</c> once a year has passed. A date
+    ///     ahead of today is phrased <c>in N months</c> when <c>futureDates</c> is on, and redacted when
+    ///     it is off. An unparseable token falls back to redaction.
+    /// </summary>
+    private string RelativeValue(string token, string? classification, bool futureDates)
+    {
+        if (!DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            return GetRedactedToken(token, classification, FilterType.Date);
+
+        var (years, months, days) = PeriodBetween(date.Date, DateTime.Today);
+
+        if (years >= 0 && months >= 0 && days >= 0)
+        {
+            // Java rounds up to the next month from the fifteenth day onward.
+            var wholeMonths = days >= 15 ? months + 1 : months;
+            return years == 0
+                ? $"{wholeMonths} months ago"
+                : $"{years} years {wholeMonths} months ago";
+        }
+
+        if (!futureDates)
+            return GetRedactedToken(token, classification, FilterType.Date);
+
+        // The day rounding is not applied here, matching the Java filter: the remaining days of a
+        // future period are negative, so its "fifteenth day" test never fires.
+        var futureMonths = Math.Abs(months);
+        var futureYears = Math.Abs(years);
+        return futureYears == 0
+            ? $"in {futureMonths} months"
+            : $"in {futureYears} years {futureMonths} months";
+    }
+
+    /// <summary>
+    ///     Decomposes the span between two dates into years, months and days, as Java's
+    ///     <c>Period.between</c> does. All three carry the sign of the span.
+    /// </summary>
+    private static (int Years, int Months, int Days) PeriodBetween(DateTime from, DateTime to)
+    {
+        var years = to.Year - from.Year;
+        var months = to.Month - from.Month;
+        var days = to.Day - from.Day;
+
+        if (from <= to)
+        {
+            if (days < 0)
+            {
+                months--;
+                days += DateTime.DaysInMonth(to.AddMonths(-1).Year, to.AddMonths(-1).Month);
+            }
+
+            if (months < 0)
+            {
+                years--;
+                months += 12;
+            }
+        }
+        else
+        {
+            if (days > 0)
+            {
+                months++;
+                days -= DateTime.DaysInMonth(from.AddMonths(-1).Year, from.AddMonths(-1).Month);
+            }
+
+            if (months > 0)
+            {
+                years++;
+                months -= 12;
+            }
+        }
+
+        return (years, months, days);
     }
 
     private static string ShiftDateValue(string token, int days, int months, int years, bool futureDates)
