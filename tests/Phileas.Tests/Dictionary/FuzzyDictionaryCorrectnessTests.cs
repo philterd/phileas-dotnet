@@ -104,20 +104,33 @@ public class FuzzyDictionaryCorrectnessTests
     // ---------------- the ignored check sees the token ----------------
 
     [Fact]
-    public void TheIgnoredCheckIsGivenTheMatchedValue()
+    public void AnIgnoredTermIsNotRedacted()
     {
-        // It was given the whole input, so it never fired and every span came back not ignored.
-        var span = Assert.Single(Filter(Policy(ignored: "Smith"), "Smith here").Spans);
-
-        Assert.True(span.Ignored);
+        // Two fixes compose here. The ignored check was given the whole input rather than the matched
+        // value, so it never fired (#126); and the dictionary filters did not run their post-filters,
+        // which is where ignored terms are applied (#124). With both, an ignored term is dropped
+        // rather than merely flagged.
+        Assert.Equal("Smith here", Filter(Policy(ignored: "Smith"), "Smith here").FilteredText);
+        Assert.Empty(Filter(Policy(ignored: "Smith"), "Smith here").Spans);
     }
 
     [Fact]
-    public void AValueThatIsNotIgnoredIsStillReportedAsNotIgnored()
+    public void AValueThatIsNotIgnoredIsStillRedacted()
     {
         var span = Assert.Single(Filter(Policy(ignored: "Jones"), "Smith here").Spans);
 
         Assert.False(span.Ignored);
+        Assert.Equal("Smith", span.Text);
+    }
+
+    [Fact]
+    public void IgnoringTheExactValueLeavesTheNearMatchDetected()
+    {
+        // The ignored list names a value, not a term: ignoring "Smith" must not also ignore "Smyth".
+        var filtered = Filter(Policy(ignored: "Smith"), "Smith Smyth").FilteredText;
+
+        Assert.StartsWith("Smith ", filtered);
+        Assert.DoesNotContain("Smyth", filtered);
     }
 
     // ---------------- what must not change ----------------

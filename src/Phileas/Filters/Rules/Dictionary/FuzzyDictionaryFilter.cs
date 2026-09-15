@@ -118,7 +118,10 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
             }
         }
 
-        return new Filtered(context, piece, spans);
+        // Per-filter ignoredPatterns, ignored terms and the config.postFilters trailing-punctuation
+        // rules all live here. Returning the spans directly meant none of them reached a dictionary
+        // filter, while every regex filter honoured them. See philterd/phileas-dotnet#124.
+        return new Filtered(context, piece, PostFilter(spans, input));
     }
 
     private Span CreateSpan(string text, int characterStart, int characterEnd, double confidence, string context,
