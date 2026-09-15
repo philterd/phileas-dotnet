@@ -166,11 +166,13 @@ public class EndToEndParityTests
             SsnAndZipCodePolicy(splitting: true), "context", 0,
             "George Washington whose SSN was 123-45-6789 was\n the first president of the United States and he lived at 90210.\nThe second president was John Adams. Abraham Lincoln was later on. His SSN was 123-45-6789.");
 
-        var newline = Environment.NewLine;
+        // Splitting no longer rebuilds the output by concatenating filtered pieces, so the input's own
+        // whitespace survives: the leading space on the second line and the original line breaks are
+        // the input's, not a separator the splitter chose. See philterd/phileas-dotnet#92.
         Assert.Equal(
-            "George Washington whose SSN was {{{REDACTED-ssn}}} was" + newline
-            + "the first president of the United States and he lived at {{{REDACTED-zip-code}}}." + newline
-            + "The second president was John Adams. Abraham Lincoln was later on. His SSN was {{{REDACTED-ssn}}}.",
+            "George Washington whose SSN was {{{REDACTED-ssn}}} was\n the first president of the United "
+            + "States and he lived at {{{REDACTED-zip-code}}}.\nThe second president was John Adams. "
+            + "Abraham Lincoln was later on. His SSN was {{{REDACTED-ssn}}}.",
             response.FilteredText);
 
         foreach (var redaction in response.IncrementalRedactions)

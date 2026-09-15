@@ -34,4 +34,12 @@ public class Splitting
     /// <summary>Gets or sets the split method. Defaults to <c>"newline"</c>.</summary>
     [JsonPropertyName("method")]
     public string Method { get; set; } = "newline";
+
+    /// <summary>
+    ///     Gets or sets the number of characters each piece shares with the end of the previous piece.
+    ///     An entity straddling a piece boundary is seen whole within the overlap window, and the spans
+    ///     the overlap duplicates are de-duplicated. Defaults to 0 (pieces are contiguous).
+    /// </summary>
+    [JsonPropertyName("overlap")]
+    public int Overlap { get; set; } = 0;
 }
