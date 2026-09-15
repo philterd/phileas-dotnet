@@ -400,7 +400,20 @@ Identifiers = new Identifiers { IbanCode = new IbanCode() }
 
 ### IP Address
 
-Detects IPv4 addresses (e.g. `192.168.1.1`) and IPv6 addresses.
+Detects IPv4 addresses (e.g. `192.168.1.1`) and IPv6 addresses in every written form: expanded
+(`2001:0db8:85a3:0000:0000:8a2e:0370:7334`), compressed (`2001:db8::1`, `::1`, `2001:db8::`),
+IPv4-mapped (`::ffff:192.0.2.128`), and link-local with a zone identifier (`fe80::1%eth0`).
+
+An IPv4 address with a letter or underscore immediately against it, such as the `1.2.3.4` of
+`v1.2.3.4`, is still detected and still redacted, but at a lower confidence (0.70 rather than 0.95),
+because it is as likely to be a version string or an identifier. Span disambiguation weighs that
+confidence when another filter claims the same text. An address delimited by punctuation, such as
+`build-10.0.0.1-rc`, is cleanly bounded and keeps the higher confidence.
+
+A bare `::` on its own is not treated as an address. It is the unspecified address, but accepting it
+meant every `::` in prose or code became a span, so `std::vector` and `Foo::Bar` were reported as IP
+addresses. A match also cannot begin or end partway through a token, which keeps an address from
+being reported as a fragment of one.
 
 ```csharp
 Identifiers = new Identifiers { IpAddress = new IpAddress() }

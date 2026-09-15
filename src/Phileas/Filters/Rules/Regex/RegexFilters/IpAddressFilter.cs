@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Text.RegularExpressions;
 using Phileas.Model;
 using PhileasPolicy = Phileas.Policy.Policy;
 
@@ -24,17 +25,26 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class IpAddressFilter : RegexFilter
 {
+    private const string Ipv4 =
+        @"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+
+    /// <summary>
+    ///     The strict form of each address is listed first and the relaxed form second, because
+    ///     <see cref="Analyzer" /> patterns are applied in order and a span already found at exactly
+    ///     the same offsets is not added again. An address standing on its own is therefore reported
+    ///     at the higher confidence, and only one that abuts other text falls through to the lower one.
+    /// </summary>
     private static readonly Analyzer IpAnalyzer = new(
-        new FilterPattern.Builder()
-            .WithPattern(
-                @"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b")
+        new FilterPattern.Builder().WithPattern(@"\b" + Ipv4 + @"\b")
             .WithInitialConfidence(0.95).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b")
+        new FilterPattern.Builder().WithPattern(Ipv6Patterns.Address, RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.95).Build(),
-        new FilterPattern.Builder().WithPattern(@"((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)(?:%[A-Za-z0-9_.-]+)?")
-            .WithInitialConfidence(0.95).Build(),
-        new FilterPattern.Builder().WithPattern(@"(?:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::(?:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?(?:%[A-Za-z0-9_.-]+)?):(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)")
-            .WithInitialConfidence(0.95).Build()
+
+        // An address with a letter or underscore against it, such as the "1.2.3.4" of "v1.2.3.4",
+        // is still an address and is still redacted, but it is as likely to be a version string or
+        // an identifier, so it carries a lower confidence for span disambiguation to weigh.
+        new FilterPattern.Builder().WithPattern(@"(?<![0-9])" + Ipv4 + @"(?![0-9])")
+            .WithInitialConfidence(0.70).Build()
     );
 
     /// <summary>
