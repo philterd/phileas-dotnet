@@ -127,6 +127,13 @@ Detects credit and debit card numbers including Visa, Mastercard, Amex, Discover
 Identifiers = new Identifiers { CreditCard = new CreditCard() }
 ```
 
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `OnlyValidCreditCardNumbers` | `onlyValidCreditCardNumbers` | `true` | Keep only numbers that pass the Luhn checksum. |
+| `OnlyWordBoundaries` | `onlyWordBoundaries` | `true` | Require the number to sit on a word boundary. Set to `false` to find a number embedded in a longer token, at the cost of precision. |
+| `IgnoreWhenInUnixTimestamp` | `ignoreWhenInUnixTimestamp` | `false` | Drop digit runs shaped like a Unix timestamp. This port detects specific card brands, so no timestamp currently matches and the option has no effect; it is bound for policy portability. |
+
 ---
 
 ### Currency
@@ -346,6 +353,12 @@ Identifiers = new Identifiers
 }
 ```
 
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `OnlyStrictMatches` | `onlyStrictMatches` | `true` | Use the RFC-conformant local part, which accepts the specials the RFC permits (`!#$%&'*+/=?^_`` `{\|}~`). Set to `false` for a local part of word characters, dots and dashes only. "Strict" means strictly conformant, so it matches more, not less. |
+| `OnlyValidTLDs` | `onlyValidTLDs` | `false` | Keep only addresses whose top-level domain is in the bundled IANA list. The list is a point-in-time snapshot, so a newly delegated TLD is rejected until it is refreshed. |
+
 ---
 
 ### IBAN Code
@@ -355,6 +368,12 @@ Detects International Bank Account Numbers in standard format (e.g. `GB29 NWBK 6
 ```csharp
 Identifiers = new Identifiers { IbanCode = new IbanCode() }
 ```
+
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `OnlyValidIBANCodes` | `onlyValidIBANCodes` | `true` | Keep only codes that pass the MOD-97-10 checksum. |
+| `AllowSpaces` | `allowSpaces` | `true` | Also detect a code written in the four-character groups banks print. |
 
 ---
 
@@ -586,6 +605,14 @@ Detects parcel tracking numbers from major carriers (UPS, FedEx, USPS, DHL).
 Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
 ```
 
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `Ups` | `ups` | `true` | Detect UPS numbers (`1Z` followed by sixteen characters). |
+| `Fedex` | `fedex` | `true` | Detect FedEx numbers (twelve to fifteen digits). |
+| `Usps` | `usps` | `true` | Detect USPS numbers (twenty to twenty-two digits). |
+| `AllowSpaces` | `allowSpaces` | `false` | Also detect a number written in space-separated groups. |
+
 ---
 
 ### URL
@@ -595,6 +622,11 @@ Detects HTTP and HTTPS URLs.
 ```csharp
 Identifiers = new Identifiers { Url = new Url() }
 ```
+
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `RequireHttpWwwPrefix` | `requireHttpWwwPrefix` | `true` | Require a `http://`, `https://` or `www.` prefix. Set to `false` to also detect a bare host such as `example.com/page`, which is detected at a lower confidence. |
 
 ---
 

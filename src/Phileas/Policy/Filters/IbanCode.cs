@@ -27,4 +27,12 @@ public class IbanCode : AbstractPolicyFilter
     /// <summary>Gets or sets the list of IBAN code filter strategies to apply.</summary>
     [JsonPropertyName("ibanCodeFilterStrategies")]
     public List<IbanCodeFilterStrategy>? Strategies { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether a code may be written in space-separated groups. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("allowSpaces")]
+    public bool AllowSpaces { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether only codes passing the MOD-97-10 checksum are detected. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("onlyValidIBANCodes")]
+    public bool OnlyValidIBANCodes { get; set; } = true;
 }
