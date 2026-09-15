@@ -41,7 +41,6 @@ public class TrackingNumberFilter : RegexFilter
     ///     Initializes a new <see cref="TrackingNumberFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    /// <param name="configuration">Runtime filter configuration.</param>
     /// <param name="ups">Detect UPS numbers (<c>1Z</c> followed by sixteen characters).</param>
     /// <param name="fedex">Detect FedEx numbers (twelve to fifteen digits).</param>
     /// <param name="usps">Detect USPS numbers (twenty to twenty-two digits).</param>
