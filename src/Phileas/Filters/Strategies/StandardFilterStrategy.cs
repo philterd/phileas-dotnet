@@ -59,8 +59,10 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
 
         // The strategy that actually produces the replacement. For MAP_REPLACE this becomes the fallback
         // strategy when the token is absent from the lookup table and no generator produces a value; for
-        // every other strategy it is simply the strategy itself.
-        var effectiveStrategy = Strategy;
+        // every other strategy it is simply the strategy itself. Upper-cased because a strategy name is
+        // matched without regard to case: the schema's enum is uppercase, so this is leniency toward a
+        // hand-written policy rather than a second accepted spelling.
+        var effectiveStrategy = Strategy?.ToUpperInvariant();
 
         if (string.Equals(Strategy, MapReplace, StringComparison.OrdinalIgnoreCase))
         {
@@ -91,7 +93,7 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
 
             // Fallback. The fallback enum never includes MAP_REPLACE, but guard against recursion anyway so a
             // hand-written policy can never loop.
-            effectiveStrategy = string.IsNullOrEmpty(FallbackStrategy) ? Redact : FallbackStrategy;
+            effectiveStrategy = string.IsNullOrEmpty(FallbackStrategy) ? Redact : FallbackStrategy.ToUpperInvariant();
             if (string.Equals(effectiveStrategy, MapReplace, StringComparison.OrdinalIgnoreCase))
                 effectiveStrategy = Redact;
         }

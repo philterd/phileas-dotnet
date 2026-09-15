@@ -51,7 +51,7 @@ public class DateFilterStrategy : StandardFilterStrategy
     {
         // Both names reach here: SHIFT is what the policy schema and the PhiSQL compiler emit, and
         // SHIFT_DATE is what this port has always accepted.
-        if (Strategy == ShiftDate || Strategy == AbstractFilterStrategy.Shift)
+        if (Is(ShiftDate) || Is(AbstractFilterStrategy.Shift))
         {
             var (days, months, years) = ShiftRandom
                 ? (Random.Next(1, 30), Random.Next(1, 12), -Random.Next(1, 3))
@@ -61,13 +61,13 @@ public class DateFilterStrategy : StandardFilterStrategy
             return new Replacement(shifted, string.Empty, shifted != token);
         }
 
-        if (Strategy == AbstractFilterStrategy.TruncateToYear)
+        if (Is(AbstractFilterStrategy.TruncateToYear))
         {
             var truncated = TruncateToYearValue(token, classification);
             return new Replacement(truncated, string.Empty, truncated != token);
         }
 
-        if (Strategy == AbstractFilterStrategy.Relative)
+        if (Is(AbstractFilterStrategy.Relative))
         {
             var relative = RelativeValue(token, classification, FutureDates);
             return new Replacement(relative, string.Empty, relative != token);
@@ -95,10 +95,16 @@ public class DateFilterStrategy : StandardFilterStrategy
         AbstractFilterStrategy.Relative
     };
 
+    /// <summary>Whether the configured strategy is <paramref name="name" />, ignoring case.</summary>
+    private bool Is(string name)
+    {
+        return string.Equals(Strategy, name, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsKnownStrategy(string? strategy)
     {
         return string.IsNullOrEmpty(strategy)
-               || KnownStrategies.Any(k => string.Equals(k, strategy, StringComparison.Ordinal));
+               || KnownStrategies.Any(k => string.Equals(k, strategy, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>Replaces a parsed date with its year; an unparseable token falls back to redaction.</summary>
