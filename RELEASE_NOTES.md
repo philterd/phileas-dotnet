@@ -6,6 +6,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 _Unreleased._
 
+### Fixed
+
+- **SSN detection accepts Unicode hyphens and wrapped identifiers, and no longer matches digits on separate lines** ([#93](https://github.com/philterd/phileas-dotnet/issues/93)). The separator between an identifier's digit groups now covers the soft hyphen, the U+2010 to U+2015 dashes (including the non-breaking hyphen), the minus sign, and the small and fullwidth hyphen-minus forms, alongside the ASCII hyphen. A line break counts as part of the separator only when a hyphen precedes it, so an identifier wrapped across two lines is detected (with `\n` or `\r\n`, and with an indented continuation line) while three unrelated numbers on three lines are not, which closes a false positive the old `[-\s]?` separator produced. Whitespace separators are now horizontal only, and digits and word boundaries are ASCII only, matching the Java filter, so an identifier embedded in non-Latin text is detected where it previously was not. The input is not normalized, so spans still index into the original text and cover the whole identifier, line break included. See [Supported Identifiers → SSN](docs/supported-identifiers.md#ssn).
+
 ## 1.6.0 - 2026-07-19
 
 ### Added

@@ -15,7 +15,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `Currency` | `currency` | Currency amounts (e.g. "$1,234.56") |
 | `Date` | `date` | Calendar dates in common formats |
 | `DriversLicense` | `driversLicense` | US driver's license numbers |
-| `Ein` | `ein` | US Employer Identification Numbers |
+| `Ein` | `ein` | US Employer Identification Numbers and TINs (`NN-NNNNNNN`) |
 | `EmailAddress` | `emailAddress` | Email addresses |
 | `IbanCode` | `ibanCode` | International Bank Account Numbers |
 | `IpAddress` | `ipAddress` | IPv4 and IPv6 addresses |
@@ -23,7 +23,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `PassportNumber` | `passportNumber` | Passport numbers |
 | `PhoneNumber` | `phoneNumber` | US and international phone numbers |
 | `PhoneNumberExtension` | `phoneNumberExtension` | Phone number extensions (e.g. "ext. 123") |
-| `Ssn` | `ssn` | US Social Security Numbers |
+| `Ssn` | `ssn` | US Social Security Numbers (`NNN-NN-NNNN`) |
 | `StateAbbreviation` | `stateAbbreviation` | Two-letter US state codes |
 | `StreetAddress` | `streetAddress` | US street addresses |
 | `TrackingNumber` | `trackingNumber` | Shipping/parcel tracking numbers |
@@ -280,6 +280,17 @@ Detects US Employer Identification Numbers (federal tax IDs) in the canonical `N
 Identifiers = new Identifiers { Ein = new Ein() }
 ```
 
+#### Relationship to the SSN identifier
+
+`NN-NNNNNNN` is the US taxpayer identification number (TIN) format assigned to employers, and it is
+detected here, not by the [SSN](#ssn) identifier. The hyphen position is the whole distinction: after
+the second digit for a TIN or EIN, after the third and fifth for an SSN. A value in this format is
+reported as `ein` and never as `ssn`, so a policy that enables `ssn` alone does not detect it; enable
+`ein` as well.
+
+The separators accepted here are narrower than the SSN identifier's. Only the ASCII hyphen is
+accepted, and an identifier wrapped across a line break is not detected.
+
 Set `onlyValidPrefixes` to `true` to keep only matches whose two-digit prefix is one the IRS currently issues, which reduces false positives on format-valid but non-issued numbers. It defaults to `false` (match any EIN-formatted value), so a prefix issued after this release is still detected; the strict list is engine-carried and only affects the opt-in mode.
 
 The JSON key for the filter strategies list is `einFilterStrategies`:
@@ -437,11 +448,52 @@ Identifiers = new Identifiers { PhoneNumberExtension = new PhoneNumberExtension(
 
 ### SSN
 
-Detects US Social Security Numbers in `NNN-NN-NNNN` format. The regex excludes invalid ranges (`000`, `666`, `900â€“999` area codes; `00` group; `0000` serial).
+Detects US Social Security Numbers in `NNN-NN-NNNN` format. The regex excludes invalid ranges (`000`, `666`, and `900` to `999` area codes; `00` group; `0000` serial).
 
 ```csharp
 Identifiers = new Identifiers { Ssn = new Ssn() }
 ```
+
+#### Relationship to the EIN identifier
+
+This identifier covers the Social Security Number forms only: `NNN-NN-NNNN`, the same digits
+separated by whitespace, and the bare nine-digit run. It does not detect the `NN-NNNNNNN` taxpayer
+identification number format, where the hyphen falls after the second digit. That shape belongs to
+the [EIN](#ein) identifier and is reported as `ein`.
+
+#### Accepted separators
+
+The three groups of an identifier may be separated by any of the following:
+
+- Nothing at all, as in `123456789`.
+- One hyphen, optionally followed by horizontal whitespace. Alongside the ASCII hyphen-minus, the
+  soft hyphen (U+00AD), the dashes U+2010 through U+2015 (which include the non-breaking hyphen
+  U+2011), the minus sign (U+2212), and the small and fullwidth hyphen-minus forms (U+FE58, U+FE63,
+  U+FF0D) are all accepted.
+- One horizontal whitespace character on its own: a space, a tab, or a non-breaking space, for
+  example.
+- A hyphen followed by a line break, so an identifier wrapped across two lines is still detected.
+  Both `\n` and `\r\n` count as the break, and horizontal whitespace may sit on either side of it,
+  so an indented continuation line works.
+
+The input is not normalized, so span offsets index into the original text and a span covers the
+complete identifier, line break included.
+
+A match may not begin or end partway through a run of ASCII letters, digits, or underscores. Other
+characters, including non-ASCII letters and digits, do not block a match, so an identifier embedded
+in non-Latin text is still detected.
+
+#### Intentional exclusions
+
+These forms produce no span, each by design:
+
+- A line break with no hyphen before it. Accepting one would read three unrelated numbers on three
+  lines as a single identifier.
+- A line break inside a group of digits, such as `078-05-11` with `20` on the next line.
+- Non-ASCII digits, including the fullwidth and Arabic-Indic forms.
+- More than one whitespace character between two groups that no hyphen separates. Whitespace
+  following a hyphen is not limited, so `078-  05-  1120` is detected.
+- Whitespace before the hyphen, as in `078 - 05 - 1120`.
 
 The JSON key for the filter strategies list is `ssnFilterStrategies`:
 
