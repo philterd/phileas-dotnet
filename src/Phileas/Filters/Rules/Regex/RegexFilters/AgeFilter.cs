@@ -25,11 +25,41 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class AgeFilter : RegexFilter
 {
+    /// <summary>
+    ///     The optional separator between an <c>age</c> or <c>aged</c> keyword and its value, so
+    ///     <c>Age: 47</c>, <c>Age = 47</c>, <c>Age - 47</c> and <c>Age:47</c> are read as well as
+    ///     <c>age 47</c>. The whitespace sits inside the optional group so a run of it has only one
+    ///     possible match; the ambiguous <c>\s*[:=-]?\s*</c> backtracks quadratically.
+    /// </summary>
+    private const string KeywordSeparator = @"\s*(?:[:=-]\s*)?";
+
+    /// <summary>
+    ///     A plausible age written after a keyword: 0 to 125, with an optional fractional part.
+    ///     <para>
+    ///         The keyword pattern previously took any number at all, so <c>Bronze Age 1200</c> and
+    ///         <c>form AGE 2024</c> were redacted as ages. The ceiling is set well above a typical
+    ///         maximum lifespan rather than at it, since the cost of the bound is recall on a genuine
+    ///         but extreme age.
+    ///     </para>
+    ///     <para>
+    ///         Leading zeros are allowed, so the zero-padded value of a fixed-width form export such as
+    ///         <c>AGE 047</c> still reads. The count is bounded rather than written <c>0*</c>, which
+    ///         would backtrack over a long run of zeros.
+    ///     </para>
+    ///     <para>
+    ///         Only the keyword pattern is bounded. The <c>years old</c> and <c>y/o</c> forms carry
+    ///         their own unit, which is what makes them ages, so a number in front of one needs no
+    ///         plausibility check.
+    ///     </para>
+    /// </summary>
+    private const string PlausibleAge = @"0{0,2}(?:1[01][0-9]|12[0-5]|[1-9][0-9]|[0-9])(?:\.[0-9]+)?";
+
     private static readonly Analyzer AgeAnalyzer = new(
         new FilterPattern.Builder()
             .WithPattern(@"\b[0-9.]+[\s]*(year|years|yrs|yr|yo)(\.?)(\s)*(old)?\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b(age)(d)?(\s)*[0-9.]+\b", RegexOptions.IgnoreCase)
+        new FilterPattern.Builder()
+            .WithPattern($@"\b(age)(d)?{KeywordSeparator}{PlausibleAge}\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder()
             .WithPattern(@"\b[0-9.]+[-]*(year|years|yrs|yr|yo)(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase)

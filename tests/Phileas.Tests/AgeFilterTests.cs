@@ -100,6 +100,153 @@ public class AgeFilterTests
         Assert.Equal(FilterType.Age, result.Spans[0].FilterType);
     }
 
+    // ---------------- the keyword separator (#68) ----------------
+
+    [Theory]
+    [InlineData("Age: 47")]
+    [InlineData("Age:47")]
+    [InlineData("Age : 47")]
+    [InlineData("Age = 47")]
+    [InlineData("Age=47")]
+    [InlineData("Age - 47")]
+    [InlineData("Age-47")]
+    [InlineData("Age 47")]
+    [InlineData("AGE:47")]
+    [InlineData("aged: 39")]
+    [InlineData("aged=39.5")]
+    public void AKeywordSeparatorIsAccepted(string input)
+    {
+        // "Age: 47" is how age is written in a structured clinical or intake record, and the pattern
+        // allowed only whitespace, so the most common written form went undetected.
+        Assert.NotEmpty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Theory]
+    [InlineData("Age:\n47")]
+    [InlineData("Age\n47")]
+    [InlineData("Age:\r\n47")]
+    public void ALabelOnOneLineAndItsValueOnTheNextIsDetected(string input)
+    {
+        Assert.NotEmpty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Theory]
+    [InlineData("coverage: 47")]
+    [InlineData("mileage: 45000")]
+    [InlineData("average: 47")]
+    [InlineData("storage - 12")]
+    [InlineData("Portage=30")]
+    public void AWordEndingInAgeIsNotAKeyword(string input)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    // ---------------- the plausibility bound (#69) ----------------
+
+    [Theory]
+    [InlineData("form AGE 2024")]
+    [InlineData("Bronze Age 1200")]
+    [InlineData("Stone Age-2000")]
+    [InlineData("Age: 2024")]
+    [InlineData("age 126")]
+    [InlineData("age 130")]
+    [InlineData("age 999")]
+    public void AnImplausibleNumberAfterAKeywordIsNotAnAge(string input)
+    {
+        // The keyword pattern kept any number that followed it, so a historical period or a form
+        // field number was redacted as an age.
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Theory]
+    [InlineData("age 0", true)]
+    [InlineData("age 1", true)]
+    [InlineData("age 99", true)]
+    [InlineData("age 100", true)]
+    [InlineData("age 119", true)]
+    [InlineData("age 120", true)]
+    [InlineData("age 125", true)] // the ceiling is inclusive
+    [InlineData("age 126", false)]
+    [InlineData("age 125.9", true)]
+    [InlineData("age 39.5", true)] // a decimal age still reads
+    public void TheBoundIsWhereItIsDocumented(string input, bool detected)
+    {
+        // Set generously rather than at a typical maximum lifespan: the cost of the bound is recall on
+        // a genuine but extreme age.
+        Assert.Equal(detected, CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans.Count > 0);
+    }
+
+    [Theory]
+    [InlineData("AGE 047")] // a fixed-width form export
+    [InlineData("age 007")]
+    [InlineData("age 09")]
+    [InlineData("Age: 002")]
+    [InlineData("age 0125")]
+    public void AZeroPaddedValueIsStillAnAge(string input)
+    {
+        // A bound written without room for leading zeros would have dropped the padded value a
+        // fixed-width record carries, which detected before the bound existed.
+        Assert.NotEmpty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Theory]
+    [InlineData("age 0126")] // padding does not widen the bound
+    [InlineData("age 02024")]
+    [InlineData("age 0000")]
+    public void PaddingDoesNotSmuggleAnImplausibleValuePastTheBound(string input)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Theory]
+    [InlineData("1200 years old")]
+    [InlineData("2024 years old")]
+    [InlineData("130 yrs")]
+    [InlineData("47-year-old")]
+    [InlineData("3.5 years old")]
+    public void TheBoundDoesNotReachTheFormsThatCarryTheirOwnUnit(string input)
+    {
+        // "years old" and "y/o" are what make those forms ages, so a number in front of one needs no
+        // plausibility check. The bound applies to the keyword pattern alone.
+        Assert.NotEmpty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Theory]
+    [InlineData("2026-01-15")]
+    [InlineData("01/15/1990")]
+    [InlineData("15-Jan-1990")]
+    public void ADateIsStillNotAnAge(string input)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Fact]
+    public void AKeywordFollowedByAWhitespaceRunDoesNotBacktrackQuadratically()
+    {
+        // The separator keeps its whitespace inside the optional group so a run of it has only one
+        // possible match. Written the ambiguous way, \s*[:=-]?\s*, this input takes time quadratic in
+        // the length of the run. Doubling the run must not quadruple the work.
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+
+        var shortRun = Time(() => filter.Filter(policy, "test", 0, "age" + new string(' ', 4_000) + "x"));
+        var longRun = Time(() => filter.Filter(policy, "test", 0, "age" + new string(' ', 16_000) + "x"));
+
+        // Four times the input; a quadratic pattern would be about sixteen times the work. The bar is
+        // loose enough not to be flaky on a shared runner and still fails a quadratic regression.
+        Assert.True(longRun < Math.Max(shortRun * 8, TimeSpan.FromMilliseconds(250).TotalMilliseconds),
+            $"4x the input took {longRun:F1} ms against {shortRun:F1} ms, which looks quadratic");
+    }
+
+    private static double Time(Action action)
+    {
+        action(); // let the compiled patterns warm up
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        for (var i = 0; i < 5; i++) action();
+        stopwatch.Stop();
+        return stopwatch.Elapsed.TotalMilliseconds / 5;
+    }
+
     [Fact]
     public void FilterService_RedactsAge()
     {
