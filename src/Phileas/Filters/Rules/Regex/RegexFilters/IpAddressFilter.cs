@@ -21,7 +21,19 @@ using PhileasPolicy = Phileas.Policy.Policy;
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-///     Regex-based filter that detects IP address entities in plain text.
+///     Regex-based filter that detects IP address entities in plain text: IPv4 dotted quads, and IPv6
+///     in every written form through <see cref="Ipv6Patterns" />.
+///     <para>
+///         A bare <c>::</c> is not treated as an address. It is the unspecified address, but matching it
+///         meant every <c>::</c> in prose or code became a span, so <c>std::vector</c> was reported as an
+///         IP address.
+///     </para>
+///     <para>
+///         An IPv4 address with a letter or underscore against it, such as the <c>1.2.3.4</c> of
+///         <c>v1.2.3.4</c>, is still detected but at a lower confidence, because it is as likely to be a
+///         version string. The strict pattern is listed first so a cleanly delimited address keeps the
+///         higher score; see the analyzer below.
+///     </para>
 /// </summary>
 public class IpAddressFilter : RegexFilter
 {

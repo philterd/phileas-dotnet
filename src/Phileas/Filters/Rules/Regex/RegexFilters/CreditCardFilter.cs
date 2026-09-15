@@ -25,6 +25,20 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
 ///     Regex-based filter that detects credit card number entities in plain text.
+///     <para>
+///         Detection happens in two stages. The pattern matches any run of 13 to 16 digits, separators
+///         allowed between them, and the issuer prefix is checked afterwards along with the Luhn
+///         checksum as part of <c>onlyValidCreditCardNumbers</c>. Keeping issuer prefixes out of the
+///         pattern is deliberate: when they were in it, a card in a range the pattern did not list went
+///         undetected rather than merely unvalidated, which is the worse way for a redaction filter to
+///         fail. Mastercard's 2221-2720 range had been missing since it opened in 2017.
+///     </para>
+///     <para>
+///         The consequence is that <c>onlyValidCreditCardNumbers</c> carries more weight than its name
+///         suggests. With it on, which is the default, only issuer-shaped numbers passing the checksum
+///         are kept. With it off, every run of 13 to 16 digits is, which is when
+///         <c>ignoreWhenInUnixTimestamp</c> becomes worth enabling.
+///     </para>
 /// </summary>
 public class CreditCardFilter : RegexFilter
 {

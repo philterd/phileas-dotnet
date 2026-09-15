@@ -21,7 +21,17 @@ using PhileasPolicy = Phileas.Policy.Policy;
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-///     Regex-based filter that detects URL entities in plain text.
+///     Regex-based filter that detects URL entities in plain text: <c>http</c>, <c>https</c> and
+///     <c>ftp</c> URLs, and hosts written with a <c>www.</c> prefix.
+///     <para>
+///         With the policy's <c>requireHttpWwwPrefix</c> turned off, a bare host such as
+///         <c>example.com/page</c> is detected too, at a lower confidence, since a prefix is what most
+///         reliably separates a URL from prose containing a dot.
+///     </para>
+///     <para>
+///         Where a span ends is governed by <see cref="EndsOnUrlCharacter" />, which keeps a trailing
+///         <c>/</c>, <c>&amp;</c> or <c>#</c> in the URL while leaving a sentence's punctuation behind.
+///     </para>
 /// </summary>
 public class UrlFilter : RegexFilter
 {

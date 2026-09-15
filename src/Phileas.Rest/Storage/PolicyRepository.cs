@@ -56,7 +56,7 @@ public sealed class PolicyRepository
             .FirstOrDefault();
 
     /// <summary>
-    ///     Loads and deserializes the named policy ready to filter with, with its <see cref="Policy.Name" /> set and
+    ///     Loads and deserializes the named policy ready to filter with, with its <see cref="PhileasPolicy.Name" /> set and
     ///     the container's GLiNER model path injected. Returns <see langword="null" /> if the policy does not exist.
     /// </summary>
     public PhileasPolicy? Load(string name)

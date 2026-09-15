@@ -22,9 +22,18 @@ using PhileasPolicy = Phileas.Policy.Policy;
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-///     Regex-based filter that detects IBAN code entities in plain text. A structural match is kept only
-///     when it passes the IBAN MOD-97-10 checksum, so an IBAN-shaped string with wrong check digits is
-///     rejected rather than redacted.
+///     Regex-based filter that detects IBAN code entities in plain text.
+///     <para>
+///         A structural match is kept only when it passes the IBAN MOD-97-10 checksum, so an
+///         IBAN-shaped string with wrong check digits is rejected rather than redacted. That check is
+///         the policy's <c>onlyValidIBANCodes</c>, which defaults to on; turning it off keeps every
+///         structurally IBAN-shaped value.
+///     </para>
+///     <para>
+///         <c>allowSpaces</c>, also on by default, additionally detects a code written in the
+///         four-character groups banks print, and the checksum then runs over the code with the spaces
+///         removed.
+///     </para>
 /// </summary>
 public class IbanCodeFilter : RegexFilter
 {
