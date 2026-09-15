@@ -87,7 +87,23 @@ In addition, each identifier exposes a `Strategies` list that lets you override 
 
 ### Age
 
-Detects age expressions such as "42 years old" or "aged 35".
+Detects age expressions in the forms below.
+
+| Written form | Example |
+|---|---|
+| A number with its unit | `42 years old`, `42-year-old`, `30 yo`, `3.5 yrs`, `22 y/o` |
+| An `age` or `aged` keyword | `age 25`, `aged 65`, `Age: 47`, `Age = 47`, `Age - 47`, `Age:47` |
+
+A keyword may be separated from its value by `:`, `=` or `-`, with or without surrounding
+whitespace, or by whitespace alone, and that whitespace may include a line break, so a label on one
+line with its value on the next is detected. A word merely ending in "age", such as `coverage: 47`,
+is not a keyword.
+
+A number following a keyword is read as an age only when it is between 0 and 125, so `Bronze Age
+1200` and `form AGE 2024` are not detected. A zero-padded value, as a fixed-width record writes it
+(`AGE 047`), still reads. The bound applies only to the keyword forms: a number
+carrying its own unit, as in `1200 years old`, is what makes that form an age and is not
+plausibility-checked.
 
 ```csharp
 Identifiers = new Identifiers { Age = new Age() }
