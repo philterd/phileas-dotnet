@@ -74,20 +74,38 @@ public abstract class RulesFilter : AbstractFilter
     /// <summary>
     ///     Returns the whitespace-delimited n-grams of exactly <paramref name="length" /> words, each paired
     ///     with its character <see cref="Position" /> in <paramref name="text" />.
+    ///     <para>
+    ///         Each position is taken from the words the n-gram was built from, tracked while splitting.
+    ///         Searching the text for the n-gram afterwards instead reported the first place that text
+    ///         occurred, which is a different occurrence whenever the same words appear earlier: a term
+    ///         inside a longer preceding word took that word's position, so the wrong characters were
+    ///         redacted and the real value was left behind, and a repeated term collapsed onto one
+    ///         position. See philterd/phileas-dotnet#119.
+    ///     </para>
     /// </summary>
     protected static List<(Position Position, string Ngram)> GetNgramsOfLength(string text, int length)
     {
         var ngrams = new List<(Position, string)>();
-        var words = text.Split(' ');
-        var lastLocation = 0;
+        if (length <= 0) return ngrams;
 
-        for (var i = 0; i <= words.Length - length; i++)
+        var words = text.Split(' ');
+
+        // Where each word begins: the previous start, plus that word and the single space that
+        // followed it. Split(' ') does not coalesce runs of spaces, so a run yields empty words whose
+        // widths still account for every character.
+        var starts = new int[words.Length];
+        var offset = 0;
+        for (var i = 0; i < words.Length; i++)
         {
-            var ngram = string.Join(' ', words.Skip(i).Take(length));
-            var newLocation = text.IndexOf(ngram, lastLocation, StringComparison.Ordinal);
-            if (newLocation < 0) continue;
-            lastLocation = newLocation;
-            ngrams.Add((new Position(newLocation, newLocation + ngram.Length), ngram));
+            starts[i] = offset;
+            offset += words[i].Length + 1;
+        }
+
+        for (var i = 0; i + length <= words.Length; i++)
+        {
+            var start = starts[i];
+            var end = starts[i + length - 1] + words[i + length - 1].Length;
+            ngrams.Add((new Position(start, end), text.Substring(start, end - start)));
         }
 
         return ngrams;

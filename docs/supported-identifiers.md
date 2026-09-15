@@ -226,7 +226,7 @@ Identifiers = new Identifiers
 
 ### Dictionary
 
-Detects user-supplied terms in the input text. A policy can contain any number of dictionaries, each with its own `name` and list of `terms`. Matching is case-insensitive and whole-word.
+Detects user-supplied terms in the input text. A policy can contain any number of dictionaries, each with its own `name` and list of `terms`. Matching is case-insensitive and whole-word, and every occurrence of a term is detected, including repeats.
 
 ```csharp
 Identifiers = new Identifiers
