@@ -15,6 +15,7 @@
  */
 
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Phileas.Filters;
 using Phileas.Filters.PhEye;
@@ -263,35 +264,35 @@ public class FilterService : IFilterService
         var filters = new List<AbstractFilter>();
         var identifiers = policy.Identifiers;
 
-        if (identifiers.Age != null)
+        if (IsEnabled(identifiers.Age))
             filters.Add(BuildFilter<AgeFilter, AgeFilterStrategy>(identifiers.Age, policy, contextService));
-        if (identifiers.EmailAddress != null)
+        if (IsEnabled(identifiers.EmailAddress))
         {
             var emailConfig =
                 BuildRegexConfig<EmailAddressFilterStrategy>(identifiers.EmailAddress, policy, contextService);
             filters.Add(new EmailAddressFilter(emailConfig, identifiers.EmailAddress.OnlyStrictMatches,
                 identifiers.EmailAddress.OnlyValidTLDs));
         }
-        if (identifiers.PhoneNumber != null)
+        if (IsEnabled(identifiers.PhoneNumber))
         {
             var phoneConfig =
                 BuildRegexConfig<PhoneNumberFilterStrategy>(identifiers.PhoneNumber, policy, contextService);
             filters.Add(new PhoneNumberFilter(phoneConfig, identifiers.PhoneNumber.GetRegionOrDefault()));
         }
-        if (identifiers.Ssn != null)
+        if (IsEnabled(identifiers.Ssn))
             filters.Add(BuildFilter<SsnFilter, SsnFilterStrategy>(identifiers.Ssn, policy, contextService));
-        if (identifiers.Ein != null)
+        if (IsEnabled(identifiers.Ein))
         {
             var einConfig = BuildRegexConfig<EinFilterStrategy>(identifiers.Ein, policy, contextService);
             filters.Add(new EinFilter(einConfig, identifiers.Ein.OnlyValidPrefixes));
         }
-        if (identifiers.ZipCode != null)
+        if (IsEnabled(identifiers.ZipCode))
         {
             var zipConfig = BuildRegexConfig<ZipCodeFilterStrategy>(identifiers.ZipCode, policy, contextService);
             filters.Add(new ZipCodeFilter(zipConfig, identifiers.ZipCode.RequireDelimiter,
                 identifiers.ZipCode.Validate));
         }
-        if (identifiers.CreditCard != null)
+        if (IsEnabled(identifiers.CreditCard))
         {
             var creditCardConfig =
                 BuildRegexConfig<CreditCardFilterStrategy>(identifiers.CreditCard, policy, contextService);
@@ -299,46 +300,46 @@ public class FilterService : IFilterService
                 identifiers.CreditCard.OnlyValidCreditCardNumbers, identifiers.CreditCard.OnlyWordBoundaries,
                 identifiers.CreditCard.IgnoreWhenInUnixTimestamp));
         }
-        if (identifiers.IpAddress != null)
+        if (IsEnabled(identifiers.IpAddress))
             filters.Add(
                 BuildFilter<IpAddressFilter, IpAddressFilterStrategy>(identifiers.IpAddress, policy, contextService));
-        if (identifiers.Url != null)
+        if (IsEnabled(identifiers.Url))
         {
             var urlConfig = BuildRegexConfig<UrlFilterStrategy>(identifiers.Url, policy, contextService);
             filters.Add(new UrlFilter(urlConfig, identifiers.Url.RequireHttpWwwPrefix));
         }
-        if (identifiers.BitcoinAddress != null)
+        if (IsEnabled(identifiers.BitcoinAddress))
             filters.Add(BuildFilter<BitcoinAddressFilter, BitcoinAddressFilterStrategy>(identifiers.BitcoinAddress,
                 policy, contextService));
-        if (identifiers.BankRoutingNumber != null)
+        if (IsEnabled(identifiers.BankRoutingNumber))
             filters.Add(
                 BuildFilter<BankRoutingNumberFilter, BankRoutingNumberFilterStrategy>(identifiers.BankRoutingNumber,
                     policy, contextService));
-        if (identifiers.MacAddress != null)
+        if (IsEnabled(identifiers.MacAddress))
             filters.Add(
                 BuildFilter<MacAddressFilter, MacAddressFilterStrategy>(identifiers.MacAddress, policy,
                     contextService));
-        if (identifiers.Vin != null)
+        if (IsEnabled(identifiers.Vin))
             filters.Add(BuildFilter<VinFilter, VinFilterStrategy>(identifiers.Vin, policy, contextService));
-        if (identifiers.Date != null)
+        if (IsEnabled(identifiers.Date))
         {
             var dateConfig = BuildRegexConfig<DateFilterStrategy>(identifiers.Date, policy, contextService);
             filters.Add(new DateFilter(dateConfig, identifiers.Date.OnlyValidDates));
         }
-        if (identifiers.PassportNumber != null)
+        if (IsEnabled(identifiers.PassportNumber))
             filters.Add(BuildFilter<PassportNumberFilter, PassportNumberFilterStrategy>(identifiers.PassportNumber,
                 policy, contextService));
-        if (identifiers.DriversLicense != null)
+        if (IsEnabled(identifiers.DriversLicense))
             filters.Add(BuildFilter<DriversLicenseFilter, DriversLicenseFilterStrategy>(identifiers.DriversLicense,
                 policy, contextService));
-        if (identifiers.StreetAddress != null)
+        if (IsEnabled(identifiers.StreetAddress))
             filters.Add(BuildFilter<StreetAddressFilter, StreetAddressFilterStrategy>(identifiers.StreetAddress, policy,
                 contextService));
-        if (identifiers.PhoneNumberExtension != null)
+        if (IsEnabled(identifiers.PhoneNumberExtension))
             filters.Add(
                 BuildFilter<PhoneNumberExtensionFilter, PhoneNumberExtensionFilterStrategy>(
                     identifiers.PhoneNumberExtension, policy, contextService));
-        if (identifiers.TrackingNumber != null)
+        if (IsEnabled(identifiers.TrackingNumber))
         {
             var trackingConfig =
                 BuildRegexConfig<TrackingNumberFilterStrategy>(identifiers.TrackingNumber, policy, contextService);
@@ -346,22 +347,22 @@ public class FilterService : IFilterService
                 identifiers.TrackingNumber.Fedex, identifiers.TrackingNumber.Usps,
                 identifiers.TrackingNumber.AllowSpaces));
         }
-        if (identifiers.IbanCode != null)
+        if (IsEnabled(identifiers.IbanCode))
         {
             var ibanConfig = BuildRegexConfig<IbanCodeFilterStrategy>(identifiers.IbanCode, policy, contextService);
             filters.Add(new IbanCodeFilter(ibanConfig, identifiers.IbanCode.OnlyValidIBANCodes,
                 identifiers.IbanCode.AllowSpaces));
         }
-        if (identifiers.StateAbbreviation != null)
+        if (IsEnabled(identifiers.StateAbbreviation))
             filters.Add(
                 BuildFilter<StateAbbreviationFilter, StateAbbreviationFilterStrategy>(identifiers.StateAbbreviation,
                     policy, contextService));
-        if (identifiers.Currency != null)
+        if (IsEnabled(identifiers.Currency))
             filters.Add(
                 BuildFilter<CurrencyFilter, CurrencyFilterStrategy>(identifiers.Currency, policy, contextService));
 
         if (identifiers.PhEyes != null)
-            foreach (var phEye in identifiers.PhEyes)
+            foreach (var phEye in identifiers.PhEyes.Where(IsEnabled))
             {
                 var strategies = new List<AbstractFilterStrategy>();
                 if (phEye.Strategies != null)
@@ -404,32 +405,32 @@ public class FilterService : IFilterService
             }
 
         // Dictionary-backed name/location filters (load the bundled term lists by filter type).
-        if (identifiers.City != null)
+        if (IsEnabled(identifiers.City))
             filters.Add(BuildDictionaryFilter(identifiers.City, identifiers.City.Strategies, FilterType.LocationCity,
                 identifiers.City.Fuzzy, identifiers.City.Sensitivity, identifiers.City.Capitalized, policy, contextService));
-        if (identifiers.County != null)
+        if (IsEnabled(identifiers.County))
             filters.Add(BuildDictionaryFilter(identifiers.County, identifiers.County.Strategies, FilterType.LocationCounty,
                 identifiers.County.Fuzzy, identifiers.County.Sensitivity, identifiers.County.Capitalized, policy, contextService));
-        if (identifiers.State != null)
+        if (IsEnabled(identifiers.State))
             filters.Add(BuildDictionaryFilter(identifiers.State, identifiers.State.Strategies, FilterType.LocationState,
                 identifiers.State.Fuzzy, identifiers.State.Sensitivity, identifiers.State.Capitalized, policy, contextService));
-        if (identifiers.Hospital != null)
+        if (IsEnabled(identifiers.Hospital))
             filters.Add(BuildDictionaryFilter(identifiers.Hospital, identifiers.Hospital.Strategies, FilterType.Hospital,
                 identifiers.Hospital.Fuzzy, identifiers.Hospital.Sensitivity, identifiers.Hospital.Capitalized, policy, contextService));
-        if (identifiers.FirstName != null)
+        if (IsEnabled(identifiers.FirstName))
             filters.Add(BuildDictionaryFilter(identifiers.FirstName, identifiers.FirstName.Strategies, FilterType.FirstName,
                 identifiers.FirstName.Fuzzy, identifiers.FirstName.Sensitivity, identifiers.FirstName.Capitalized, policy, contextService));
-        if (identifiers.Surname != null)
+        if (IsEnabled(identifiers.Surname))
             filters.Add(BuildDictionaryFilter(identifiers.Surname, identifiers.Surname.Strategies, FilterType.Surname,
                 identifiers.Surname.Fuzzy, identifiers.Surname.Sensitivity, identifiers.Surname.Capitalized, policy, contextService));
 
         if (identifiers.CustomDictionaries != null)
-            foreach (var customDictionary in identifiers.CustomDictionaries)
+            foreach (var customDictionary in identifiers.CustomDictionaries.Where(IsEnabled))
                 filters.Add(BuildCustomDictionaryFilter(customDictionary, policy, contextService));
 
         // Custom regex identifier filters.
         if (identifiers.CustomIdentifiers != null)
-            foreach (var identifier in identifiers.CustomIdentifiers)
+            foreach (var identifier in identifiers.CustomIdentifiers.Where(IsEnabled))
             {
                 var config = BuildDictionaryConfig(identifier, identifier.Strategies, FilterType.Identifier, policy,
                     contextService);
@@ -440,7 +441,7 @@ public class FilterService : IFilterService
 
         // Section filters.
         if (identifiers.Sections != null)
-            foreach (var section in identifiers.Sections)
+            foreach (var section in identifiers.Sections.Where(IsEnabled))
             {
                 var config = BuildDictionaryConfig(section, section.Strategies, FilterType.Section, policy,
                     contextService);
@@ -493,6 +494,16 @@ public class FilterService : IFilterService
             ? new FuzzyDictionaryFilter(FilterType.CustomDictionary, config,
                 SensitivityLevels.FromName(customDictionary.Sensitivity), terms, customDictionary.Capitalized)
             : new SetDictionaryFilter(FilterType.CustomDictionary, config, terms, customDictionary.Classification);
+    }
+
+    /// <summary>
+    ///     Whether the policy declares this filter and has not switched it off. A filter with
+    ///     <c>enabled: false</c> is not built at all, rather than built and then having its spans
+    ///     discarded, so it costs nothing at filter time. See philterd/phileas-dotnet#123.
+    /// </summary>
+    private static bool IsEnabled([NotNullWhen(true)] AbstractPolicyFilter? policyFilter)
+    {
+        return policyFilter is { Enabled: true };
     }
 
     private FilterConfiguration BuildDictionaryConfig(AbstractPolicyFilter policyFilter,
