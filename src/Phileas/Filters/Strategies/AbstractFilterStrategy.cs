@@ -72,6 +72,12 @@ public abstract class AbstractFilterStrategy
     /// </summary>
     public const string Shift = "SHIFT";
 
+    /// <summary>Replaces a date with its year alone. Date filters only.</summary>
+    public const string TruncateToYear = "TRUNCATE_TO_YEAR";
+
+    /// <summary>Replaces a date with a readable interval from today. Date filters only.</summary>
+    public const string Relative = "RELATIVE";
+
     /// <summary>Replacement strategy constant: keep only the first character.</summary>
     public const string Truncate = "TRUNCATE";
 

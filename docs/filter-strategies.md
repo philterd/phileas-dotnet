@@ -19,6 +19,8 @@ A **filter strategy** controls what happens to a detected PII token. Each identi
 | `SAME` | `AbstractFilterStrategy.Same` | Leave the token unchanged (mark as detected but not replaced) |
 | `TRUNCATE` | `AbstractFilterStrategy.Truncate` | Keep only the first character |
 | `SHIFT` | `AbstractFilterStrategy.Shift` | Shift a detected date by a configurable offset (date filters only). `SHIFT_DATE` is accepted as an alias |
+| `TRUNCATE_TO_YEAR` | `AbstractFilterStrategy.TruncateToYear` | Replace a detected date with its year (date filters only) |
+| `RELATIVE` | `AbstractFilterStrategy.Relative` | Replace a detected date with a readable interval from today (date filters only) |
 
 ---
 
@@ -316,8 +318,11 @@ The strategy is named `SHIFT` in the redaction policy schema and by the PhiSQL c
 |---|---|
 | `1/15/1990` | Numeric M/D/YYYY |
 | `January 15, 1990` | Full month name |
-| `15-Jan-1990` | Day-abbreviated-month-year |
 | `Jan 15, 1990` | Abbreviated month name |
+
+The date filter has to detect the date before a strategy can act on it, so this list is the
+intersection of what it detects and what the strategies can parse. `15-Jan-1990` is not detected and
+so is not shifted, truncated or made relative.
 
 If the detected token cannot be parsed as a date, or if the `Date` filter type is not active, `SHIFT` falls back to `REDACT`.
 
@@ -374,6 +379,66 @@ var policy = new Policy
   }
 }
 ```
+
+---
+
+### TRUNCATE_TO_YEAR
+
+> **Date filters only.** Applies to `DateFilterStrategy`; ignored by all other filter types.
+
+Replaces a detected date with its year alone, so `01/15/1990` becomes `1990`. A detected token that
+cannot be parsed as a date falls back to `REDACT`.
+
+```json
+{
+  "identifiers": {
+    "date": {
+      "dateFilterStrategies": [{ "strategy": "TRUNCATE_TO_YEAR" }]
+    }
+  }
+}
+```
+
+---
+
+### RELATIVE
+
+> **Date filters only.** Applies to `DateFilterStrategy`; ignored by all other filter types.
+
+Replaces a detected date with a readable interval from today, such as `3 months ago`. Once a year has
+passed the years are included: `2 years 1 months ago`. The wording, including the plural on a single
+month, matches the Java filter so the two ports produce the same output. An interval rounds up to the
+next month from the fifteenth day onward.
+
+A date ahead of today is governed by `futureDates`, which is off by default:
+
+| `futureDates` | A date four months ahead |
+|---|---|
+| `false` (default) | redacted |
+| `true` | `in 4 months` |
+
+A detected token that cannot be parsed as a date falls back to `REDACT`.
+
+**Properties**
+
+| Property | JSON key | Type | Default | Description |
+|---|---|---|---|---|
+| `FutureDates` | `futureDates` | `bool` | `false` | Whether a date ahead of today is phrased as an interval rather than redacted |
+
+```json
+{
+  "identifiers": {
+    "date": {
+      "dateFilterStrategies": [{ "strategy": "RELATIVE", "futureDates": true }]
+    }
+  }
+}
+```
+
+> `futureDates` is read by both `RELATIVE` and `SHIFT`, and means the same thing in each: whether a
+> replacement may land ahead of today. Under `RELATIVE` it decides between an interval and redaction;
+> under `SHIFT` it decides whether a shift that would move a past date beyond today is applied in the
+> opposite direction instead.
 
 **Example transformation**
 
