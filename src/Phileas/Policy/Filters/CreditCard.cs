@@ -27,4 +27,16 @@ public class CreditCard : AbstractPolicyFilter
     /// <summary>Gets or sets the list of credit card filter strategies to apply.</summary>
     [JsonPropertyName("creditCardFilterStrategies")]
     public List<CreditCardFilterStrategy>? Strategies { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether only numbers passing the Luhn checksum are detected. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("onlyValidCreditCardNumbers")]
+    public bool OnlyValidCreditCardNumbers { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether a number must sit on a word boundary. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("onlyWordBoundaries")]
+    public bool OnlyWordBoundaries { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether a digit run that looks like a Unix timestamp is ignored. Defaults to <see langword="false" />.</summary>
+    [JsonPropertyName("ignoreWhenInUnixTimestamp")]
+    public bool IgnoreWhenInUnixTimestamp { get; set; } = false;
 }

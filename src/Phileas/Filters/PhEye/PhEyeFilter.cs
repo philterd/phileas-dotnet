@@ -68,7 +68,14 @@ public class PhEyeFilter : AbstractFilter, IDisposable
         _thresholds = thresholds;
         _localInference = !string.IsNullOrEmpty(_configuration.ModelPath);
 
-        _httpClient = httpClient ?? new HttpClient();
+        // MaxIdleConnections bounds the pooled connections kept alive to the PhEye service; it only
+        // applies to a client this filter creates, since a supplied one is already configured.
+        _httpClient = httpClient ?? new HttpClient(new SocketsHttpHandler
+        {
+            MaxConnectionsPerServer = _configuration.MaxIdleConnections > 0
+                ? _configuration.MaxIdleConnections
+                : 30
+        });
         _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout > 0 ? _configuration.Timeout : 30);
     }
 

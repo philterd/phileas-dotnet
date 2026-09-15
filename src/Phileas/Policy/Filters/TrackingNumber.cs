@@ -27,4 +27,20 @@ public class TrackingNumber : AbstractPolicyFilter
     /// <summary>Gets or sets the list of tracking number filter strategies to apply.</summary>
     [JsonPropertyName("trackingNumberFilterStrategies")]
     public List<TrackingNumberFilterStrategy>? Strategies { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether UPS tracking numbers are detected. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("ups")]
+    public bool Ups { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether FedEx tracking numbers are detected. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("fedex")]
+    public bool Fedex { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether USPS tracking numbers are detected. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("usps")]
+    public bool Usps { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether a number may be written in space-separated groups. Defaults to <see langword="false" />.</summary>
+    [JsonPropertyName("allowSpaces")]
+    public bool AllowSpaces { get; set; } = false;
 }

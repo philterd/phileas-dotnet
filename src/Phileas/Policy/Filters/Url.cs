@@ -27,4 +27,8 @@ public class Url : AbstractPolicyFilter
     /// <summary>Gets or sets the list of URL filter strategies to apply.</summary>
     [JsonPropertyName("urlFilterStrategies")]
     public List<UrlFilterStrategy>? Strategies { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether a URL must start with <c>http://</c>, <c>https://</c>, or <c>www.</c>. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("requireHttpWwwPrefix")]
+    public bool RequireHttpWwwPrefix { get; set; } = true;
 }

@@ -216,9 +216,12 @@ public class FilterService : IFilterService
         if (identifiers.Age != null)
             filters.Add(BuildFilter<AgeFilter, AgeFilterStrategy>(identifiers.Age, policy, contextService));
         if (identifiers.EmailAddress != null)
-            filters.Add(
-                BuildFilter<EmailAddressFilter, EmailAddressFilterStrategy>(identifiers.EmailAddress, policy,
-                    contextService));
+        {
+            var emailConfig =
+                BuildRegexConfig<EmailAddressFilterStrategy>(identifiers.EmailAddress, policy, contextService);
+            filters.Add(new EmailAddressFilter(emailConfig, identifiers.EmailAddress.OnlyStrictMatches,
+                identifiers.EmailAddress.OnlyValidTLDs));
+        }
         if (identifiers.PhoneNumber != null)
         {
             var phoneConfig =
@@ -239,14 +242,21 @@ public class FilterService : IFilterService
                 identifiers.ZipCode.Validate));
         }
         if (identifiers.CreditCard != null)
-            filters.Add(
-                BuildFilter<CreditCardFilter, CreditCardFilterStrategy>(identifiers.CreditCard, policy,
-                    contextService));
+        {
+            var creditCardConfig =
+                BuildRegexConfig<CreditCardFilterStrategy>(identifiers.CreditCard, policy, contextService);
+            filters.Add(new CreditCardFilter(creditCardConfig,
+                identifiers.CreditCard.OnlyValidCreditCardNumbers, identifiers.CreditCard.OnlyWordBoundaries,
+                identifiers.CreditCard.IgnoreWhenInUnixTimestamp));
+        }
         if (identifiers.IpAddress != null)
             filters.Add(
                 BuildFilter<IpAddressFilter, IpAddressFilterStrategy>(identifiers.IpAddress, policy, contextService));
         if (identifiers.Url != null)
-            filters.Add(BuildFilter<UrlFilter, UrlFilterStrategy>(identifiers.Url, policy, contextService));
+        {
+            var urlConfig = BuildRegexConfig<UrlFilterStrategy>(identifiers.Url, policy, contextService);
+            filters.Add(new UrlFilter(urlConfig, identifiers.Url.RequireHttpWwwPrefix));
+        }
         if (identifiers.BitcoinAddress != null)
             filters.Add(BuildFilter<BitcoinAddressFilter, BitcoinAddressFilterStrategy>(identifiers.BitcoinAddress,
                 policy, contextService));
@@ -279,11 +289,19 @@ public class FilterService : IFilterService
                 BuildFilter<PhoneNumberExtensionFilter, PhoneNumberExtensionFilterStrategy>(
                     identifiers.PhoneNumberExtension, policy, contextService));
         if (identifiers.TrackingNumber != null)
-            filters.Add(BuildFilter<TrackingNumberFilter, TrackingNumberFilterStrategy>(identifiers.TrackingNumber,
-                policy, contextService));
+        {
+            var trackingConfig =
+                BuildRegexConfig<TrackingNumberFilterStrategy>(identifiers.TrackingNumber, policy, contextService);
+            filters.Add(new TrackingNumberFilter(trackingConfig, identifiers.TrackingNumber.Ups,
+                identifiers.TrackingNumber.Fedex, identifiers.TrackingNumber.Usps,
+                identifiers.TrackingNumber.AllowSpaces));
+        }
         if (identifiers.IbanCode != null)
-            filters.Add(
-                BuildFilter<IbanCodeFilter, IbanCodeFilterStrategy>(identifiers.IbanCode, policy, contextService));
+        {
+            var ibanConfig = BuildRegexConfig<IbanCodeFilterStrategy>(identifiers.IbanCode, policy, contextService);
+            filters.Add(new IbanCodeFilter(ibanConfig, identifiers.IbanCode.OnlyValidIBANCodes,
+                identifiers.IbanCode.AllowSpaces));
+        }
         if (identifiers.StateAbbreviation != null)
             filters.Add(
                 BuildFilter<StateAbbreviationFilter, StateAbbreviationFilterStrategy>(identifiers.StateAbbreviation,

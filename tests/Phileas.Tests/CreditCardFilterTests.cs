@@ -61,9 +61,11 @@ public class CreditCardFilterTests
         Assert.Equal(FilterType.CreditCard, result.Spans[0].FilterType);
     }
 
+    // onlyValidCreditCardNumbers defaults to true, so a formatted number must also pass the Luhn
+    // checksum. 4111 1111 1111 1111 is the industry test Visa number, not an issued card.
     [Theory]
-    [InlineData("Card: 1234 5678 9012 3456")] // formatted with spaces
-    [InlineData("Card: 1234-5678-9012-3456")] // formatted with hyphens
+    [InlineData("Card: 4111 1111 1111 1111")] // formatted with spaces
+    [InlineData("Card: 4111-1111-1111-1111")] // formatted with hyphens
     public void Filter_DetectsFormattedCreditCard(string input)
     {
         var filter = CreateFilter();
