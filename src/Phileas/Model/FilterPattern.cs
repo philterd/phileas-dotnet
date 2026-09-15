@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace Phileas.Model;
@@ -25,6 +26,15 @@ namespace Phileas.Model;
 /// </summary>
 public class FilterPattern
 {
+    /// <summary>
+    ///     The match budget applied when a pattern is built without an explicit one. Matches
+    ///     <see cref="Phileas.Filters.FilterConfiguration.RegexTimeoutMs" />'s default, so a pattern
+    ///     is never constructed with an unbounded budget.
+    /// </summary>
+    public static readonly TimeSpan DefaultMatchTimeout = RegexDefaults.MatchTimeout;
+
+    private readonly ConcurrentDictionary<TimeSpan, Regex> _byTimeout = new();
+
     private FilterPattern(Builder builder)
     {
         Pattern = builder.Pattern ?? throw new ArgumentNullException(nameof(builder.Pattern));
@@ -38,6 +48,19 @@ public class FilterPattern
 
     /// <summary>Gets the compiled regular expression used to find matches in input text.</summary>
     public Regex Pattern { get; }
+
+    /// <summary>
+    ///     Gets this pattern compiled with the given match budget, rebuilding and caching one instance
+    ///     per distinct budget. Patterns are held in static fields so they compile once per process,
+    ///     which rules out baking a per-policy budget in at construction.
+    /// </summary>
+    /// <param name="matchTimeout">The match budget to apply.</param>
+    public Regex GetPattern(TimeSpan matchTimeout)
+    {
+        if (matchTimeout == Pattern.MatchTimeout) return Pattern;
+        return _byTimeout.GetOrAdd(matchTimeout,
+            timeout => new Regex(Pattern.ToString(), Pattern.Options, timeout));
+    }
 
     /// <summary>Gets an optional display format string for the pattern.</summary>
     public string? Format { get; }
@@ -95,7 +118,7 @@ public class FilterPattern
         /// </param>
         public Builder WithPattern(string pattern, RegexOptions options = RegexOptions.None)
         {
-            Pattern = new Regex(pattern, options | RegexOptions.Compiled);
+            Pattern = new Regex(pattern, options | RegexOptions.Compiled, DefaultMatchTimeout);
             return this;
         }
 

@@ -17,6 +17,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Phileas.Model;
 
 namespace Phileas.Policy;
 
@@ -28,7 +29,7 @@ namespace Phileas.Policy;
 /// </summary>
 public class PlaceholderStringConverter : JsonConverter<string>
 {
-    private static readonly Regex Placeholder = new(@"^\$\{([A-Z0-9_]+)\}$", RegexOptions.IgnoreCase);
+    private static readonly Regex Placeholder = new(@"^\$\{([A-Z0-9_]+)\}$", RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout);
 
     /// <inheritdoc />
     public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

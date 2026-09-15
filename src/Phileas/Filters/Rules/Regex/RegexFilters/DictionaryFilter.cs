@@ -69,7 +69,8 @@ public class DictionaryFilter : RegexFilter
         var allSpans = new List<Span>(exactSpans);
 
         // Tokenize the input on non-word characters to find candidate tokens
-        var tokenMatches = System.Text.RegularExpressions.Regex.Matches(input, @"\b\w+\b", RegexOptions.IgnoreCase);
+        var tokenMatches = System.Text.RegularExpressions.Regex.Matches(input, @"\b\w+\b", RegexOptions.IgnoreCase,
+            RegexDefaults.MatchTimeout);
 
         foreach (Match tokenMatch in tokenMatches)
         {

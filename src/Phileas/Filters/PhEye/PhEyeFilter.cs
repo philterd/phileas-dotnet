@@ -85,7 +85,7 @@ public class PhEyeFilter : AbstractFilter, IDisposable
         var spans = new List<Span>();
 
         var formattedInput = _removePunctuation
-            ? Regex.Replace(input, @"\p{P}", " ")
+            ? Regex.Replace(input, @"\p{P}", " ", RegexOptions.None, RegexDefaults.MatchTimeout)
             : input;
 
         var phEyeSpans = _localInference

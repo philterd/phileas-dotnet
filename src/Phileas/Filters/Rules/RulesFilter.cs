@@ -52,7 +52,7 @@ public abstract class RulesFilter : AbstractFilter
         if (PostFiltersConfig.RemoveTrailingSpaces)
             spans = TrailingSpacePostFilter.Apply(spans);
         spans = IgnoredTermsPostFilter.Apply(spans, Ignored);
-        spans = IgnoredPatternsPostFilter.Apply(spans, IgnoredPatterns);
+        spans = IgnoredPatternsPostFilter.Apply(spans, IgnoredPatterns, RegexTimeout, RecordRegexTimeout);
         return spans;
     }
 

@@ -59,7 +59,8 @@ public class DateFilterStrategy : StandardFilterStrategy
         date = date.AddDays(days).AddMonths(months).AddYears(years);
 
         // Numeric format: M/D/YYYY, M-D-YYYY, M.D.YYYY
-        var numericMatch = Regex.Match(token, @"^(\d{1,2})([\/\-\.])(\d{1,2})\2(\d{2,4})$");
+        var numericMatch = Regex.Match(token, @"^(\d{1,2})([\/\-\.])(\d{1,2})\2(\d{2,4})$", RegexOptions.None,
+            RegexDefaults.MatchTimeout);
         if (numericMatch.Success)
         {
             var sep = numericMatch.Groups[2].Value;
@@ -72,7 +73,7 @@ public class DateFilterStrategy : StandardFilterStrategy
         // Full month name, day, year: "January 15, 1990"
         if (Regex.IsMatch(token,
                 @"^(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}$",
-                RegexOptions.IgnoreCase))
+                RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout))
         {
             var comma = token.Contains(',') ? "," : "";
             return $"{date.ToString("MMMM", CultureInfo.InvariantCulture)} {date.Day}{comma} {date.Year}";
@@ -81,15 +82,15 @@ public class DateFilterStrategy : StandardFilterStrategy
         // Day, full month name, year: "15 January 1990"
         if (Regex.IsMatch(token,
                 @"^\d{1,2}\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}$",
-                RegexOptions.IgnoreCase))
+                RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout))
             return $"{date.Day} {date.ToString("MMMM", CultureInfo.InvariantCulture)} {date.Year}";
 
         // Abbreviated month, day, year: "Jan. 5, 2023" or "Jan 5, 2023"
         if (Regex.IsMatch(token,
                 @"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.\s]\s*\d{1,2},?\s*\d{4}$",
-                RegexOptions.IgnoreCase))
+                RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout))
         {
-            var dotAfterMonth = Regex.IsMatch(token, @"^[A-Za-z]{3}\.");
+            var dotAfterMonth = Regex.IsMatch(token, @"^[A-Za-z]{3}\.", RegexOptions.None, RegexDefaults.MatchTimeout);
             var comma = token.Contains(',') ? "," : "";
             var monthAbbr = date.ToString("MMM", CultureInfo.InvariantCulture);
             return $"{monthAbbr}{(dotAfterMonth ? ". " : " ")}{date.Day}{comma} {date.Year}";

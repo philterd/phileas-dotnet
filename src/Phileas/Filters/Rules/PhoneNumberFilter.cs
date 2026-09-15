@@ -35,7 +35,8 @@ public class PhoneNumberFilter : RulesFilter
     // A fully NANP-formatted number (optional country code, 3-3-4 grouping). A found number that matches is
     // scored highest; other found numbers are scored by length, mirroring the Java PhoneNumberRulesFilter.
     private static readonly SysRegex NanpPattern =
-        new(@"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$", RegexOptions.Compiled);
+        new(@"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$", RegexOptions.Compiled,
+            RegexDefaults.MatchTimeout);
 
     private static readonly PhoneNumberUtil PhoneUtil = PhoneNumberUtil.GetInstance();
 

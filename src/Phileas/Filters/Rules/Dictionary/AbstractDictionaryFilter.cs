@@ -60,7 +60,7 @@ public abstract class AbstractDictionaryFilter : RulesFilter
         foreach (var term in terms)
         {
             if (string.IsNullOrWhiteSpace(term)) continue;
-            dictionary[term] = new Rx(@"\b" + Rx.Escape(term) + @"\b", RegexOptions.IgnoreCase);
+            dictionary[term] = new Rx(@"\b" + Rx.Escape(term) + @"\b", RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout);
         }
 
         return dictionary;

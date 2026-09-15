@@ -123,10 +123,12 @@ public class FilterService : IFilterService
         int piece, string input)
     {
         var allSpans = new List<Span>();
+        var regexTimeouts = new List<string>();
         foreach (var filter in filters)
         {
             var filtered = filter.Filter(policy, context, piece, input);
             allSpans.AddRange(filtered.Spans);
+            regexTimeouts.AddRange(filter.DrainRegexTimeouts());
         }
 
         // Resolve spans that compete at the same location (same text classified as different types) using
@@ -139,7 +141,7 @@ public class FilterService : IFilterService
         var (filteredText, incrementalRedactions) = ApplyReplacements(input, finalSpans);
 
         return new TextFilterResult(filteredText, context, piece, finalSpans, incrementalRedactions,
-            TokenCounter.CountTokens(input));
+            TokenCounter.CountTokens(input), regexTimeouts);
     }
 
     /// <summary>

@@ -137,6 +137,7 @@ public class TextFilterResult
     public IList<Span> Spans { get; }
     public IList<IncrementalRedaction> IncrementalRedactions { get; }
     public long Tokens { get; }
+    public IList<string> RegexTimeouts { get; }
 }
 ```
 
@@ -148,6 +149,7 @@ public class TextFilterResult
 | `Spans` | `IList<Span>` | Ordered list of [`Span`](#span) objects describing each detected PII occurrence. |
 | `IncrementalRedactions` | `IList<IncrementalRedaction>` | Per-redaction snapshot trail (populated only when the service is constructed with incremental redactions enabled). |
 | `Tokens` | `long` | Number of whitespace-delimited tokens in the input. |
+| `RegexTimeouts` | `IList<string>` | Patterns that exceeded their match budget during this pass; empty when none did. See [Regex match budget](#regex-match-budget). |
 
 ---
 
@@ -325,7 +327,42 @@ var config = new FilterConfiguration.Builder()
 | `WithWindowSize(int)` | Sets the context window size. |
 | `WithPriority(int)` | Sets the filter priority. |
 | `WithPostFilters(Policy.PostFilters?)` | Sets the post-filter cleanup options. |
-| `WithRegexTimeoutMs(long)` | Sets the per-pattern regex match timeout (used by custom regex filters). |
+| `WithRegexTimeoutMs(long)` | Sets the per-pattern regex match budget in milliseconds. Defaults to `1000`. See [Regex match budget](#regex-match-budget). |
+
+---
+
+## Regex match budget
+
+Every regular expression this library runs is bounded. A pattern that exceeds its budget is
+abandoned rather than allowed to stall filtering, which matters because detection runs over
+untrusted document text and because a policy may supply its own patterns through `sections`,
+`identifiers`, and `ignoredPatterns`.
+
+The budget is `FilterConfiguration.RegexTimeoutMs`, which defaults to `1000` and must be positive.
+Patterns built outside a filter, where no configuration is in scope, use
+`Phileas.Model.RegexDefaults.MatchTimeout`, which carries the same default.
+
+The budget applies to a single match operation, so it bounds how long any one pattern can spend
+before it gives up. It does not cap the total time to filter a document: a large input that produces
+many matches can take considerably longer than the budget without any pattern exceeding it.
+
+**A timeout is reported, not silently absorbed.** An abandoned pattern contributes no spans, which on
+its own is indistinguishable from a document that genuinely contained nothing. Every timeout is
+therefore recorded and surfaced on `TextFilterResult.RegexTimeouts`.
+
+```csharp
+var result = new FilterService().Filter(policy, "context", 0, text);
+
+if (result.RegexTimeouts.Count > 0)
+{
+    // Part of the input went unsearched. result.FilteredText may still contain values that a
+    // completed pass would have redacted, so do not treat it as fully filtered.
+}
+```
+
+Treat a non-empty `RegexTimeouts` as a failed pass rather than a clean one. Where a pattern cannot be
+evaluated in time, the library fails towards redaction: an `ignoredPatterns` entry that times out
+does not suppress the detection it was being tested against, so the value is still replaced.
 
 ---
 

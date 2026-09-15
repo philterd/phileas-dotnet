@@ -16,6 +16,7 @@
 
 using System.Text.RegularExpressions;
 using Phileas.Model.Metadata;
+using Phileas.Model;
 
 namespace Phileas.Filters.Conditions;
 
@@ -35,7 +36,7 @@ public static class ConditionEvaluator
 
     private static readonly Regex ConditionPattern = new(
         @"^\s*(?<field>population|token|type|confidence|context)\s+(?<op>>|<|<=|>=|==|!=|startswith|is|is not)\s+(?<value>""[^""]*""|\d+(?:\.\d+)?)\s*(?<and>and\s+(?<rest>.+))?$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
+        RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexDefaults.MatchTimeout
     );
 
     /// <summary>
