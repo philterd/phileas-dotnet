@@ -83,7 +83,6 @@ public class PolicyModelTests
                                     "customFilterStrategies": [ { "strategy": "REDACT" } ]
                                   }
                                 ],
-                                "ner": { "nerFilterStrategies": [ { "strategy": "REDACT" } ] },
                                 "age": { "ageFilterStrategies": [ { "strategy": "REDACT" } ] },
                                 "ssn": { "ssnFilterStrategies": [ { "strategy": "REDACT" } ] },
                                 "zipCode": { "zipCodeFilterStrategy": [ { "strategy": "REDACT" } ] }

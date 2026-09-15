@@ -189,6 +189,20 @@ public sealed class RestApiTests
     }
 
     [SkippableFact]
+    public async Task UpsertPolicy_RejectsAPolicyTheSchemaDoesNotAccept()
+    {
+        // The policy is well-formed JSON but names a filter the schema does not define, which used to
+        // be stored and then quietly not redact. A 400 naming the offending location, not a 500.
+        Skip.IfNot(_fixture.DockerAvailable, "Docker is not available.");
+
+        var response = await _fixture.Client.PutAsJsonAsync("/policies/bad-policy",
+            new { json = "{\"identifiers\":{\"notAFilter\":{}}}" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("/identifiers/notAFilter", await response.Content.ReadAsStringAsync());
+    }
+
+    [SkippableFact]
     public async Task PhilterApi_Status_IsNoLongerServed()
     {
         // Philter 4.0 removed /api/status, so serving it here would keep alive a route Philter itself

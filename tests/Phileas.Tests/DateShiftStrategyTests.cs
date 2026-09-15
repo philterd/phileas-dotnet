@@ -211,14 +211,26 @@ public class DateShiftStrategyTests
     }
 
     [Fact]
-    public void AnUnimplementedStrategyName_RaisesRatherThanRedacting()
+    public void AnUnimplementedStrategyName_IsReportedWhenThePolicyLoads()
     {
-        // It used to fall through to redaction, so a policy asking for a year or an interval had the
-        // date destroyed instead, with nothing reported. See #109.
+        // A name the schema does not declare is now caught as the policy loads, earlier than #109's
+        // runtime check and with the offending location named. See #81.
+        var json = PolicyJson("NOT_A_STRATEGY", "\"shiftDays\": 0");
+
+        var ex = Assert.Throws<PolicyValidationException>(() => PolicySerializer.DeserializeFromJson(json));
+
+        Assert.Contains("dateFilterStrategies/0/strategy", string.Join("; ", ex.Errors));
+    }
+
+    [Fact]
+    public void AnUnimplementedStrategyName_StillRaisesAtFilterTime()
+    {
+        // The runtime check from #109 has to survive: schema validation is opt-out, and a policy built
+        // in code never passes through it at all.
         var json = PolicyJson("NOT_A_STRATEGY", "\"shiftDays\": 0");
 
         var ex = Assert.Throws<ArgumentException>(() => new FilterService()
-            .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, Text));
+            .Filter(PolicySerializer.DeserializeFromJson(json, validate: false), "ctx", 0, Text));
 
         Assert.Contains("NOT_A_STRATEGY", ex.Message);
         Assert.Contains("TRUNCATE_TO_YEAR", ex.Message);
@@ -257,9 +269,15 @@ public class DateShiftStrategyTests
     public void ACaseInsensitiveNameReachesTheStandardStrategiesToo()
     {
         // The date filter shares the standard switch with every other filter, so the leniency has to
-        // hold on both sides of the dispatch or "relative" would work while "same" still redacted.
-        Assert.Equal(Text, Filter(PolicyJson("same", "\"shiftDays\": 0")));
+        // hold on both sides of the dispatch or "relative" would work while "truncate" still redacted.
         Assert.Equal("seen on 0 today", Filter(PolicyJson("truncate", "\"shiftDays\": 0")));
+        Assert.Equal("seen on 1990 today", Filter(PolicyJson("truncate_to_year", "\"shiftDays\": 0")));
+
+        // SAME is accepted by this port's date filter but is not in the schema's date strategy enum,
+        // so a policy asking for it is now reported rather than loaded.
+        Assert.Equal(Text, new FilterService()
+            .Filter(PolicySerializer.DeserializeFromJson(PolicyJson("same", "\"shiftDays\": 0"),
+                validate: false), "ctx", 0, Text).FilteredText);
     }
 
     [Fact]

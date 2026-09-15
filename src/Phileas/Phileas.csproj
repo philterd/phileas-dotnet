@@ -60,7 +60,7 @@
     <ItemGroup>
         <!-- PhiSQL .NET reference library (Philterd.PhiSql on NuGet). Provides the PhiSQL
              compiler and the canonical redaction policy schema used for all policy operations. -->
-        <PackageReference Include="Philterd.PhiSql" Version="1.2.0" />
+        <PackageReference Include="Philterd.PhiSql" Version="1.3.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\" />
