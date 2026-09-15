@@ -20,15 +20,26 @@ using PhileasPolicy = Phileas.Policy.Policy;
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-///     Regex-based filter that detects US Employer Identification Number (EIN) entities in plain text. The canonical
-///     form is <c>NN-NNNNNNN</c> (two digits, a hyphen, seven digits), matched at word boundaries. The hyphen position
-///     distinguishes an EIN from an SSN (<c>NNN-NN-NNNN</c>); an unhyphenated nine-digit run is not claimed here, so
-///     bare runs are left to the SSN filter and the shared span-disambiguation step.
+///     Regex-based filter that detects US Employer Identification Number (EIN) entities in plain text. The form is
+///     <c>NN-NNNNNNN</c> (two digits, a hyphen, seven digits), which is also the shape of a taxpayer identification
+///     number written for an employer, so this filter and not <see cref="SsnFilter" /> is what detects a TIN. The
+///     hyphen position distinguishes it from an SSN (<c>NNN-NN-NNNN</c>); the hyphen is required, so an unhyphenated
+///     nine-digit run is left to the SSN filter and the shared span-disambiguation step.
+///     <para>
+///         The separator and boundary fragments come from <see cref="IdentifierSeparators" />, shared with
+///         <see cref="SsnFilter" />, so the two filters agree on which hyphens count, on an identifier wrapped across
+///         a line break, and on what a digit is.
+///     </para>
 /// </summary>
 public class EinFilter : RegexFilter
 {
+    private const string Digit = IdentifierSeparators.Digit;
+
     private static readonly Analyzer EinAnalyzer = new(
-        new FilterPattern.Builder().WithPattern(@"\b\d{2}-\d{7}\b")
+        new FilterPattern.Builder()
+            .WithPattern(IdentifierSeparators.NotWordOrHyphenBefore
+                         + Digit + "{2}" + IdentifierSeparators.Wrap + Digit + "{7}"
+                         + IdentifierSeparators.NotWordOrHyphenAfter)
             .WithInitialConfidence(0.90).Build()
     );
 

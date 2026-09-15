@@ -274,7 +274,7 @@ Identifiers = new Identifiers { DriversLicense = new DriversLicense() }
 
 ### EIN
 
-Detects US Employer Identification Numbers (federal tax IDs) in the canonical `NN-NNNNNNN` format (two digits, a hyphen, seven digits), matched at word boundaries. The hyphen position distinguishes an EIN from an SSN (`NNN-NN-NNNN`); a bare nine-digit run is left to the SSN filter and span disambiguation rather than claimed as an EIN.
+Detects US Employer Identification Numbers (federal tax IDs) in the `NN-NNNNNNN` format (two digits, a hyphen, seven digits). The hyphen position distinguishes an EIN from an SSN (`NNN-NN-NNNN`); a bare nine-digit run is left to the SSN filter and span disambiguation rather than claimed as an EIN.
 
 ```csharp
 Identifiers = new Identifiers { Ein = new Ein() }
@@ -288,8 +288,29 @@ the second digit for a TIN or EIN, after the third and fifth for an SSN. A value
 reported as `ein` and never as `ssn`, so a policy that enables `ssn` alone does not detect it; enable
 `ein` as well.
 
-The separators accepted here are narrower than the SSN identifier's. Only the ASCII hyphen is
-accepted, and an identifier wrapped across a line break is not detected.
+#### Accepted separators
+
+The hyphen is required (a bare nine-digit run is left to the SSN identifier), and the same
+separators the [SSN](#ssn) identifier accepts are accepted here:
+
+- The ASCII hyphen-minus, or any of its substitutes: the soft hyphen (U+00AD), the dashes U+2010
+  through U+2015 (which include the non-breaking hyphen U+2011), the minus sign (U+2212), and the
+  small and fullwidth hyphen-minus forms (U+FE58, U+FE63, U+FF0D). The hyphen may be followed by
+  horizontal whitespace, so `12-  3456789` is detected.
+- A hyphen followed by a line break, so an identifier wrapped across two lines is detected. Both
+  `\n` and `\r\n` count as the break, and horizontal whitespace may sit on either side of it, so an
+  indented continuation line works.
+
+The input is not normalized, so span offsets index into the original text and a span covers the
+complete identifier, line break included.
+
+#### Intentional exclusions
+
+- Whitespace on its own. Unlike an SSN, an EIN is not detected with a space in place of the
+  hyphen. Whitespace following a hyphen is not limited, as above.
+- Non-ASCII digits, including the fullwidth, Arabic-Indic and Devanagari forms.
+- A value with a hyphen immediately before or after it, so a fragment straddling two longer
+  identifiers is not claimed: `45-6789123` inside `123-45-6789123-45-6789` produces no span.
 
 Set `onlyValidPrefixes` to `true` to keep only matches whose two-digit prefix is one the IRS currently issues, which reduces false positives on format-valid but non-issued numbers. It defaults to `false` (match any EIN-formatted value), so a prefix issued after this release is still detected; the strict list is engine-carried and only affects the opt-in mode.
 
