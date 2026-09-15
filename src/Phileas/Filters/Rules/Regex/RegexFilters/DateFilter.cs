@@ -22,9 +22,16 @@ using PhileasPolicy = Phileas.Policy.Policy;
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-///     Regex-based filter that detects date expression entities in plain text. When
-///     <c>onlyValidDates</c> is enabled, numeric dates that do not parse as real calendar dates (for
-///     example <c>02-31-2019</c>) are discarded; month-name dates are always treated as valid.
+///     Regex-based filter that detects date expression entities in plain text. Numeric dates are
+///     detected month first (<c>01/15/1990</c>), day first (<c>15/01/1990</c>) and year first
+///     (<c>1990-01-15</c>), each with <c>/</c>, <c>-</c> or <c>.</c> as the delimiter, and month-name
+///     dates with the month or the day leading. A year-first date is also detected as the date part of
+///     an ISO 8601 timestamp, where the time is left in the document.
+///     <para>
+///         When <c>onlyValidDates</c> is enabled, numeric dates that do not parse as real calendar
+///         dates (for example <c>02-31-2019</c>) are discarded; month-name dates are always treated
+///         as valid.
+///     </para>
 /// </summary>
 public class DateFilter : RegexFilter
 {
@@ -69,6 +76,23 @@ public class DateFilter : RegexFilter
             "January|February|March|April|May|June|July|August|September|October|November|December";
         const string monthAbbreviations = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
 
+        // Year-first dates take a zero-padded month and day, as ISO 8601 requires and as the Java
+        // filter does. Accepting a single digit there would make a version string such as 2020.1.5 a
+        // date, which the leading (19|20) does nothing to rule out.
+        const string paddedMonth = "(0[1-9]|1[012])";
+        const string paddedDay = "(0[1-9]|[12][0-9]|3[01])";
+
+        // A date ends on a word boundary, or on the T that introduces the time of an ISO 8601
+        // timestamp: a word boundary alone would reject 2024-06-01T09:30:00Z entirely, and a log or
+        // an export writes the timestamp far more often than the bare date. Anything else adjacent
+        // still ends the date, so 1990-01-15x is not one.
+        const string isoDateEnd = @"(?:\b|(?=[Tt]\d))";
+
+        // A day and a month name are separated by whitespace or by one of the delimiters the numeric
+        // patterns accept. The separator is captured once and backreferenced so both sides agree,
+        // rather than assembling a date out of "15-January 1990".
+        const string nameSeparator = @"(?<sep>\s*[\-\/.]\s*|\s+)";
+
         var patterns = new List<FilterPattern>();
 
         // Numeric dates with a delimiter. Each delimiter and year-length combination is its own pattern so
@@ -103,6 +127,17 @@ public class DateFilter : RegexFilter
                 .WithInitialConfidence(0.85)
                 .WithFormat($"d{formatDelimiter}M{formatDelimiter}yy")
                 .Build());
+
+            // Year-first numeric dates (1990-01-15 and the same shape with the other delimiters).
+            // ISO 8601 is the ordinary machine-written form and appears in exports, logs and clinical
+            // extracts. No month-first or day-first pattern can match the same text, since neither
+            // leading group accepts four digits, so the orderings stay unambiguous.
+            patterns.Add(new FilterPattern.Builder()
+                .WithPattern(
+                    $@"\b(19|20)\d{{2}}{regexDelimiter}{paddedMonth}{regexDelimiter}{paddedDay}{isoDateEnd}")
+                .WithInitialConfidence(0.85)
+                .WithFormat($"yyyy{formatDelimiter}MM{formatDelimiter}dd")
+                .Build());
         }
 
         // Month-name dates are specific enough that they are always treated as valid dates.
@@ -110,8 +145,12 @@ public class DateFilter : RegexFilter
             .WithPattern($@"\b({monthNames})\s+\d{{1,2}},?\s+\d{{4}}\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).WithAlwaysValid(true).Build());
 
+        // Day-first month-name dates: 15 January 1990, 15 Jan 1990, 15-Jan-1990, 15/Jan/1990. An
+        // abbreviation may carry a trailing period, which the backreferenced separator would
+        // otherwise reject.
         patterns.Add(new FilterPattern.Builder()
-            .WithPattern($@"\b\d{{1,2}}\s+({monthNames})\s+\d{{4}}\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\b{day}{nameSeparator}(?:{monthNames}|{monthAbbreviations})\.?\k<sep>\d{{4}}\b",
+                RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).WithAlwaysValid(true).Build());
 
         patterns.Add(new FilterPattern.Builder()
