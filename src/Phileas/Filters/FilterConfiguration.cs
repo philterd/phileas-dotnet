@@ -133,8 +133,17 @@ public class FilterConfiguration
         }
 
         /// <summary>Sets the per-pattern regex match budget in milliseconds.</summary>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when <paramref name="regexTimeoutMs" /> is not positive. A budget of zero is not a
+        ///     value .NET accepts, and a negative one is its "no timeout" sentinel, which would remove the
+        ///     bound this setting exists to impose.
+        /// </exception>
         public Builder WithRegexTimeoutMs(long regexTimeoutMs)
         {
+            if (regexTimeoutMs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(regexTimeoutMs), regexTimeoutMs,
+                    "The regex match budget must be positive.");
+
             _config.RegexTimeoutMs = regexTimeoutMs;
             return this;
         }

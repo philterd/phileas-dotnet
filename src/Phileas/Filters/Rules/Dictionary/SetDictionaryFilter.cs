@@ -50,7 +50,7 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
     {
         foreach (var term in terms)
         {
-            var split = Rx.Split(term, @"\s");
+            var split = Rx.Split(term, @"\s", RegexOptions.None, RegexDefaults.MatchTimeout);
             if (split.Length > _maxNgramSize) _maxNgramSize = split.Length;
             _lowerCaseTerms.Add(term.ToLowerInvariant());
         }

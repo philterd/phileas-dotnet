@@ -15,13 +15,14 @@
  */
 
 using System.Text.RegularExpressions;
+using Phileas.Model;
 
 namespace Phileas.Services.Tokens;
 
 /// <summary>Counts tokens by splitting on runs of whitespace.</summary>
 public class WhitespaceTokenCounter : ITokenCounter
 {
-    private static readonly Regex Whitespace = new(@"\s+");
+    private static readonly Regex Whitespace = new(@"\s+", RegexOptions.None, RegexDefaults.MatchTimeout);
 
     /// <inheritdoc />
     public long CountTokens(string? text)

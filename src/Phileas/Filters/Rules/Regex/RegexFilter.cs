@@ -59,14 +59,17 @@ public abstract class RegexFilter : RulesFilter
         foreach (var filterPattern in analyzer.FilterPatterns)
         {
             // MatchCollection is lazy, so materialize it under the pattern's match budget: a pattern
-            // that exceeds its timeout is abandoned (contributing no spans) rather than stalling filtering.
+            // that exceeds its timeout is abandoned rather than stalling filtering. It contributes no
+            // spans, which is indistinguishable from a clean miss, so the timeout is recorded and
+            // surfaced on the result instead of being swallowed here.
             List<Match> matches;
             try
             {
-                matches = filterPattern.Pattern.Matches(input).ToList();
+                matches = filterPattern.GetPattern(RegexTimeout).Matches(input).ToList();
             }
             catch (RegexMatchTimeoutException)
             {
+                RecordRegexTimeout($"{FilterType} pattern '{filterPattern.Pattern}'");
                 continue;
             }
 

@@ -58,6 +58,15 @@ public abstract class AbstractFilter
     /// <summary>Number of words on each side of a match to include in the context window.</summary>
     protected int WindowSize;
 
+    private readonly List<string> _regexTimeouts = new();
+
+    /// <summary>
+    ///     Budget for a single regex match, from <see cref="FilterConfiguration.RegexTimeoutMs" />.
+    ///     Applied wherever this filter runs a pattern over document text or over a pattern the policy
+    ///     author supplied, so neither can stall filtering.
+    /// </summary>
+    protected TimeSpan RegexTimeout;
+
     /// <summary>
     ///     Initializes the filter with the given <paramref name="filterType" /> and <paramref name="configuration" />.
     /// </summary>
@@ -74,6 +83,7 @@ public abstract class AbstractFilter
         WindowSize = configuration.WindowSize;
         Priority = configuration.Priority;
         PostFiltersConfig = configuration.PostFilters ?? new Policy.PostFilters();
+        RegexTimeout = TimeSpan.FromMilliseconds(configuration.RegexTimeoutMs);
 
         // Initialize the strategy-specific anonymization services (mirrors the Java Filter constructor):
         // each strategy gets the service for this filter type, drawing FROM_LIST when the strategy
@@ -102,6 +112,30 @@ public abstract class AbstractFilter
     /// <returns>A <see cref="Filtered" /> containing all detected and (optionally) replaced spans.</returns>
     public abstract Filtered Filter(Policy.Policy policy, string context, int piece, string input);
 
+    /// <summary>
+    ///     Records that a pattern exceeded its match budget. A timeout means this filter searched less
+    ///     of the text than it was asked to, so it is reported rather than swallowed: a caller that
+    ///     cannot tell a timeout from a clean "nothing found" would ship unredacted text believing it
+    ///     had been filtered.
+    /// </summary>
+    /// <param name="description">Human-readable identification of the pattern that timed out.</param>
+    protected void RecordRegexTimeout(string description)
+    {
+        _regexTimeouts.Add(description);
+    }
+
+    /// <summary>
+    ///     Returns the timeouts recorded since the last call and clears them, so a filter instance
+    ///     reused across the pieces of a split document reports each piece separately.
+    /// </summary>
+    public IList<string> DrainRegexTimeouts()
+    {
+        if (_regexTimeouts.Count == 0) return Array.Empty<string>();
+        var drained = _regexTimeouts.ToList();
+        _regexTimeouts.Clear();
+        return drained;
+    }
+
     /// <summary>Returns the replacement strategies configured on this filter.</summary>
     public IList<AbstractFilterStrategy> GetStrategies()
     {
@@ -129,8 +163,17 @@ public abstract class AbstractFilter
             var options = pattern.CaseSensitive
                 ? RegexOptions.None
                 : RegexOptions.IgnoreCase;
-            if (Regex.IsMatch(token, pattern.Pattern, options))
-                return true;
+            try
+            {
+                if (Regex.IsMatch(token, pattern.Pattern, options, RegexTimeout))
+                    return true;
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // An ignored pattern that cannot be evaluated must not silently ignore the token:
+                // treat it as not matched, so the span is still redacted, and report the timeout.
+                RecordRegexTimeout($"{FilterType} ignoredPattern '{pattern.Pattern}'");
+            }
         }
 
         return false;

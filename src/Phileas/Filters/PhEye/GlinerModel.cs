@@ -19,6 +19,7 @@ using System.Text.RegularExpressions;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using Microsoft.ML.Tokenizers;
+using Phileas.Model;
 
 namespace Phileas.Filters.PhEye;
 
@@ -44,7 +45,7 @@ public sealed class GlinerModel : IDisposable
 
     // A word is a run of word-characters (keeping internal hyphens/underscores, so "123-45-6789" and "2024-03-02"
     // stay single words) or a single non-word, non-space character. Mirrors the model's whitespace+punctuation split.
-    private static readonly Regex WordRegex = new(@"\w+(?:[-_]\w+)*|[^\w\s]", RegexOptions.Compiled);
+    private static readonly Regex WordRegex = new(@"\w+(?:[-_]\w+)*|[^\w\s]", RegexOptions.Compiled, RegexDefaults.MatchTimeout);
 
     private readonly int _entId;
     private readonly int _maxLen;

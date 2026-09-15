@@ -16,6 +16,7 @@
 
 using System.Text;
 using System.Text.RegularExpressions;
+using Phileas.Model;
 
 namespace Phileas.Services.Split;
 
@@ -25,7 +26,7 @@ namespace Phileas.Services.Split;
 /// </summary>
 public class CharacterCountSplitService : AbstractSplitService, ISplitService
 {
-    private static readonly Regex SentenceBoundary = new(@"(?<=[.?!])\s");
+    private static readonly Regex SentenceBoundary = new(@"(?<=[.?!])\s", RegexOptions.None, RegexDefaults.MatchTimeout);
 
     private readonly int _maxChunkSize;
 

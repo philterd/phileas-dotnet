@@ -43,7 +43,8 @@ public class TextFilterResult
     /// <param name="incrementalRedactions">The per-redaction snapshot trail (empty when disabled).</param>
     /// <param name="tokens">The number of tokens in the input.</param>
     public TextFilterResult(string filteredText, string context, int piece, IList<Span> spans,
-        IList<IncrementalRedaction> incrementalRedactions, long tokens)
+        IList<IncrementalRedaction> incrementalRedactions, long tokens,
+        IList<string>? regexTimeouts = null)
     {
         FilteredText = filteredText;
         Context = context;
@@ -51,6 +52,7 @@ public class TextFilterResult
         Spans = spans;
         IncrementalRedactions = incrementalRedactions;
         Tokens = tokens;
+        RegexTimeouts = regexTimeouts ?? Array.Empty<string>();
     }
 
     /// <summary>Gets the input text with all detected entities replaced by their configured redaction values.</summary>
@@ -64,6 +66,15 @@ public class TextFilterResult
 
     /// <summary>Gets the ordered list of spans that were identified and replaced.</summary>
     public IList<Span> Spans { get; }
+
+    /// <summary>
+    ///     Gets the patterns that exceeded their match budget during this filtering pass, empty when none
+    ///     did. A non-empty list means part of the input went unsearched, so <see cref="FilteredText" />
+    ///     may still contain sensitive values that a completed pass would have redacted. Callers that
+    ///     treat filtering as a control should check this rather than assume an empty
+    ///     <see cref="Spans" /> means the text was clean.
+    /// </summary>
+    public IList<string> RegexTimeouts { get; }
 
     /// <summary>Gets the per-redaction snapshot trail (empty when incremental redactions are disabled).</summary>
     public IList<IncrementalRedaction> IncrementalRedactions { get; }
@@ -81,6 +92,7 @@ public class TextFilterResult
         var filteredText = new StringBuilder();
         var spans = new List<Span>();
         var incrementalRedactions = new List<IncrementalRedaction>();
+        var regexTimeouts = new List<string>();
         long tokens = 0;
         var documentOffset = 0;
 
@@ -93,10 +105,11 @@ public class TextFilterResult
             documentOffset += pieceFilteredText.Length;
 
             incrementalRedactions.AddRange(result.IncrementalRedactions);
+            regexTimeouts.AddRange(result.RegexTimeouts);
             tokens += result.Tokens;
         }
 
         return new TextFilterResult(filteredText.ToString().Trim(), context, 0, spans, incrementalRedactions,
-            tokens);
+            tokens, regexTimeouts);
     }
 }
