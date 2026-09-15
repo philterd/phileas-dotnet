@@ -8,6 +8,7 @@ _Unreleased._
 
 ### Added
 
+- **The `aba`, `verhoeff` and `damm` identifier validators** ([#89](https://github.com/philterd/phileas-dotnet/issues/89)). The redaction policy schema names eleven validators for the custom `identifiers` filter and this build implemented eight, so a policy naming one of these three failed to load. `aba` is the ABA routing transit checksum (3-7-1 weighted sum mod 10 over exactly nine digits); `verhoeff` and `damm` are check-digit schemes that, unlike a plain modulus check, catch every single-digit error and every transposition of adjacent digits. See [Policies → Validators](docs/policies.md#validators).
 - **Locale-aware phone number detection via the policy's `region`** ([#53](https://github.com/philterd/phileas-dotnet/issues/53)). The `phoneNumber` filter accepts an optional `region`, one ISO 3166-1 alpha-2 code or an array of them (default `US`), setting the region(s) used to read numbers written without an international `+` country code. Each configured region is scanned and the results are merged with overlapping matches de-duplicated, so `region: "GB"` detects UK national-format numbers and `region: ["US","GB","FR"]` detects all three. `+`-prefixed numbers are detected regardless. Additive and non-breaking: a policy with no `region` behaves as before. Requires redaction-policy schema 1.2.0 (Philterd.PhiSql 1.2.0). See [Supported Identifiers → Phone Number](docs/supported-identifiers.md#phone-number).
 
 ### Changed
