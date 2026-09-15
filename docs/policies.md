@@ -143,7 +143,7 @@ Each identifier class extends `AbstractPolicyFilter` and supports these common o
 
 | Property | JSON key | Type | Default | Description |
 |---|---|---|---|---|
-| `Enabled` | `enabled` | `bool` | `true` | Whether the filter is active. |
+| `Enabled` | `enabled` | `bool` | `true` | Whether the filter is active. When `false` the filter is not built, so it detects nothing. Each entry of a list-valued identifier carries its own setting. |
 | `Ignored` | `ignored` | `List<string>?` | `null` | Exact values that should not be redacted. |
 | `IgnoredFiles` | `ignoredFiles` | `List<string>?` | `null` | Files whose lines provide additional ignored terms. |
 | `IgnoredPatterns` | `ignoredPatterns` | `List<IgnoredPattern>?` | `null` | Regex patterns whose matches are not redacted. |
