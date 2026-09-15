@@ -50,7 +50,8 @@ public class Policy
 |---|---|---|---|
 | `Enabled` | `enabled` | `false` | Enable splitting of long inputs. |
 | `Threshold` | `threshold` | `10000` | Minimum input length (characters) before splitting applies. |
-| `Method` | `method` | `"newline"` | Split method (e.g. `"newline"`). |
+| `Method` | `method` | `"newline"` | Split method: `"newline"`, `"width"`, or `"characters"`. |
+| `Overlap` | `overlap` | `0` | Characters each piece shares with the end of the previous piece. |
 
 ```csharp
 var policy = new Policy
@@ -62,6 +63,20 @@ var policy = new Policy
     }
 };
 ```
+
+Splitting is an internal optimisation and is not observable in the result. Each piece is located in
+the original input, so span offsets index into the input you passed, and the replacements are applied
+to that input, so its whitespace is preserved exactly. A document filtered with splitting enabled
+produces the same output as the same document filtered without it.
+
+Set `overlap` when an entity could straddle a piece boundary. Each piece after the first begins that
+many characters earlier, so the entity is seen whole by the later piece; a span the overlap causes
+both pieces to find is de-duplicated.
+
+In one case the pieces cannot be located: a split method whose pieces are not verbatim substrings of
+the input, which none of the built-in methods produce. Filtering then falls back to processing each
+piece separately and concatenating the results, and on that path span offsets index the output rather
+than the input and the input's whitespace is not preserved.
 
 > The per-filter context **window size** is configured on each identifier via `WindowSize` (see [Common Options](#common-identifier-options)), not on `Config`.
 

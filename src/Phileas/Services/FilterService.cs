@@ -99,15 +99,40 @@ public class FilterService : IFilterService
         contextService ??= _contextService ?? new InMemoryContextService();
         var filters = BuildFilters(policy, contextService);
 
-        // Split the input when the policy enables splitting and the document is over the threshold,
-        // filter each piece independently, and combine the per-piece results.
+        // Split the input when the policy enables splitting and the document is over the threshold.
         var splitting = policy.Config.Splitting;
         if (splitting.Enabled && input.Length >= splitting.Threshold)
         {
             var splitService = SplitFactory.GetSplitService(splitting.Method, splitting.Threshold);
-            var splits = splitService.Split(input);
+
+            // Locating each piece in the input is what keeps span offsets indexing into the input, so
+            // it runs whether or not an overlap is configured. Null when a piece is not a verbatim
+            // substring of the input, which is the only case that falls back to concatenation.
+            var located = splitService.SplitWithOverlap(input, splitting.Overlap);
+
+            if (located != null)
+            {
+                // Filtered pieces cannot simply be concatenated: pieces may share text under an
+                // overlap, an entity on a seam belongs to neither piece alone, and concatenation drops
+                // the whitespace the splitter trimmed. Detect across all the pieces, then apply the
+                // replacements once to the original input.
+                var identified = new List<Span>();
+                var timeouts = new List<string>();
+
+                for (var i = 0; i < located.Count; i++)
+                {
+                    var (spans, pieceTimeouts) = Detect(policy, filters, context, i, located[i].Text);
+                    identified.AddRange(Span.ShiftSpans(located[i].Offset, spans));
+                    timeouts.AddRange(pieceTimeouts);
+                }
+
+                // An entity inside an overlap is found by both pieces; dropping overlapping spans
+                // keeps one of the duplicates.
+                return Apply(policy, context, piece, input, identified, timeouts);
+            }
 
             var results = new List<TextFilterResult>();
+            var splits = splitService.Split(input);
             for (var i = 0; i < splits.Count; i++)
             {
                 results.Add(ProcessPiece(policy, filters, context, i, splits[i]));
@@ -122,6 +147,14 @@ public class FilterService : IFilterService
     private TextFilterResult ProcessPiece(PhileasPolicy policy, IList<AbstractFilter> filters, string context,
         int piece, string input)
     {
+        var (spans, regexTimeouts) = Detect(policy, filters, context, piece, input);
+        return Apply(policy, context, piece, input, spans, regexTimeouts);
+    }
+
+    /// <summary>Runs every filter over <paramref name="input" /> without applying any replacement.</summary>
+    private static (IList<Span> Spans, IList<string> RegexTimeouts) Detect(PhileasPolicy policy,
+        IList<AbstractFilter> filters, string context, int piece, string input)
+    {
         var allSpans = new List<Span>();
         var regexTimeouts = new List<string>();
         foreach (var filter in filters)
@@ -131,10 +164,17 @@ public class FilterService : IFilterService
             regexTimeouts.AddRange(filter.DrainRegexTimeouts());
         }
 
+        return (allSpans, regexTimeouts);
+    }
+
+    /// <summary>Resolves competing spans and applies their replacements to <paramref name="input" />.</summary>
+    private TextFilterResult Apply(PhileasPolicy policy, string context, int piece, string input,
+        IList<Span> spans, IList<string> regexTimeouts)
+    {
         // Resolve spans that compete at the same location (same text classified as different types) using
         // their surrounding context, before overlapping spans are dropped. A no-op service leaves the
         // spans untouched.
-        var disambiguatedSpans = _disambiguationService.Disambiguate(context, allSpans);
+        var disambiguatedSpans = _disambiguationService.Disambiguate(context, spans);
 
         var finalSpans = Span.DropOverlappingSpans(disambiguatedSpans);
         finalSpans = ApplyGlobalIgnored(policy, finalSpans);
