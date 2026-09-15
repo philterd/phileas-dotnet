@@ -6,6 +6,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 _Unreleased._
 
+### Added
+
+- **Locale-aware phone number detection via the policy's `region`** ([#53](https://github.com/philterd/phileas-dotnet/issues/53)). The `phoneNumber` filter accepts an optional `region`, one ISO 3166-1 alpha-2 code or an array of them (default `US`), setting the region(s) used to read numbers written without an international `+` country code. Each configured region is scanned and the results are merged with overlapping matches de-duplicated, so `region: "GB"` detects UK national-format numbers and `region: ["US","GB","FR"]` detects all three. `+`-prefixed numbers are detected regardless. Additive and non-breaking: a policy with no `region` behaves as before. Requires redaction-policy schema 1.2.0 (Philterd.PhiSql 1.2.0). See [Supported Identifiers → Phone Number](docs/supported-identifiers.md#phone-number).
+
 ## 1.6.0 - 2026-07-19
 
 ### Added

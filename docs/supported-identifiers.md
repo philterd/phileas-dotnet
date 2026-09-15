@@ -417,11 +417,41 @@ For detailed documentation, see [PhEye Filter Usage](pheye-filter-usage.md).
 
 ### Phone Number
 
-Detects US and international phone numbers in a variety of formats, backed by Google's [libphonenumber](https://github.com/google/libphonenumber) (the `libphonenumber-csharp` port). Text is scanned with a default region of `US`, so North American Numbering Plan numbers (`(555) 123-4567`, `+1 555 123 4567`, `555.123.4567`) and any `+`-prefixed international number (`+44 20 7946 0958`, `+33 1 42 68 53 00`, `+91 98765 43210`, `+49 30 901820`) are detected regardless of region. National-format foreign numbers with no `+` are not reachable while the region is fixed to `US`.
+Detects US and international phone numbers in a variety of formats, backed by Google's [libphonenumber](https://github.com/google/libphonenumber) (the `libphonenumber-csharp` port). Text is scanned with a default region of `US`, so North American Numbering Plan numbers (`(555) 123-4567`, `+1 555 123 4567`, `555.123.4567`) and any `+`-prefixed international number (`+44 20 7946 0958`, `+33 1 42 68 53 00`, `+91 98765 43210`, `+49 30 901820`) are detected regardless of region.
 
 ```csharp
 Identifiers = new Identifiers { PhoneNumber = new PhoneNumber() }
 ```
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `Region` | `region` | `US` | The region(s), ISO 3166-1 alpha-2, used to interpret numbers written without an international `+` country code. Numbers with a `+` prefix are detected regardless of this value. |
+
+To detect national-format numbers from other countries, set one region or several. Each configured region is scanned and the results are merged, with overlapping matches de-duplicated:
+
+```csharp
+Identifiers = new Identifiers
+{
+    PhoneNumber = new PhoneNumber { Region = new List<string> { "US", "GB", "FR" } }
+}
+```
+
+In a JSON policy, `region` takes either a single string or an array of strings:
+
+```json
+{
+   "identifiers": {
+      "phoneNumber": {
+         "region": ["US", "GB", "FR"],
+         "phoneNumberFilterStrategies": [{"strategy": "REDACT"}]
+      }
+   }
+}
+```
+
+Region codes are matched exactly, so use the uppercase ISO 3166-1 alpha-2 form (`GB`, not `gb`). An unrecognized code leaves national-format numbers undetected; only `+`-prefixed numbers are found.
+
+> The `region` property requires redaction policy schema 1.2.0.
 
 ---
 
