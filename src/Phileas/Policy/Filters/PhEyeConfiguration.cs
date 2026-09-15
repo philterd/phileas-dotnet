@@ -35,6 +35,10 @@ public class PhEyeConfiguration
     [JsonPropertyName("timeout")]
     public int Timeout { get; set; } = 30;
 
+    /// <summary>Gets or sets the maximum number of idle HTTP connections kept alive. Defaults to 30.</summary>
+    [JsonPropertyName("maxIdleConnections")]
+    public int MaxIdleConnections { get; set; } = 30;
+
     /// <summary>
     ///     Gets or sets the list of entity labels the filter should detect (e.g. <c>"Person"</c>). Defaults to
     ///     <c>["Person"]</c>. For a local GLiNER model these are the detection prompt.

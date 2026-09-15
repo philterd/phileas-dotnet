@@ -25,7 +25,7 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class UrlFilter : RegexFilter
 {
-    private static readonly Analyzer UrlAnalyzer = new(
+    private static readonly Analyzer PrefixedAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.95).Build(),
         new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase)
@@ -33,17 +33,43 @@ public class UrlFilter : RegexFilter
     );
 
     /// <summary>
+    ///     Also matches a bare host such as <c>example.com/path</c>. The prefix is what separates a URL
+    ///     from ordinary prose containing a dot, so dropping the requirement costs precision: a lower
+    ///     initial confidence reflects that.
+    /// </summary>
+    private static readonly Analyzer UnprefixedAnalyzer = new(
+        new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.95).Build(),
+        new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*\b", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.90).Build(),
+        new FilterPattern.Builder()
+            .WithPattern(@"\b[a-z\d]+(?:[\-.][a-z\d]+)*\.[a-z]{2,5}(?::\d{1,5})?(?:/[^\s]*)?",
+                RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.70).Build()
+    );
+
+    private readonly bool _requireHttpWwwPrefix;
+
+    /// <summary>
     ///     Initializes a new <see cref="UrlFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public UrlFilter(FilterConfiguration configuration) : base(FilterType.Url, configuration)
+    /// <param name="configuration">Runtime filter configuration.</param>
+    /// <param name="requireHttpWwwPrefix">
+    ///     Require a <c>http://</c>, <c>https://</c> or <c>www.</c> prefix. When false a bare host is
+    ///     also detected.
+    /// </param>
+    public UrlFilter(FilterConfiguration configuration, bool requireHttpWwwPrefix = true)
+        : base(FilterType.Url, configuration)
     {
+        _requireHttpWwwPrefix = requireHttpWwwPrefix;
     }
 
     /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, UrlAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, _requireHttpWwwPrefix ? PrefixedAnalyzer : UnprefixedAnalyzer,
+            input, context, piece);
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

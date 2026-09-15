@@ -1,0 +1,31 @@
+{
+  "identifiers": {
+    "creditCard": {
+      "creditCardFilterStrategies": [
+        { "strategy": "MASK" }
+      ],
+      "onlyValidCreditCardNumbers": true,
+      "priority": 10,
+      "windowSize": 5,
+      "ignoredFiles": [ "allowlist.txt" ]
+    },
+    "dictionaries": [
+      {
+        "classification": "meds",
+        "terms": [ "aspirin" ],
+        "customFilterStrategies": [
+          { "strategy": "REDACT" }
+        ],
+        "files": [ "meds.txt" ],
+        "enabled": true,
+        "priority": 3
+      }
+    ]
+  },
+  "ignored": [
+    { "terms": [ "Acme Corp" ], "name": "org-allowlist", "caseSensitive": true }
+  ],
+  "ignoredPatterns": [
+    { "pattern": "[0-9]{4}", "name": "four-digits" }
+  ]
+}

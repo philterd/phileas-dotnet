@@ -27,4 +27,12 @@ public class EmailAddress : AbstractPolicyFilter
     /// <summary>Gets or sets the list of email address filter strategies to apply.</summary>
     [JsonPropertyName("emailAddressFilterStrategies")]
     public List<EmailAddressFilterStrategy>? Strategies { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the strict RFC-shaped pattern is used instead of the lenient one. Defaults to <see langword="true" />.</summary>
+    [JsonPropertyName("onlyStrictMatches")]
+    public bool OnlyStrictMatches { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether the domain's top-level domain must be an IANA-registered one. Defaults to <see langword="false" />.</summary>
+    [JsonPropertyName("onlyValidTLDs")]
+    public bool OnlyValidTLDs { get; set; } = false;
 }

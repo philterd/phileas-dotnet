@@ -34,8 +34,20 @@ public abstract class AbstractSplitService
     {
         var start = 0;
         var end = value.Length;
-        while (start < end && value[start] <= ' ') start++;
-        while (end > start && value[end - 1] <= ' ') end--;
+        while (start < end && IsTrimmable(value[start])) start++;
+        while (end > start && IsTrimmable(value[end - 1])) end--;
         return value[start..end];
+    }
+
+    /// <summary>
+    ///     Whether a splitter may have dropped this character between two pieces: exactly what
+    ///     <see cref="JavaTrim" /> removes. <see cref="char.IsWhiteSpace(char)" /> is wrong in both
+    ///     directions here, missing control characters that are trimmed and matching separators such as
+    ///     U+2028 and U+3000 that are not, either of which mislocates a piece.
+    /// </summary>
+    /// <param name="c">The character to test.</param>
+    public static bool IsTrimmable(char c)
+    {
+        return c <= ' ';
     }
 }
