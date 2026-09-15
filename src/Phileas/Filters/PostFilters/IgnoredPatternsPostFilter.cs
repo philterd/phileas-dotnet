@@ -52,12 +52,10 @@ public static class IgnoredPatternsPostFilter
             foreach (var pattern in ignoredPatterns)
             {
                 if (pattern.Pattern == null) continue;
-                var options = pattern.CaseSensitive
-                    ? RegexOptions.None
-                    : RegexOptions.IgnoreCase;
                 try
                 {
-                    if (Regex.IsMatch(span.Text, pattern.Pattern, options, timeout))
+                    // Case-sensitive, matching the Java filter. A pattern needing otherwise starts with (?i).
+                    if (Regex.IsMatch(span.Text, pattern.Pattern, RegexOptions.None, timeout))
                         return false;
                 }
                 catch (RegexMatchTimeoutException)

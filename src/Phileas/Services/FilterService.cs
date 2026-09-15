@@ -403,48 +403,6 @@ public class FilterService : IFilterService
                     new PhEyeFilter(config, phEye.PhEyeConfiguration, phEye.RemovePunctuation, phEye.Thresholds));
             }
 
-        if (identifiers.Dictionaries != null)
-            foreach (var dictionary in identifiers.Dictionaries)
-            {
-                var strategies = new List<AbstractFilterStrategy>();
-                if (dictionary.Strategies != null)
-                    foreach (var s in dictionary.Strategies)
-                        strategies.Add(new DictionaryFilterStrategy
-                        {
-                            Strategy = s.Strategy,
-                            RedactionFormat = s.RedactionFormat,
-                            Color = s.Color,
-                            StaticReplacement = s.StaticReplacement ?? string.Empty,
-                            MaskCharacter = s.MaskCharacter,
-                            MaskLength = s.MaskLength,
-                            Condition = s.Condition,
-                            Salt = s.Salt,
-                            AnonymizationMethod = s.AnonymizationMethod,
-                            AnonymizationCandidates = s.AnonymizationCandidates,
-                            ReplacementScope = s.ReplacementScope,
-                            ContextService = contextService
-                        });
-
-                if (strategies.Count == 0)
-                    strategies.Add(new DictionaryFilterStrategy { ContextService = contextService });
-
-                var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                if (dictionary.Ignored != null)
-                    foreach (var s in dictionary.Ignored)
-                        ignored.Add(s);
-
-                var config = new FilterConfiguration.Builder()
-                    .WithStrategies(strategies)
-                    .WithIgnored(ignored)
-                    .WithIgnoredPatterns(dictionary.IgnoredPatterns ?? new List<IgnoredPattern>())
-                    .WithWindowSize(dictionary.GetWindowSizeOrDefault(DefaultWindowSize))
-                    .WithPriority(dictionary.Priority)
-                    .WithPostFilters(policy.Config.PostFilters)
-                    .Build();
-
-                filters.Add(new DictionaryFilter(config, dictionary.Terms, dictionary.Fuzzy, dictionary.Level));
-            }
-
         // Dictionary-backed name/location filters (load the bundled term lists by filter type).
         if (identifiers.City != null)
             filters.Add(BuildDictionaryFilter(identifiers.City, identifiers.City.Strategies, FilterType.LocationCity,
@@ -632,8 +590,17 @@ public class FilterService : IFilterService
                     foreach (var prop in sourceType.GetProperties())
                     {
                         var targetProp = typeof(TStrategy).GetProperty(prop.Name);
-                        if (targetProp != null && targetProp.CanWrite)
-                            targetProp.SetValue(runtimeStrategy, prop.GetValue(s));
+                        if (targetProp == null || !targetProp.CanWrite) continue;
+
+                        // A policy property left unset carries null. Where the runtime property cannot
+                        // hold one, leave the runtime default in place rather than throwing: that is
+                        // what "the policy did not say" means.
+                        var value = prop.GetValue(s);
+                        if (value == null && targetProp.PropertyType.IsValueType
+                                          && Nullable.GetUnderlyingType(targetProp.PropertyType) == null)
+                            continue;
+
+                        targetProp.SetValue(runtimeStrategy, value);
                     }
 
                     runtimeStrategy.ContextService = contextService;

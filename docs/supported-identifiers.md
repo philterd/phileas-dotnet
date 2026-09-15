@@ -46,7 +46,6 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 
 | Property Name | JSON Key | Description |
 |---|---|---|
-| `Dictionaries` | `dictionary` | Named lists of custom terms (legacy dictionary model, `level`-based fuzzy matching) |
 | `CustomDictionaries` | `dictionaries` | Custom term lists with `classification` and `sensitivity`-based fuzzy matching |
 | `CustomIdentifiers` | `identifiers` | Custom regex identifiers |
 | `Sections` | `sections` | Spans of text delimited by a start and end pattern |
@@ -226,38 +225,19 @@ Identifiers = new Identifiers
 
 ### Dictionary
 
-Detects user-supplied terms in the input text. A policy can contain any number of dictionaries, each with its own `name` and list of `terms`. Matching is case-insensitive and whole-word, and every occurrence of a term is detected, including repeats.
+Detects user-supplied terms in the input text. A policy can contain any number of dictionaries, each
+with an optional `classification` and a list of `terms`. Matching is case-insensitive and whole-word,
+and every occurrence of a term is detected, including repeats.
 
 ```csharp
 Identifiers = new Identifiers
 {
-    Dictionaries = new List<Dictionary>
+    CustomDictionaries = new List<CustomDictionary>
     {
-        new Dictionary
+        new CustomDictionary
         {
-            Name = "medical-conditions",
+            Classification = "medical-conditions",
             Terms = new List<string> { "diabetes", "hypertension", "asthma" }
-        }
-    }
-}
-```
-
-Multiple dictionaries can be combined in a single policy:
-
-```csharp
-Identifiers = new Identifiers
-{
-    Dictionaries = new List<Dictionary>
-    {
-        new Dictionary
-        {
-            Name = "conditions",
-            Terms = new List<string> { "diabetes", "hypertension" }
-        },
-        new Dictionary
-        {
-            Name = "medications",
-            Terms = new List<string> { "metformin", "lisinopril" }
         }
     }
 }
@@ -266,63 +246,59 @@ Identifiers = new Identifiers
 ```json
 "identifiers": {
   "dictionaries": [
-    {
-      "name": "conditions",
-      "terms": ["diabetes", "hypertension"]
-    },
-    {
-      "name": "medications",
-      "terms": ["metformin", "lisinopril"]
-    }
+    { "classification": "conditions", "terms": ["diabetes", "hypertension"] },
+    { "classification": "medications", "terms": ["metformin", "lisinopril"] }
   ]
 }
 ```
 
-#### Fuzzy Matching
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `Classification` | `classification` | none | Label reported on each span this dictionary produces |
+| `Terms` | `terms` | none | The terms to detect |
+| `Files` | `files` | none | Files of additional terms, one per line |
+| `Fuzzy` | `fuzzy` | `false` | Enable near-match detection |
+| `Sensitivity` | `sensitivity` | `"off"` | How near a match may be: `"off"`, `"high"`, `"medium"`, `"low"`, `"auto"` |
+| `Capitalized` | `capitalized` | `false` | Require a match to start with a capital letter |
+| `Strategies` | `customFilterStrategies` | none | Filter strategies for this dictionary |
 
-The dictionary filter supports fuzzy matching to detect misspelled or near-match terms using Levenshtein distance. Enable fuzzy matching by setting `fuzzy: true` and optionally specifying a `level`:
+#### Fuzzy matching
+
+With `fuzzy: true`, a term is also detected when the text is within a Levenshtein distance of it.
+`sensitivity` sets how far: **higher sensitivity means a stricter match**.
+
+| `sensitivity` | Edit distance accepted |
+|---|---|
+| `"off"` or `"high"` | 0 (exact only) |
+| `"medium"` | 1 |
+| `"low"` | 2 |
 
 ```csharp
-new Dictionary
+new CustomDictionary
 {
-    Name = "medical-conditions",
+    Classification = "medical-conditions",
     Terms = new List<string> { "diabetes", "hypertension" },
     Fuzzy = true,
-    Level = "medium"  // "low", "medium", or "high"
+    Sensitivity = "medium"
 }
 ```
 
-```json
-{
-  "name": "medical-conditions",
-  "terms": ["diabetes", "hypertension"],
-  "fuzzy": true,
-  "level": "medium"
-}
-```
+#### The deprecated `dictionary` key
 
-**Fuzzy matching levels:** a *lower* level allows *more* edits (it is more permissive), and the assigned match confidence drops accordingly.
+This port also accepted `identifiers.dictionary`, a .NET-only spelling with `name` instead of
+`classification` and `level` instead of `sensitivity`. The redaction policy schema declares only
+`dictionaries` and rejects keys it does not define, so a policy using it did not validate.
 
-| Level | Max Edit Distance | Confidence |
-|---|---|---|
-| `high` | 0 (exact match) | 0.9 |
-| `medium` | 1 | 0.7 |
-| `low` (default) | 2 | 0.5 |
+It is still read, and its entries are folded into `dictionaries`, so an existing policy keeps
+redacting. It is never written back: a policy that goes in with `dictionary` comes out with
+`dictionaries`. Two things change when it is folded:
 
-For example, with `level: "medium"`, the term `"diabetes"` would match a misspelling like `"diabetis"` (1 edit) but not `"diabtes"` (2 edits). With `level: "low"`, both would match.
-
-#### Configuration Options
-
-Each `Dictionary` entry supports the common `AbstractPolicyFilter` options (`ignored`, `ignoredPatterns`, `priority`) and an optional `dictionaryFilterStrategies` list to override the default `REDACT` behaviour, plus:
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `fuzzy` | `bool` | `false` | Enable fuzzy matching for near-match detection |
-| `level` | `string` | `"low"` | Fuzzy matching sensitivity: `"low"`, `"medium"`, or `"high"` |
-
-> There are two dictionary models. The `Dictionaries` list above (JSON key `dictionary`) uses the `level`-based fuzzy matching shown here. A second `CustomDictionaries` list (JSON key `dictionaries`) carries a `classification`, optional term `files`, and uses the `sensitivity` scale (`"off"`, `"low"`, `"medium"`, `"high"`, `"auto"`) instead of `level`; its strategies list key is `customFilterStrategies`.
-
----
+- `level` counted upward (`"low"` accepted 1 edit, `"medium"` 2, `"high"` 3) while `sensitivity`
+  counts downward, so the mapping goes by the distance each accepts: `level: "low"` becomes
+  `sensitivity: "medium"`, and `level: "medium"` becomes `sensitivity: "low"`. Nothing accepts 3
+  edits, so `level: "high"` also becomes `sensitivity: "low"` and stops matching at a distance of 3.
+- Spans are reported as `custom-dictionary` rather than `dictionary`, so the default redaction label
+  becomes `{{{REDACTED-custom-dictionary}}}`.
 
 ### Driver's License
 

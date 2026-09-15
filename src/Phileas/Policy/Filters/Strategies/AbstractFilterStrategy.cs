@@ -158,9 +158,15 @@ public abstract class AbstractFilterStrategy
     /// <summary>
     ///     <c>MAP_REPLACE</c> whether lookup-table keys are matched case-sensitively. Defaults to
     ///     <see langword="false" />.
+    ///     <para>
+    ///         Nullable so an unset value is omitted when the policy is written. The schema's date
+    ///         strategy is additionalProperties:false and does not carry the MAP_REPLACE fields, since
+    ///         a date strategy cannot be MAP_REPLACE, so emitting this unconditionally made every
+    ///         policy with a date strategy fail validation.
+    ///     </para>
     /// </summary>
     [JsonPropertyName("caseSensitive")]
-    public bool CaseSensitive { get; set; } = false;
+    public bool? CaseSensitive { get; set; }
 
     /// <summary>
     ///     <c>MAP_REPLACE</c> name of a generator declared in the policy's top-level <c>generators</c> block, invoked to
@@ -172,10 +178,14 @@ public abstract class AbstractFilterStrategy
     /// <summary>
     ///     <c>MAP_REPLACE</c> terminal strategy applied when a detected value is absent from the lookup table and no
     ///     generator is set, or when the generator fails, times out, or returns invalid output. Defaults to
-    ///     <c>"REDACT"</c>. A detected value is never left in the clear.
+    ///     <c>"REDACT"</c> when unset. A detected value is never left in the clear.
+    ///     <para>
+    ///         Left null rather than defaulted here so an unset value is omitted when the policy is
+    ///         written, for the same reason as <see cref="CaseSensitive" />.
+    ///     </para>
     /// </summary>
     [JsonPropertyName("fallbackStrategy")]
-    public string FallbackStrategy { get; set; } = Redact;
+    public string? FallbackStrategy { get; set; }
 
     /// <summary>
     ///     Gets or sets the optional color of the bar drawn over a span this strategy redacts when rendering a PDF or
