@@ -67,17 +67,20 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
 
             foreach (var (entry, pattern) in _dictionary)
             {
-                var match = pattern.Match(input);
-                if (match.Success)
+                // Every occurrence, not just the first: a term repeated in the document was reported
+                // once and the rest were left in place. See philterd/phileas-dotnet#119.
+                var matched = false;
+                foreach (Match match in pattern.Matches(input))
                 {
-                    var startPosition = match.Index;
-                    if (!_requireCapitalization || char.IsUpper(input[startPosition]))
+                    matched = true;
+                    if (!_requireCapitalization || char.IsUpper(input[match.Index]))
                     {
-                        spans.Add(CreateSpan(input, startPosition, startPosition + entry.Length, 1.0, context, piece,
+                        spans.Add(CreateSpan(input, match.Index, match.Index + match.Length, 1.0, context, piece,
                             entry, policy));
                     }
                 }
-                else if (_sensitivityLevel != SensitivityLevel.Off)
+
+                if (!matched && _sensitivityLevel != SensitivityLevel.Off)
                 {
                     var wordsInEntry = entry.Split(' ').Length;
                     if (!ngramsByLength.TryGetValue(wordsInEntry, out var ngrams)) continue;
