@@ -19,6 +19,7 @@ using System.Text;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Phileas.Model;
+using Phileas.Policy;
 using Phileas.Rest.Storage;
 using Phileas.Services;
 using Phileas.Services.Office;
@@ -36,8 +37,8 @@ namespace Phileas.Rest.Endpoints;
 ///         the body. It always sets <c>Content-Type: application/pdf</c> for files and conveys the true type via
 ///         <c>filename</c>, so the document type here is taken from the <b>filename extension</b> (falling back
 ///         to plain text when <c>filename</c> is absent). The redacted document is returned in the body with the
-///         assigned id in the <c>x-document-id</c> header. <c>GET /api/health</c> and <c>GET /api/status</c>
-///         return a Philter <c>StatusResponse</c>.
+///         assigned id in the <c>x-document-id</c> header. <c>GET /api/health</c> returns a Philter
+///         <c>StatusResponse</c>.
 ///     </para>
 /// </summary>
 public static class PhilterApiEndpoints
@@ -46,6 +47,11 @@ public static class PhilterApiEndpoints
         typeof(PhilterApiEndpoints).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? typeof(PhilterApiEndpoints).Assembly.GetName().Version?.ToString()
         ?? "unknown";
+
+    // Read once, as the application version above is. Resolving it per request would also put a call
+    // that can throw inside the unhealthy branch, turning a 503 into a 500 on the one response whose
+    // job is to report the failure.
+    private static readonly string RedactionPolicySchemaVersion = PolicySchema.GetSupportedSchemaVersion();
 
     public static void MapPhilterApiEndpoints(this IEndpointRouteBuilder app)
     {
@@ -100,9 +106,9 @@ public static class PhilterApiEndpoints
             .WithSummary("Philter-compatible filter. Body is the raw document; type is taken from the 'filename' "
                          + "query parameter's extension (plain text when absent). Params: c, p, filename, async.");
 
-        // Philter health/status. Both return a StatusResponse; philter clients use them for liveness checks.
+        // Philter health. Philter 4.0 removed /api/status and made this the only health endpoint, so
+        // mapping the old path here would keep alive a route Philter clients can no longer rely on.
         app.MapGet("/api/health", Health).WithTags("Philter API").WithName("PhilterHealth");
-        app.MapGet("/api/status", Health).WithTags("Philter API").WithName("PhilterStatus");
     }
 
     private static IResult Health(IMongoDatabase database, IServiceProvider services)
@@ -111,20 +117,22 @@ public static class PhilterApiEndpoints
         {
             database.RunCommand<BsonDocument>(new BsonDocument("ping", 1));
             services.GetService<IConnectionMultiplexer>()?.GetDatabase().Ping();
-            return Results.Ok(Status("Healthy"));
+            return Results.Ok(Status("UP"));
         }
         catch
         {
-            return Results.Json(Status("Unhealthy"), statusCode: StatusCodes.Status503ServiceUnavailable);
+            return Results.Json(Status("DOWN"), statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }
 
     // Matches philter-sdk-java's StatusResponse (applicationVersion, gitCommit, redactionPolicySchemaVersion, status).
+    // The schema version comes from the PhiSQL reference library rather than being written here, as Philter's own
+    // StatusApiController reads it from PolicySchema: a literal goes stale the next time the package moves.
     private static object Status(string status) => new
     {
         applicationVersion = ApplicationVersion,
         gitCommit = string.Empty,
-        redactionPolicySchemaVersion = "1.1.0",
+        redactionPolicySchemaVersion = RedactionPolicySchemaVersion,
         status
     };
 }
