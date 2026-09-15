@@ -52,5 +52,7 @@ ENV ASPNETCORE_URLS=http://+:8080 \
     Phileas__Ocr__Language=eng \
     Phileas__Ocr__TessDataPath=/usr/share/tesseract-ocr/5/tessdata
 
+USER app
+
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Phileas.Rest.dll"]
