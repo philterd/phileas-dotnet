@@ -28,27 +28,36 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class CreditCardFilter : RegexFilter
 {
-    private const string BrandedNumber =
-        @"(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})";
-
-    private const string GroupedNumber = @"\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}";
+    /// <summary>
+    ///     Any run of 13 to 16 ASCII digits, separators allowed between them. The digit class is
+    ///     spelled out because .NET's <c>\d</c> spans every Unicode decimal digit, which would let a
+    ///     fullwidth-digit run be redacted as a card whenever validation is switched off. Detection is deliberately
+    ///     brand-agnostic: encoding brand prefixes here made the filter go stale whenever a network
+    ///     opened a range, and it did. Brand knowledge now sits in <see cref="IsKnownBrand" />, where
+    ///     being out of date costs precision rather than letting a card through unredacted.
+    /// </summary>
+    private const string CardShape = @"(?:[0-9][ -]*?){13,16}";
 
     /// <summary>
-    ///     A ten-digit epoch second count in the 2017-2027 range, written with the milliseconds that
-    ///     make it sixteen digits long and so indistinguishable from a card number by shape alone.
+    ///     The issuer prefixes, applied after the separators are stripped. Mastercard's 2-series
+    ///     (2221-2720, opened in 2017) is included: omitting it is what let valid cards through.
+    /// </summary>
+    private static readonly Rx BrandedNumber = new(
+        @"^(?:4[0-9]{12}(?:[0-9]{3})?"                                        // Visa
+        + @"|(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}" // Mastercard
+        + @"|3[47][0-9]{13}"                                                  // American Express
+        + @"|3(?:0[0-5]|[68][0-9])[0-9]{11}"                                  // Diners Club
+        + @"|6(?:011|5[0-9]{2})[0-9]{12}"                                     // Discover
+        + @"|62[0-9]{14}"                                                     // UnionPay, 16-digit
+        + @"|(?:2131|1800|35[0-9]{3})[0-9]{11})$",                            // JCB
+        RegexOptions.None, RegexDefaults.MatchTimeout);
+
+    /// <summary>
+    ///     A thirteen-digit epoch millisecond count. Under a brand-agnostic pattern such a run is a
+    ///     candidate, which is what <c>ignoreWhenInUnixTimestamp</c> exists to suppress.
     /// </summary>
     private static readonly Rx UnixTimestamp = new(@"^1[5-8][0-9]{11}$", RegexOptions.None,
         RegexDefaults.MatchTimeout);
-
-    /// <summary>
-    ///     Whether <paramref name="text" /> is shaped like a Unix timestamp in epoch milliseconds.
-    ///     Exposed for testing: the guard cannot currently change what this filter returns, because the
-    ///     brand patterns never match a timestamp, so its own correctness is not otherwise observable.
-    /// </summary>
-    internal static bool IsUnixTimestamp(string text)
-    {
-        return UnixTimestamp.IsMatch(text);
-    }
 
     /// <summary>
     ///     Analyzers are keyed by the options that change the pattern, so each distinct configuration
@@ -64,7 +73,7 @@ public class CreditCardFilter : RegexFilter
     ///     Initializes a new <see cref="CreditCardFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    /// <param name="onlyValidCreditCardNumbers">Keep only numbers that pass the Luhn checksum.</param>
+    /// <param name="onlyValidCreditCardNumbers">Keep only issuer-shaped numbers that pass Luhn.</param>
     /// <param name="onlyWordBoundaries">Require the number to sit on a word boundary.</param>
     /// <param name="ignoreWhenInUnixTimestamp">Drop digit runs that look like a Unix timestamp.</param>
     public CreditCardFilter(FilterConfiguration configuration, bool onlyValidCreditCardNumbers = true,
@@ -76,18 +85,36 @@ public class CreditCardFilter : RegexFilter
         _ignoreWhenInUnixTimestamp = ignoreWhenInUnixTimestamp;
     }
 
+    /// <summary>Whether <paramref name="text" /> is shaped like a Unix timestamp in epoch milliseconds.</summary>
+    internal static bool IsUnixTimestamp(string text)
+    {
+        return UnixTimestamp.IsMatch(Digits(text));
+    }
+
+    /// <summary>Whether the digits of <paramref name="text" /> carry a known issuer prefix.</summary>
+    internal static bool IsKnownBrand(string text)
+    {
+        return BrandedNumber.IsMatch(Digits(text));
+    }
+
+    private static string Digits(string text)
+    {
+        return new string(text.Where(char.IsAsciiDigit).ToArray());
+    }
+
     private static Analyzer AnalyzerFor(bool onlyWordBoundaries)
     {
         return Analyzers.GetOrAdd(onlyWordBoundaries, wordBoundaries =>
         {
-            // Without the boundaries a card number embedded in a longer run of digits or letters is
-            // still found, at the cost of more false positives, which is why it is not the default.
-            var boundary = wordBoundaries ? @"\b" : string.Empty;
-            return new Analyzer(
-                new FilterPattern.Builder().WithPattern(boundary + BrandedNumber + boundary)
-                    .WithInitialConfidence(0.95).Build(),
-                new FilterPattern.Builder().WithPattern(boundary + GroupedNumber + boundary)
-                    .WithInitialConfidence(0.85).Build());
+            // Without the boundaries a number embedded in a longer token is still found, at the cost
+            // of precision, so it carries a lower initial confidence. The lookahead form lets
+            // overlapping candidates be found, matching the Java filter.
+            return wordBoundaries
+                ? new Analyzer(new FilterPattern.Builder()
+                    .WithPattern(@"\b" + CardShape + @"\b").WithInitialConfidence(0.90).Build())
+                : new Analyzer(new FilterPattern.Builder()
+                    .WithPattern("(?=(" + CardShape + "))").WithGroupNumber(1)
+                    .WithInitialConfidence(0.70).Build());
         });
     }
 
@@ -97,12 +124,16 @@ public class CreditCardFilter : RegexFilter
         var spans = FindSpans(policy, AnalyzerFor(_onlyWordBoundaries), input, context, piece);
         spans = PostFilter(spans, input);
 
+        // Ordered as in the Java filter: the timestamp guard runs first, so it still applies when
+        // validation is switched off, which is exactly when the shape pattern is at its noisiest.
         if (_ignoreWhenInUnixTimestamp)
             spans = spans.Where(span => !IsUnixTimestamp(span.Text)).ToList();
 
-        // The checksum runs over the digits, so a number written in groups is validated as written.
+        // Validation is both halves: a known issuer prefix and the Luhn checksum. Luhn alone would
+        // admit roughly one in ten arbitrary digit runs.
         if (_onlyValidCreditCardNumbers)
-            spans = spans.Where(span => LuhnValidator.IsValid(span.Text)).ToList();
+            spans = spans.Where(span => IsKnownBrand(span.Text) && LuhnValidator.IsValid(span.Text))
+                .ToList();
 
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

@@ -121,7 +121,28 @@ Identifiers = new Identifiers { BitcoinAddress = new BitcoinAddress() }
 
 ### Credit Card
 
-Detects credit and debit card numbers including Visa, Mastercard, Amex, Discover, and others.
+Detects credit and debit card numbers including Visa, Mastercard (both the `51-55` and `2221-2720`
+ranges), American Express, Diners Club, Discover, JCB, and UnionPay.
+
+Detection happens in two stages. The pattern matches any run of 13 to 16 digits, with spaces or
+hyphens allowed between them, and the issuer prefix is then checked along with the Luhn checksum as
+part of `OnlyValidCreditCardNumbers`. Keeping issuer prefixes out of the pattern is deliberate: when
+they were in it, a card whose range was not listed went undetected rather than merely unvalidated,
+which is the worse way for a redaction filter to fail.
+
+A number is detected whatever grouping it is written in, so an American Express printed
+`NNNN NNNNNN NNNNN` is recognised as readily as a card grouped four by four. Numbers shorter than 13
+or longer than 16 digits are outside the window, which excludes the 19-digit forms some issuers use.
+
+The consequence is that `OnlyValidCreditCardNumbers` carries more weight than its name suggests. With
+it enabled, which is the default, only issuer-shaped numbers passing the checksum are redacted. With
+it disabled, every run of 13 to 16 digits is redacted, including order numbers and timestamps.
+
+Setting `OnlyWordBoundaries` to `false` also costs throughput. The pattern then has to be tried at
+every offset inside a run of digits rather than only where one begins, so a document containing long
+unbroken digit sequences takes substantially longer to filter: 50,000 contiguous digits takes seconds
+rather than milliseconds. The per-pattern regex budget does not bound this, because it limits a
+single match rather than the total time spent on a document. The default is unaffected.
 
 ```csharp
 Identifiers = new Identifiers { CreditCard = new CreditCard() }
@@ -130,9 +151,9 @@ Identifiers = new Identifiers { CreditCard = new CreditCard() }
 
 | Property | JSON key | Default | Description |
 |---|---|---|---|
-| `OnlyValidCreditCardNumbers` | `onlyValidCreditCardNumbers` | `true` | Keep only numbers that pass the Luhn checksum. |
-| `OnlyWordBoundaries` | `onlyWordBoundaries` | `true` | Require the number to sit on a word boundary. Set to `false` to find a number embedded in a longer token, at the cost of precision. |
-| `IgnoreWhenInUnixTimestamp` | `ignoreWhenInUnixTimestamp` | `false` | Drop digit runs shaped like a Unix timestamp. This port detects specific card brands, so no timestamp currently matches and the option has no effect; it is bound for policy portability. |
+| `OnlyValidCreditCardNumbers` | `onlyValidCreditCardNumbers` | `true` | Keep only numbers that carry a known issuer prefix **and** pass the Luhn checksum. Disabling it keeps every run of 13 to 16 digits. |
+| `OnlyWordBoundaries` | `onlyWordBoundaries` | `true` | Require the number to sit on a word boundary. Set to `false` to find a number embedded in a longer token, at the cost of precision and throughput. |
+| `IgnoreWhenInUnixTimestamp` | `ignoreWhenInUnixTimestamp` | `false` | Drop digit runs shaped like a thirteen-digit Unix timestamp in epoch milliseconds. Relevant mainly with `OnlyValidCreditCardNumbers` set to `false`, where any digit run of the right length is detected. |
 
 ---
 
