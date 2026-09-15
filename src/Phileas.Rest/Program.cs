@@ -100,7 +100,7 @@ app.UseSwaggerUI();
 app.MapFilterEndpoints();
 app.MapPolicyEndpoints();
 app.MapContextEndpoints();
-// Philter-compatible surface (/api/filter, /api/health, /api/status) for philter-router / philter-sdk clients.
+// Philter-compatible surface (/api/filter, /api/health) for philter-router / philter-sdk clients.
 app.MapPhilterApiEndpoints();
 
 // Liveness/readiness: verify Mongo and (if configured) Valkey are reachable.

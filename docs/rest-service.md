@@ -202,13 +202,17 @@ notably [philter-router](https://github.com/philterd/philter-router) via
 | Method & path | Purpose |
 | ------------- | ------- |
 | `POST /api/filter` | Redact text or a file. Query params `c`, `p`, `filename`, `async`. |
-| `GET /api/health` / `GET /api/status` | Philter `StatusResponse` for liveness checks. |
+| `GET /api/health` | Philter `StatusResponse` for liveness checks. Returns `"status": "UP"` with `200`, or `"DOWN"` with `503`. |
 
 The SDK sends the raw document as the request body and always sets `Content-Type: application/pdf` for files,
 conveying the real type through the `filename` query parameter — so `/api/filter` determines the document type
 from the **filename extension** (`.txt`, `.docx`, `.xlsx`, `.pdf`), and treats a request with no `filename` as
 plain text. The redacted document is returned in the body with the assigned id in the `x-document-id` header.
 `async` is accepted for wire compatibility but the service always filters synchronously.
+
+`GET /api/status` is not served. Philter 4.0 removed it and made `/api/health` the only health
+endpoint, and its `status` value changed from `Healthy` to `UP` (philterd/philter#90), so a probe or
+client written against the older contract has to be updated.
 
 To point philter-router at this service, add it as an engine in the router's configuration:
 
@@ -222,7 +226,7 @@ engines:
 | Method & path | Purpose |
 | ------------- | ------- |
 | `GET /health` | Liveness/readiness — pings MongoDB and Valkey; `503` if either is unreachable |
-| `GET /api/health`, `GET /api/status` | Philter-compatible liveness (see [Philter compatibility](#philter-compatibility)) |
+| `GET /api/health` | Philter-compatible liveness (see [Philter compatibility](#philter-compatibility)) |
 | `GET /swagger` | OpenAPI UI |
 
 ## Security

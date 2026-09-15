@@ -21,6 +21,7 @@ using System.Text.Json;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Phileas.Policy;
 using Xunit;
 
 namespace Phileas.Rest.Tests;
@@ -176,9 +177,27 @@ public sealed class RestApiTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal("Healthy", doc.RootElement.GetProperty("status").GetString());
-        Assert.True(doc.RootElement.TryGetProperty("applicationVersion", out _));
-        Assert.True(doc.RootElement.TryGetProperty("redactionPolicySchemaVersion", out _));
+
+        // Philter 4.0 standardized the value as "UP" across Philterd products; it was "Healthy".
+        Assert.Equal("UP", doc.RootElement.GetProperty("status").GetString());
+        Assert.False(string.IsNullOrEmpty(doc.RootElement.GetProperty("applicationVersion").GetString()));
+
+        // Read from the PhiSQL reference library rather than written into the response, so it cannot
+        // report a version the build does not actually support.
+        Assert.Equal(PolicySchema.GetSupportedSchemaVersion(),
+            doc.RootElement.GetProperty("redactionPolicySchemaVersion").GetString());
+    }
+
+    [SkippableFact]
+    public async Task PhilterApi_Status_IsNoLongerServed()
+    {
+        // Philter 4.0 removed /api/status, so serving it here would keep alive a route Philter itself
+        // no longer has. See philterd/philter#90.
+        Skip.IfNot(_fixture.DockerAvailable, "Docker is not available.");
+
+        var response = await _fixture.Client.GetAsync("/api/status");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [SkippableFact]

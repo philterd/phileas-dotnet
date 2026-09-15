@@ -15,6 +15,7 @@ _Unreleased._
 
 ### Changed
 
+- **`GET /api/status` is removed and `GET /api/health` reports `"status": "UP"`** ([#71](https://github.com/philterd/phileas-dotnet/issues/71)), matching the health contract Philter 4.0 standardized across Philterd products (philterd/philter#90); an unhealthy service answers `"DOWN"` with `503` as before. **Breaking for anything probing the Philter-compatible surface:** a load-balancer check or client on `/api/status`, or matching the old `Healthy` value, must be updated. The response's `redactionPolicySchemaVersion` is now read from the PhiSQL reference library rather than written into the handler, where it had gone stale at `1.1.0` against an actual supported version of `1.2.0`.
 - **Every regular expression now runs under a match budget, and a timeout is reported instead of being silently absorbed** ([#98](https://github.com/philterd/phileas-dotnet/issues/98)). `FilterConfiguration.RegexTimeoutMs` (default `1000`) now applies wherever a pattern runs over document text, and `TextFilterResult.RegexTimeouts` lists the patterns that gave up, so a non-empty list means part of the input went unsearched.
 - **Strategy names are matched without regard to case on every filter** ([#113](https://github.com/philterd/phileas-dotnet/pull/113)). The schema's enum is uppercase, so this is leniency toward a hand-written policy rather than a second spelling to document.
 
