@@ -24,8 +24,22 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class SsnFilter : RegexFilter
 {
+    /// <summary>
+    ///     The separator between the groups of an SSN is optional: a hyphen (wrapped across a line
+    ///     break or not), one horizontal space, or nothing at all. The fragments are shared with
+    ///     <see cref="EinFilter" /> through <see cref="IdentifierSeparators" />.
+    /// </summary>
+    private const string Separator = IdentifierSeparators.OptionalSeparator;
+
+    private const string Digit = IdentifierSeparators.Digit;
+
     private static readonly Analyzer SsnAnalyzer = new(
-        new FilterPattern.Builder().WithPattern(@"\b(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b")
+        new FilterPattern.Builder()
+            .WithPattern(IdentifierSeparators.NotWordBefore
+                         + "(?!000|666|9" + Digit + "{2})" + Digit + "{3}" + Separator
+                         + "(?!00)" + Digit + "{2}" + Separator
+                         + "(?!0000)" + Digit + "{4}"
+                         + IdentifierSeparators.NotWordAfter)
             .WithInitialConfidence(0.90).Build()
     );
 
