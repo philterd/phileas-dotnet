@@ -186,7 +186,15 @@ public class FilterService : IFilterService
         // Resolve spans that compete at the same location (same text classified as different types) using
         // their surrounding context, before overlapping spans are dropped. A no-op service leaves the
         // spans untouched.
-        var disambiguatedSpans = _disambiguationService.Disambiguate(context, spans);
+        //
+        // Both have to agree: the host enables the feature by which service it supplies, and the policy
+        // can decline it. A policy cannot turn it on, because a host that disabled it supplied a
+        // service that does nothing. See philterd/phileas-dotnet#52.
+        // Read as "unless the policy said no": a policy with no analysis block at all gets the default,
+        // rather than a null reference on the way to it.
+        var disambiguatedSpans = policy.Config.Analysis?.SpanDisambiguation != false
+            ? _disambiguationService.Disambiguate(context, spans)
+            : spans;
 
         var finalSpans = Span.DropOverlappingSpans(disambiguatedSpans);
         finalSpans = ApplyGlobalIgnored(policy, finalSpans);

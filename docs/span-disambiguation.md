@@ -35,6 +35,31 @@ var filterService = new FilterService(
 var result = filterService.Filter(policy, "ctx", 0, input);
 ```
 
+## Turning it off for one policy
+
+`config.analysis.spanDisambiguation` declines disambiguation for a single policy, without changing
+the host's setting:
+
+```json
+{
+  "config": { "analysis": { "spanDisambiguation": false } },
+  "identifiers": { "ssn": {} }
+}
+```
+
+It defaults to `true`, so a policy that does not mention it behaves as before. The two settings have
+to agree: the host enables the feature by which service it supplies, and a policy can decline it but
+cannot turn it on. A policy setting `true` against a host that disabled it still gets no
+disambiguation.
+
+Declining it does not change whether a value is redacted. Disambiguation decides which **type** a
+contested span is, an SSN against a phone number for instance; with it off, competing spans are
+resolved by the overlap rules alone.
+
+The same step is what trains the vector store, from the spans only one filter claimed. So a policy
+that declines disambiguation also stops contributing training data: documents filtered under it
+neither consult the store nor add to it.
+
 ## Options
 
 `SpanDisambiguationOptions`:
