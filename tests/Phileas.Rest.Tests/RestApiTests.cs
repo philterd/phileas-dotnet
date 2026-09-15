@@ -240,7 +240,7 @@ public sealed class RestApiTests
         using var stream = new MemoryStream(bytes);
         using var document = WordprocessingDocument.Open(stream, isEditable: false);
         var builder = new StringBuilder();
-        foreach (var text in document.MainDocumentPart!.Document.Descendants<Text>())
+        foreach (var text in document.MainDocumentPart!.Document!.Descendants<Text>())
             builder.Append(text.Text);
         return builder.ToString();
     }

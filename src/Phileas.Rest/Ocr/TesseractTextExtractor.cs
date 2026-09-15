@@ -67,7 +67,9 @@ public sealed class TesseractTextExtractor : ITextExtractor
             if (onlyPages != null && !onlyPages.Contains(number))
                 continue;
 
+#pragma warning disable CA1416 // supported everywhere this service can run; the rest cannot host it
             using var bitmap = Conversion.ToImage(document, page: number - 1, options: new RenderOptions(Dpi: _options.Dpi));
+#pragma warning restore CA1416
             var scaleX = bitmap.Width / widthPts;
             var scaleY = bitmap.Height / heightPts;
 

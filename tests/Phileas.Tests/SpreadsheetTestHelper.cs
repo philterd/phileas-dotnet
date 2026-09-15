@@ -103,7 +103,7 @@ namespace Phileas.Tests
 
             using SpreadsheetDocument doc = SpreadsheetDocument.Open(path, isEditable: true);
             WorksheetPart wsPart = doc.WorkbookPart!.WorksheetParts.First();
-            Worksheet worksheet = wsPart.Worksheet;
+            Worksheet worksheet = wsPart.Worksheet!;
             // headerFooter follows sheetData in schema order; appending after it is valid here.
             worksheet.AppendChild(new HeaderFooter(
                 new OddHeader(oddHeader),
@@ -294,7 +294,7 @@ namespace Phileas.Tests
                 "</xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>";
             WriteXml(drawingsPart, drawingXml);
 
-            wsPart.Worksheet.Append(new Drawing { Id = wsPart.GetIdOfPart(drawingsPart) });
+            wsPart.Worksheet!.Append(new Drawing { Id = wsPart.GetIdOfPart(drawingsPart) });
             wsPart.Worksheet.Save();
         }
 
@@ -326,7 +326,7 @@ namespace Phileas.Tests
                 "</xdr:sp><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>";
             WriteXml(drawingsPart, drawingXml);
 
-            wsPart.Worksheet.Append(new Drawing { Id = wsPart.GetIdOfPart(drawingsPart) });
+            wsPart.Worksheet!.Append(new Drawing { Id = wsPart.GetIdOfPart(drawingsPart) });
             wsPart.Worksheet.Save();
         }
 
@@ -369,7 +369,7 @@ namespace Phileas.Tests
                 "<pivotFields count=\"1\"><pivotField axis=\"axisRow\" showAll=\"0\"><items count=\"1\"><item x=\"0\"/></items></pivotField></pivotFields>" +
                 "</pivotTableDefinition>");
 
-            wbPart.Workbook.AppendChild(new PivotCaches(new PivotCache { CacheId = 1U, Id = cacheRelId }));
+            wbPart.Workbook!.AppendChild(new PivotCaches(new PivotCache { CacheId = 1U, Id = cacheRelId }));
             wbPart.Workbook.Save();
         }
 

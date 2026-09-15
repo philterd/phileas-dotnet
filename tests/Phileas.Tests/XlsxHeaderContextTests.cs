@@ -116,7 +116,7 @@ public sealed class XlsxHeaderContextTests
         using var stream = new MemoryStream(xlsx);
         using var document = SpreadsheetDocument.Open(stream, isEditable: false);
         var workbookPart = document.WorkbookPart!;
-        var cell = workbookPart.WorksheetParts.First().Worksheet
+        var cell = workbookPart.WorksheetParts.First().Worksheet!
             .Descendants<Cell>().First(c => c.CellReference == reference);
 
         if (cell.DataType?.Value == CellValues.InlineString)
@@ -124,7 +124,7 @@ public sealed class XlsxHeaderContextTests
 
         if (cell.DataType?.Value == CellValues.SharedString)
         {
-            var table = workbookPart.SharedStringTablePart!.SharedStringTable;
+            var table = workbookPart.SharedStringTablePart!.SharedStringTable!;
             return table.ElementAt(int.Parse(cell.CellValue!.Text)).InnerText;
         }
 
