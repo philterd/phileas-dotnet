@@ -61,7 +61,7 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 Add the NuGet package to your project:
 
 ```shell
-dotnet add package Phileas
+dotnet add package Philterd.Phileas
 ```
 
 ## Quick Start
