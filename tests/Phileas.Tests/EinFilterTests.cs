@@ -160,4 +160,124 @@ public class EinFilterTests
         Assert.Empty(result.Spans);
         Assert.Equal("EIN: 07-1234567", result.FilteredText);
     }
+
+    // -------------------------------------------------------------------------
+    // Separators, digits and boundaries, shared with the SSN filter.
+    // Every value below is synthetic. See philterd/phileas-dotnet#95.
+    // -------------------------------------------------------------------------
+
+    /// <summary>Asserts the identifier is a single span at the expected offsets, and is redacted.</summary>
+    private static void AssertRedacted(string input, string identifier)
+    {
+        var start = input.IndexOf(identifier, StringComparison.Ordinal);
+        Assert.True(start >= 0, "the identifier is not present in the input");
+
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+
+        Assert.Single(result.Spans);
+        Assert.Equal(identifier, result.Spans[0].Text);
+        Assert.Equal(start, result.Spans[0].CharacterStart);
+        Assert.Equal(start + identifier.Length, result.Spans[0].CharacterEnd);
+
+        var filtered = new FilterService().Filter(CreatePolicy(), "test", 0, input).FilteredText;
+        Assert.Equal(input.Replace(identifier, "{{{REDACTED-ein}}}"), filtered);
+    }
+
+    [Theory]
+    [InlineData("\u002D")] // hyphen-minus, the ASCII control
+    [InlineData("\u00AD")] // soft hyphen
+    [InlineData("\u2010")] // hyphen
+    [InlineData("\u2011")] // non-breaking hyphen
+    [InlineData("\u2012")] // figure dash
+    [InlineData("\u2013")] // en dash
+    [InlineData("\u2014")] // em dash
+    [InlineData("\u2015")] // horizontal bar
+    [InlineData("\u2212")] // minus sign
+    [InlineData("\uFE58")] // small em dash
+    [InlineData("\uFE63")] // small hyphen-minus
+    [InlineData("\uFF0D")] // fullwidth hyphen-minus
+    public void Filter_AcceptsEveryHyphenSubstitute(string hyphen)
+    {
+        var identifier = "12" + hyphen + "3456789";
+        AssertRedacted("The EIN is " + identifier + ".", identifier);
+    }
+
+    [Fact]
+    public void Filter_AcceptsWhitespaceFollowingTheHyphen()
+    {
+        AssertRedacted("The EIN is 12-  3456789.", "12-  3456789");
+    }
+
+    [Theory]
+    [InlineData("12-\n3456789")] // wrapped after the hyphen
+    [InlineData("12-\r\n3456789")] // CRLF break
+    [InlineData("12-\n    3456789")] // indented continuation line
+    [InlineData("12- \n\t3456789")] // horizontal space on either side of the break
+    [InlineData("12\u2011\n3456789")] // a hyphen substitute preceding the break
+    public void Filter_DetectsIdentifierWrappedAcrossALineBreak(string identifier)
+    {
+        AssertRedacted("The EIN is " + identifier + ".", identifier);
+    }
+
+    [Theory]
+    [InlineData("\uFF11\uFF12-\uFF13\uFF14\uFF15\uFF16\uFF17\uFF18\uFF19")] // fullwidth digits
+    [InlineData("\u0661\u0662-\u0663\u0664\u0665\u0666\u0667\u0668\u0669")] // Arabic-Indic digits
+    [InlineData("\u0967\u0968-\u0969\u096A\u096B\u096C\u096D\u096E\u096F")] // Devanagari digits
+    public void Filter_DoesNotDetectNonAsciiDigits(string input)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, "The EIN is " + input + ".").Spans);
+    }
+
+    [Theory]
+    [InlineData("x 123-45-6789123-45-6789 y")] // a fragment straddling two run-on SSNs
+    [InlineData("x -12-3456789- y")] // a hyphen on either side makes it part of a longer token
+    [InlineData("x 12-34567891 y")] // eight digits after the hyphen
+    [InlineData("x 123456789 y")] // no hyphen at all
+    [InlineData("x 12\n3456789 y")] // a bare line break is not a separator
+    public void Filter_DoesNotDetectAcrossBoundaries(string input)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Fact]
+    public void Filter_OnlyValidPrefixesOn_KeepsIssuedPrefixOnAWrappedMatch()
+    {
+        // The prefix check reads the first two characters of the span, which stay the digits
+        // however the identifier is separated.
+        var result = CreateFilter(true).Filter(CreatePolicy(), "test", 0, "EIN: 12-\n3456789");
+
+        Assert.Single(result.Spans);
+        Assert.Equal("12-\n3456789", result.Spans[0].Text);
+    }
+
+    [Fact]
+    public void Filter_OnlyValidPrefixesOn_DropsUnissuedPrefixOnAUnicodeHyphenMatch()
+    {
+        // 07 is not an issued prefix.
+        Assert.Empty(CreateFilter(true).Filter(CreatePolicy(), "test", 0, "EIN: 07\u20113456789").Spans);
+    }
+
+    [Fact]
+    public void Filter_OnlyValidPrefixesOff_KeepsUnissuedPrefixOnAUnicodeHyphenMatch()
+    {
+        AssertRedacted("EIN: 07\u20113456789.", "07\u20113456789");
+    }
+
+    [Fact]
+    public void Filter_DetectsAnEinAndAnSsnInOneDocumentWithoutOverlap()
+    {
+        const string input = "EIN 12-3456789 and SSN 078-05-1120 on file.";
+
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers { Ein = new Ein(), Ssn = new Ssn() }
+        };
+
+        var result = new FilterService().Filter(policy, "test", 0, input);
+
+        Assert.Equal("EIN {{{REDACTED-ein}}} and SSN {{{REDACTED-ssn}}} on file.", result.FilteredText);
+        Assert.Contains(result.Spans, s => s.FilterType == FilterType.Ein && s.Text == "12-3456789");
+        Assert.Contains(result.Spans, s => s.FilterType == FilterType.Ssn && s.Text == "078-05-1120");
+    }
 }
