@@ -55,9 +55,13 @@ public static class IdentifierValidators
             "de-steuerid" => DeSteuerIdValidator.GetInstance(),
             "de-personalausweis" => DePersonalausweisValidator.GetInstance(),
             "bic-structural" => BicStructuralValidator.GetInstance(),
+            "aba" => AbaValidator.GetInstance(),
+            "verhoeff" => VerhoeffValidator.GetInstance(),
+            "damm" => DammValidator.GetInstance(),
             _ => throw new ArgumentException(
                 $"Unsupported identifier validator '{name}'. This build implements: luhn, mod11, mod97, "
-                + "mod23-letter, es-cif, de-steuerid, de-personalausweis, bic-structural.")
+                + "mod23-letter, es-cif, de-steuerid, de-personalausweis, bic-structural, aba, verhoeff, "
+                + "damm.")
         };
     }
 }

@@ -173,7 +173,9 @@ The validator may be written as a string, or as an object when it takes paramete
 "validator": { "name": "mod11", "params": { "variant": "cpf" } }
 ```
 
-An unknown or not-yet-implemented validator name is a policy error and the filter raises rather than silently skipping the check. The available validators match the Phileas (Java) implementation for the same input.
+An unknown or not-yet-implemented validator name is a policy error and the filter raises rather than silently skipping the check.
+
+`verhoeff` and `damm` both treat the final digit as the check digit and ignore separators. They catch every single-digit error and every transposition of adjacent digits, which is what distinguishes them from a plain modulus check.
 
 | Validator | Parameters | Description |
 |---|---|---|
@@ -185,6 +187,9 @@ An unknown or not-yet-implemented validator name is a policy error and the filte
 | `de-steuerid` | none | German tax ID (Steuer-ID): digit-repetition rule plus ISO/IEC 7064 MOD 11,10 check digit. |
 | `de-personalausweis` | none | German ID card number: ICAO 9303 7-3-1 check digit. |
 | `bic-structural` | none | SWIFT/BIC structure (ISO 9362) with a valid ISO 3166 country segment. |
+| `aba` | none | ABA routing transit number: 3-7-1 weighted sum mod 10 over exactly nine digits. |
+| `verhoeff` | none | Verhoeff check digit (dihedral group D5), the last digit of the value. |
+| `damm` | none | Damm check digit (quasigroup scheme), the last digit of the value. |
 
 ---
 
