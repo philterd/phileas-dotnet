@@ -303,8 +303,9 @@ public class DateFormatCoverageTests
 
         foreach (var strategy in new[]
                  {
+                     // The schema's date strategy enum, which a date policy is now held to.
                      "SHIFT", "TRUNCATE_TO_YEAR", "RELATIVE", "REDACT", "MASK", "LAST_4",
-                     "ABBREVIATE", "TRUNCATE", "HASH_SHA256_REPLACE", "RANDOM_REPLACE"
+                     "TRUNCATE", "HASH_SHA256_REPLACE", "RANDOM_REPLACE"
                  })
         {
             var replaced = Strategy(date, strategy, strategy == "SHIFT" ? ",\"shiftDays\": 30" : "");

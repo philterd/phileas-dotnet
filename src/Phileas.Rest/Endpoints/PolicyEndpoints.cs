@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using Phileas.Policy;
 using Phileas.Rest.Storage;
 
 namespace Phileas.Rest.Endpoints;
@@ -45,6 +46,12 @@ public static class PolicyEndpoints
             {
                 policies.Save(name, request.Json);
                 return Results.Ok();
+            }
+            catch (PolicyValidationException ex)
+            {
+                // The policy is well-formed but does not match the schema. That is the caller's
+                // mistake, so it is a 400 naming what failed, not a 500.
+                return Results.BadRequest($"Invalid policy: {ex.Message}");
             }
             catch (ArgumentException ex)
             {

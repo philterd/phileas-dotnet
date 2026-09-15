@@ -327,6 +327,38 @@ Policy loaded = PolicySerializer.DeserializeFromJson(json);
 
 `PolicySerializer` omits null fields (matching the canonical schema) and resolves `${ENV_VAR}` / `env:NAME` placeholders from environment variables during deserialization. Policies can also be authored in **PhiSQL** and compiled with `Policy.FromPhiSQL(phisql)`.
 
+### Schema validation
+
+`DeserializeFromJson` validates the policy against the bundled redaction policy schema before binding
+it, and throws `PolicyValidationException` listing what failed and where:
+
+```
+The policy does not match the redaction policy schema (1.3.0):
+/identifiers/socialSecurity: All values fail against the false schema
+```
+
+This matters because `System.Text.Json` skips a key it does not recognise. Without validation a
+misspelled filter loaded as an absent one: the policy was accepted and then quietly did not redact
+what it named.
+
+Validation is against what the policy means to this port rather than its literal text, so the
+spellings documented as accepted are not errors: a strategy name in any casing, the older
+`SHIFT_DATE` name, and the deprecated `identifiers.dictionary` key.
+
+Pass `validate: false` to load a policy written for a different schema version:
+
+```csharp
+Policy loaded = PolicySerializer.DeserializeFromJson(json, validate: false);
+```
+
+Opting out means anything the schema would have rejected is skipped rather than applied, which is the
+behavior this validation exists to stop. `PolicySchema.Validate(json)` and
+`PolicySchema.GetValidationErrors(json)` apply the schema as written, with no leniency.
+
+Over the REST service, `PUT /policies/{name}` returns `400` with the same detail rather than storing
+a policy that would not do what it says. Reading a policy back does not re-validate it: the upload is
+the gate, and a filter request would otherwise pay for validation every time.
+
 ---
 
 ## Example: Full Policy

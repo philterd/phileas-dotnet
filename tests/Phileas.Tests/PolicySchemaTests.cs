@@ -34,13 +34,13 @@ public class PolicySchemaTests
     [Fact]
     public void SupportedSchemaVersionIsAvailableFromPhisql()
     {
-        Assert.Equal("1.2.0", PhiSqlPolicySchema.GetSupportedSchemaVersion());
+        Assert.Equal("1.3.0", PhiSqlPolicySchema.GetSupportedSchemaVersion());
     }
 
     [Fact]
     public void SupportedSchemaVersionIsAvailable()
     {
-        Assert.Equal("1.2.0", PhileasPolicySchema.GetSupportedSchemaVersion());
+        Assert.Equal("1.3.0", PhileasPolicySchema.GetSupportedSchemaVersion());
     }
 
     [Fact]

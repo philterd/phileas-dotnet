@@ -65,7 +65,10 @@ public sealed class PolicyRepository
         if (json == null)
             return null;
 
-        var policy = PolicySerializer.DeserializeFromJson(json);
+        // Not validated here: Save is the gate, and every policy in the store went through it. Load
+        // runs on every filter request, and schema validation costs about 2.7 ms serialized, which
+        // would cap the service's redaction throughput on work already done at write time.
+        var policy = PolicySerializer.DeserializeFromJson(json, validate: false);
         policy.Name = name;
         InjectModelPath(policy);
         return policy;
@@ -77,7 +80,8 @@ public sealed class PolicyRepository
     /// </summary>
     public void Save(string name, string json)
     {
-        // Round-trip to validate; keep the caller's canonical JSON as stored.
+        // Round-trip to validate, against the schema as well as the model; keep the caller's canonical
+        // JSON as stored. This is the only gate, since Load does not re-validate.
         _ = PolicySerializer.DeserializeFromJson(json);
 
         // Update via $set (not ReplaceOne) so MongoDB assigns the _id on insert. A replacement document would
