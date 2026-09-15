@@ -201,7 +201,10 @@ Identifiers = new Identifiers
 }
 ```
 
-> The date strategies list uses the JSON key `dateFilterStrategies`. The `SHIFT` strategy (see [Filter Strategies](filter-strategies.md#shift)) is specific to the Date filter.
+> The date strategies list uses the JSON key `dateFilterStrategies`. The `SHIFT`, `TRUNCATE_TO_YEAR`
+> and `RELATIVE` strategies (see [Filter Strategies](filter-strategies.md#shift)) are specific to the
+> Date filter. Each acts on every form above, using the format the matching pattern recorded, and
+> falls back to `REDACT` for a token that is not a real calendar date.
 
 ---
 

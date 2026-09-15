@@ -323,19 +323,21 @@ The strategy is named `SHIFT` in the redaction policy schema and by the PhiSQL c
 | Example | Format |
 |---|---|
 | `1/15/1990` | Numeric month first |
+| `15/01/1990` | Numeric day first, also with `-` and `.` |
 | `1990-01-15` | Numeric year first (ISO 8601), also with `/` and `.` |
 | `January 15, 1990` | Full month name |
 | `Jan 15, 1990` | Abbreviated month name |
 | `15 January 1990` | Day first, full month name |
 | `15-Jan-1990` | Day first, abbreviated month name, also with `/`, `.` and a space |
 
-The date filter has to detect the date before a strategy can act on it, so this list is the
-intersection of what it detects and what the strategies can parse. See
-[Supported Identifiers](supported-identifiers.md#date) for the full detection table.
+Every form the date filter detects can be shifted; see
+[Supported Identifiers](supported-identifiers.md#date) for the full detection table. A shifted date
+is written back in the form it was read in, so the ordering, the separator and a two-digit year are
+all preserved.
 
-One detected form cannot be parsed back into a date: `15.01.1990`, because a dotted date is read
-month first and there is no month 15. `TRUNCATE_TO_YEAR` and `RELATIVE` redact such a token.
-**`SHIFT` returns it unchanged, which leaves the date in the document.**
+If a detected token cannot be parsed as a date, which a numeric date that is not a real calendar date
+will not be, `SHIFT` falls back to `REDACT` rather than returning the token. A detected date is never
+left in the document.
 
 **Properties**
 

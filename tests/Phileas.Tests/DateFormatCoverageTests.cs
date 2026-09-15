@@ -209,6 +209,109 @@ public class DateFormatCoverageTests
         }
     }
 
+    // ---------------- the strategies act on a day-first date (#115) ----------------
+
+    /// <summary>Every written form the date filter detects, for the leak sweep below.</summary>
+    public static TheoryData<string> EveryDetectedForm() => new()
+    {
+        "15/01/1990", "15-01-1990", "15.01.1990", "25/12/80", "25-12-80", "25.12.80",
+        "01/15/1990", "12-31-2000", "03/04/1981",
+        "1990-01-15", "1990/01/15", "1990.01.15", "2024-06-01T09:30:00Z",
+        "15 January 1990", "15 Jan 1990", "15-Jan-1990", "15/Jan/1990", "15-January-1990",
+        "January 15, 1990", "January 15 1990", "Jan 15, 1990", "Jan. 5, 2023"
+    };
+
+    [Theory]
+    [InlineData("15/01/1990", "14/2/1990")]
+    [InlineData("15-01-1990", "14-2-1990")]
+    [InlineData("15.01.1990", "14.2.1990")]
+    [InlineData("25/12/80", "24/1/81")]
+    [InlineData("25-12-80", "24-1-81")]
+    [InlineData("25.12.80", "24.1.81")]
+    public void ShiftActsOnADayFirstDateInsteadOfLeavingIt(string date, string shifted)
+    {
+        // The strategy used to re-parse the token with the invariant culture, which reads a numeric
+        // date month first, so 15/01/1990 failed to parse and was returned unchanged: the date stayed
+        // in the document. It now parses with the format the matching pattern recorded.
+        Assert.Equal(shifted, Strategy(date, "SHIFT", ",\"shiftDays\": 30"));
+    }
+
+    [Theory]
+    [InlineData("15/01/1990", "1990")]
+    [InlineData("15-01-1990", "1990")]
+    [InlineData("15.01.1990", "1990")]
+    [InlineData("25/12/80", "1980")] // a two-digit year resolves to its century
+    public void TruncateToYearActsOnADayFirstDateInsteadOfRedacting(string date, string year)
+    {
+        Assert.Equal(year, Strategy(date, "TRUNCATE_TO_YEAR"));
+    }
+
+    [Theory]
+    [InlineData("15/01/1990")]
+    [InlineData("15.01.1990")]
+    [InlineData("25-12-80")]
+    public void RelativeActsOnADayFirstDateInsteadOfRedacting(string date)
+    {
+        var replaced = Strategy(date, "RELATIVE");
+
+        Assert.EndsWith(" ago", replaced);
+        Assert.DoesNotContain("REDACTED", replaced);
+    }
+
+    [Fact]
+    public void ShiftRedactsADetectedDateItCannotParse()
+    {
+        // 1990-02-31 is detected while onlyValidDates is off, and no calendar reading of it exists.
+        // Returning the token would leave PHI in the document, which is what SHIFT is being used to
+        // prevent, so the fallback is redaction as the other date strategies already do.
+        Assert.Equal("{{{REDACTED-date}}}", Strategy("1990-02-31", "SHIFT", ",\"shiftDays\": 30"));
+    }
+
+    [Fact]
+    public void WithNoPatternADayFirstDateIsRedactedRatherThanMisread()
+    {
+        // The format is the only thing that says 15/01/1990 is day first, so a caller that supplies no
+        // pattern (PhEye, a dictionary, or a direct caller) cannot know. Redacting is the safe answer;
+        // reading it month first would be wrong and returning it would leave the date in the document.
+        var strategy = new Phileas.Filters.Strategies.Rules.DateFilterStrategy
+        {
+            Strategy = Phileas.Filters.AbstractFilterStrategy.Shift, ShiftDays = 30
+        };
+
+        Assert.Equal("{{{REDACTED-date}}}",
+            strategy.GetReplacement("ctx", "15/01/1990", [], 0.9, null, null, null, null).Value);
+
+        // Text a model may label a date but that is not one at all is removed too, where it used to be
+        // handed back unchanged.
+        Assert.Equal("{{{REDACTED-date}}}",
+            strategy.GetReplacement("ctx", "next Tuesday", [], 0.9, null, null, null, null).Value);
+
+        // A form the invariant culture does read still shifts, so the no-pattern path is not lost.
+        Assert.Equal("2/14/1990",
+            strategy.GetReplacement("ctx", "01/15/1990", [], 0.9, null, null, null, null).Value);
+    }
+
+    [Theory]
+    [MemberData(nameof(EveryDetectedForm))]
+    public void NoStrategyLeavesADetectedDateInTheOutput(string date)
+    {
+        // The property that matters, asserted over the whole detection table rather than one form at
+        // a time: whatever a strategy does with a detected date, the date must not survive it. SAME is
+        // excluded because leaving the token is what it is for.
+        var detected = Detected(date);
+        Assert.NotEqual(string.Empty, detected);
+
+        foreach (var strategy in new[]
+                 {
+                     "SHIFT", "TRUNCATE_TO_YEAR", "RELATIVE", "REDACT", "MASK", "LAST_4",
+                     "ABBREVIATE", "TRUNCATE", "HASH_SHA256_REPLACE", "RANDOM_REPLACE"
+                 })
+        {
+            var replaced = Strategy(date, strategy, strategy == "SHIFT" ? ",\"shiftDays\": 30" : "");
+            Assert.DoesNotContain(detected, replaced);
+        }
+    }
+
     [Fact]
     public void ARunOfYearFirstDatesIsDetectedAsTwoDates()
     {

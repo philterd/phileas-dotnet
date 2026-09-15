@@ -57,19 +57,25 @@ public class DateFilterStrategy : StandardFilterStrategy
                 ? (Random.Next(1, 30), Random.Next(1, 12), -Random.Next(1, 3))
                 : (ShiftDays, ShiftMonths, ShiftYears);
 
-            var shifted = ShiftDateValue(token, days, months, years, FutureDates);
-            return new Replacement(shifted, string.Empty, shifted != token);
+            var shifted = ShiftDateValue(token, filterPattern, days, months, years, FutureDates);
+
+            // A detected date that cannot be parsed is still PHI, so it is redacted rather than
+            // returned as it was. Returning the token left the value in the document, which is the
+            // one outcome a date strategy must never produce. Matches the Java filter.
+            return shifted == null
+                ? new Replacement(GetRedactedToken(token, classification, FilterType.Date), string.Empty)
+                : new Replacement(shifted, string.Empty, shifted != token);
         }
 
         if (Is(AbstractFilterStrategy.TruncateToYear))
         {
-            var truncated = TruncateToYearValue(token, classification);
+            var truncated = TruncateToYearValue(token, filterPattern, classification);
             return new Replacement(truncated, string.Empty, truncated != token);
         }
 
         if (Is(AbstractFilterStrategy.Relative))
         {
-            var relative = RelativeValue(token, classification, FutureDates);
+            var relative = RelativeValue(token, filterPattern, classification, FutureDates);
             return new Replacement(relative, string.Empty, relative != token);
         }
 
@@ -107,10 +113,41 @@ public class DateFilterStrategy : StandardFilterStrategy
                || KnownStrategies.Any(k => string.Equals(k, strategy, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>Replaces a parsed date with its year; an unparseable token falls back to redaction.</summary>
-    private string TruncateToYearValue(string token, string? classification)
+    /// <summary>
+    ///     Parses a detected date, preferring the format recorded on the pattern that matched it.
+    ///     <para>
+    ///         The format is what says which of the leading numbers is the day, so without it
+    ///         <c>15/01/1990</c> is read month first, fails, and the date is lost. The month-name
+    ///         patterns carry no format and fall back to the invariant culture, which reads them.
+    ///     </para>
+    /// </summary>
+    /// <param name="token">The detected text.</param>
+    /// <param name="filterPattern">The pattern that produced the match, or <see langword="null" />.</param>
+    /// <param name="date">The parsed date.</param>
+    /// <param name="format">
+    ///     The format the date was parsed with, or <see langword="null" /> when the invariant culture
+    ///     read it. Writing the date back with this format reproduces the original ordering,
+    ///     separators and padding.
+    /// </param>
+    /// <returns><see langword="true" /> when the token parsed as a date.</returns>
+    private static bool TryParseToken(string token, FilterPattern? filterPattern, out DateTime date,
+        out string? format)
     {
-        return DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+        // Java writes the year as 'u' and .NET as 'y'; DateSpanValidator makes the same substitution.
+        format = string.IsNullOrEmpty(filterPattern?.Format) ? null : filterPattern.Format.Replace('u', 'y');
+
+        if (format != null && DateTime.TryParseExact(token, format, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out date))
+            return true;
+
+        format = null;
+        return DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+    }
+
+    /// <summary>Replaces a parsed date with its year; an unparseable token falls back to redaction.</summary>
+    private string TruncateToYearValue(string token, FilterPattern? filterPattern, string? classification)
+    {
+        return TryParseToken(token, filterPattern, out var date, out _)
             ? date.Year.ToString(CultureInfo.InvariantCulture)
             : GetRedactedToken(token, classification, FilterType.Date);
     }
@@ -121,9 +158,10 @@ public class DateFilterStrategy : StandardFilterStrategy
     ///     ahead of today is phrased <c>in N months</c> when <c>futureDates</c> is on, and redacted when
     ///     it is off. An unparseable token falls back to redaction.
     /// </summary>
-    private string RelativeValue(string token, string? classification, bool futureDates)
+    private string RelativeValue(string token, FilterPattern? filterPattern, string? classification,
+        bool futureDates)
     {
-        if (!DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        if (!TryParseToken(token, filterPattern, out var date, out _))
             return GetRedactedToken(token, classification, FilterType.Date);
 
         var (years, months, days) = PeriodBetween(date.Date, DateTime.Today);
@@ -191,10 +229,15 @@ public class DateFilterStrategy : StandardFilterStrategy
         return (years, months, days);
     }
 
-    private static string ShiftDateValue(string token, int days, int months, int years, bool futureDates)
+    /// <summary>
+    ///     Shifts a detected date, preserving how it was written. Returns <see langword="null" /> when
+    ///     the token cannot be parsed, which the caller turns into a redaction.
+    /// </summary>
+    private static string? ShiftDateValue(string token, FilterPattern? filterPattern, int days, int months,
+        int years, bool futureDates)
     {
-        if (!DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
-            return token;
+        if (!TryParseToken(token, filterPattern, out var date, out var format))
+            return null;
 
         var original = date;
         date = date.AddDays(days).AddMonths(months).AddYears(years);
@@ -204,6 +247,12 @@ public class DateFilterStrategy : StandardFilterStrategy
         // is preserved either way.
         if (!futureDates && date > DateTime.Today && original <= DateTime.Today)
             date = original.AddDays(-days).AddMonths(-months).AddYears(-years);
+
+        // Written back with the format it was read with, so the ordering, separators and padding of
+        // the original are reproduced exactly. Every numeric pattern carries a format, so the branches
+        // below are the no-format path: the month-name patterns, and a caller that supplies no pattern.
+        if (format != null)
+            return date.ToString(format, CultureInfo.InvariantCulture);
 
         // Year-first numeric format: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD. Checked first because the
         // month-first pattern below would otherwise have to be read to see that it cannot match.
