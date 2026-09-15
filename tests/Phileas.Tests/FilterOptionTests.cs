@@ -62,28 +62,37 @@ public class FilterOptionTests
     [InlineData("1500000000000")]
     [InlineData("1612345678901")]
     [InlineData("1799999999999")]
-    public void IgnoreWhenInUnixTimestamp_HasNothingToDropAgainstBrandPatterns(string timestamp)
+    public void IgnoreWhenInUnixTimestamp_DropsTimestampsTheShapePatternPicksUp(string timestamp)
     {
-        // The option is bound and applied, but it cannot currently change the outcome: this port
-        // detects specific card brands (Visa, Mastercard, Amex and so on), and no epoch-second value
-        // carries one of those prefixes. The Java filter needs the guard because it matches any run of
-        // 13 to 16 digits and validates afterwards. If the pattern here is ever widened that way, this
-        // test starts failing and the guard becomes load-bearing.
+        // Detection is brand-agnostic, so an epoch millisecond value is a candidate whenever
+        // validation is off. That is the case this option exists for. See #102.
         var input = "value " + timestamp + " here";
-        var permissive = new Identifiers
+        var withoutGuard = new Identifiers
         {
-            CreditCard = new CreditCard { OnlyValidCreditCardNumbers = false, OnlyWordBoundaries = false }
+            CreditCard = new CreditCard { OnlyValidCreditCardNumbers = false }
         };
-
-        Assert.Empty(Detect(permissive, input));
-        Assert.Empty(Detect(new Identifiers
+        var withGuard = new Identifiers
         {
             CreditCard = new CreditCard
             {
-                OnlyValidCreditCardNumbers = false, OnlyWordBoundaries = false,
-                IgnoreWhenInUnixTimestamp = true
+                OnlyValidCreditCardNumbers = false, IgnoreWhenInUnixTimestamp = true
             }
-        }, input));
+        };
+
+        Assert.NotEmpty(Detect(withoutGuard, input));
+        Assert.Empty(Detect(withGuard, input));
+    }
+
+    [Fact]
+    public void IgnoreWhenInUnixTimestamp_DoesNotDropRealCards()
+    {
+        // The guard must not cost recall: a card is not a thirteen-digit epoch value.
+        var guarded = new Identifiers
+        {
+            CreditCard = new CreditCard { IgnoreWhenInUnixTimestamp = true }
+        };
+
+        Assert.NotEmpty(Detect(guarded, "card 4111111111111111 end"));
     }
 
     [Theory]
