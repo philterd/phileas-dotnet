@@ -24,25 +24,51 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class EmailAddressFilter : RegexFilter
 {
-    private static readonly Analyzer EmailAnalyzer = new(
+    /// <summary>
+    ///     The strict form follows RFC 5322's unquoted local part, so it accepts the specials the RFC
+    ///     permits. "Strict" means strictly conformant, not narrower: it matches more, not less.
+    /// </summary>
+    private static readonly Analyzer StrictAnalyzer = new(
         new FilterPattern.Builder()
-            .WithPattern(@"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
+            .WithPattern(@"\b[A-Za-z0-9!#$%&'*+/=?^_`{|}~.\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
             .WithInitialConfidence(0.99)
             .Build()
     );
+
+    /// <summary>The lenient form allows only word characters, dots and dashes in the local part.</summary>
+    private static readonly Analyzer LenientAnalyzer = new(
+        new FilterPattern.Builder()
+            .WithPattern(@"\b[\w.\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
+            .WithInitialConfidence(0.99)
+            .Build()
+    );
+
+    private readonly bool _onlyStrictMatches;
+    private readonly bool _onlyValidTlds;
 
     /// <summary>
     ///     Initializes a new <see cref="EmailAddressFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    public EmailAddressFilter(FilterConfiguration configuration) : base(FilterType.EmailAddress, configuration)
+    /// <param name="configuration">Runtime filter configuration.</param>
+    /// <param name="onlyStrictMatches">Use the RFC-conformant local part instead of the lenient one.</param>
+    /// <param name="onlyValidTlds">Keep only addresses whose top-level domain is IANA-registered.</param>
+    public EmailAddressFilter(FilterConfiguration configuration, bool onlyStrictMatches = true,
+        bool onlyValidTlds = false) : base(FilterType.EmailAddress, configuration)
     {
+        _onlyStrictMatches = onlyStrictMatches;
+        _onlyValidTlds = onlyValidTlds;
     }
 
     /// <inheritdoc />
     public override Filtered Filter(PhileasPolicy policy, string context, int piece, string input)
     {
-        var spans = FindSpans(policy, EmailAnalyzer, input, context, piece);
+        var spans = FindSpans(policy, _onlyStrictMatches ? StrictAnalyzer : LenientAnalyzer,
+            input, context, piece);
+
+        if (_onlyValidTlds)
+            spans = spans.Where(span => TopLevelDomains.IsRegistered(span.Text)).ToList();
+
         spans = PostFilter(spans, input);
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);

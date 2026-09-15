@@ -1,0 +1,29 @@
+{
+  "identifiers": {
+    "dictionaries": [
+      {
+        "classification": "meds",
+        "terms": [ "aspirin" ],
+        "customFilterStrategies": [
+          { "strategy": "REDACT" }
+        ],
+        "ignoredPatterns": [
+          { "name": "skip-codes", "pattern": "[A-Z]{3}[0-9]+" }
+        ]
+      }
+    ],
+    "pheyes": [
+      {
+        "phEyeFilterStrategies": [
+          { "strategy": "REDACT" }
+        ],
+        "phEyeConfiguration": {
+          "labels": [ "PER" ],
+          "timeout": 30,
+          "maxIdleConnections": 5
+        },
+        "thresholds": { "PER": 0.8 }
+      }
+    ]
+  }
+}
