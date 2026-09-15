@@ -205,6 +205,16 @@ public class DateFilterStrategy : StandardFilterStrategy
         if (!futureDates && date > DateTime.Today && original <= DateTime.Today)
             date = original.AddDays(-days).AddMonths(-months).AddYears(-years);
 
+        // Year-first numeric format: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD. Checked first because the
+        // month-first pattern below would otherwise have to be read to see that it cannot match.
+        var yearFirstMatch = Regex.Match(token, @"^\d{4}([\/\-\.])(\d{2})\1(\d{2})$", RegexOptions.None,
+            RegexDefaults.MatchTimeout);
+        if (yearFirstMatch.Success)
+        {
+            var sep = yearFirstMatch.Groups[1].Value;
+            return $"{date.Year:D4}{sep}{date.Month:D2}{sep}{date.Day:D2}";
+        }
+
         // Numeric format: M/D/YYYY, M-D-YYYY, M.D.YYYY
         var numericMatch = Regex.Match(token, @"^(\d{1,2})([\/\-\.])(\d{1,2})\2(\d{2,4})$", RegexOptions.None,
             RegexDefaults.MatchTimeout);
@@ -226,11 +236,23 @@ public class DateFilterStrategy : StandardFilterStrategy
             return $"{date.ToString("MMMM", CultureInfo.InvariantCulture)} {date.Day}{comma} {date.Year}";
         }
 
-        // Day, full month name, year: "15 January 1990"
-        if (Regex.IsMatch(token,
-                @"^\d{1,2}\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}$",
-                RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout))
-            return $"{date.Day} {date.ToString("MMMM", CultureInfo.InvariantCulture)} {date.Year}";
+        // Day, month name, year: "15 January 1990", "15 Jan 1990", "15-Jan-1990", "15/Jan/1990".
+        var dayFirstNamedMatch = Regex.Match(token,
+            @"^(?<day>\d{1,2})(?<sep>\s*[\-\/.]\s*|\s+)"
+            + @"(?<month>January|February|March|April|May|June|July|August|September|October|November|December"
+            + @"|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?<dot>\.?)\k<sep>\d{4}$",
+            RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout);
+        if (dayFirstNamedMatch.Success)
+        {
+            var sep = dayFirstNamedMatch.Groups["sep"].Value;
+            // "May" is both the full name and the abbreviation, so either branch prints the same text.
+            var abbreviated = dayFirstNamedMatch.Groups["month"].Value.Length <= 3;
+            var monthName = date.ToString(abbreviated ? "MMM" : "MMMM", CultureInfo.InvariantCulture);
+            var dayText = dayFirstNamedMatch.Groups["day"].Value.Length == 2
+                ? date.Day.ToString("D2", CultureInfo.InvariantCulture)
+                : date.Day.ToString(CultureInfo.InvariantCulture);
+            return $"{dayText}{sep}{monthName}{dayFirstNamedMatch.Groups["dot"].Value}{sep}{date.Year}";
+        }
 
         // Abbreviated month, day, year: "Jan. 5, 2023" or "Jan 5, 2023"
         if (Regex.IsMatch(token,

@@ -169,7 +169,22 @@ Identifiers = new Identifiers { Currency = new Currency() }
 
 ### Date
 
-Detects dates in common written and numeric forms (e.g. `January 1, 2024`, `01/01/2024`, `6.4.2020`).
+Detects dates in common written and numeric forms.
+
+| Written form | Example |
+|---|---|
+| Month name first | `January 15, 1990`, `January 15 1990`, `Jan 15, 1990`, `Jan. 15, 1990` |
+| Day first, month name | `15 January 1990`, `15 Jan 1990`, `15-Jan-1990`, `15/Jan/1990`, `15-January-1990` |
+| Month first, numeric | `01/15/1990`, `01-15-1990`, `01.15.1990`, and the same with a two-digit year |
+| Day first, numeric | `15/01/1990`, `15-01-1990`, `15.01.1990`, and the same with a two-digit year |
+| Year first, numeric | `1990-01-15`, `1990/01/15`, `1990.01.15` |
+| ISO 8601 timestamp | `2024-06-01T09:30:00Z` (the date part is the span; the time is left alone) |
+
+A day and a month name may be separated by a space, `-`, `/` or `.`, and both separators in the date
+must be the same character. A year-first date takes a zero-padded month and day, as ISO 8601 requires,
+so a version string such as `2020.1.5` is not read as a date. A date run together with a word, such as
+`1990-01-15x`, is not detected either; the only text allowed against the end of a date is the time of
+an ISO 8601 timestamp.
 
 ```csharp
 Identifiers = new Identifiers { Date = new Date() }
