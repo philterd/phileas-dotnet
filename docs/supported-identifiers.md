@@ -273,6 +273,11 @@ With `fuzzy: true`, a term is also detected when the text is within a Levenshtei
 | `"medium"` | 1 |
 | `"low"` | 2 |
 
+A near match is detected whether or not the same term also appears exactly elsewhere in the document,
+so a name written correctly once and misspelled once has both redacted. Each occurrence is reported
+once, and a span's text is the document's, not the dictionary's spelling of it, which is what a
+filter strategy operates on.
+
 ```csharp
 new CustomDictionary
 {
