@@ -536,49 +536,102 @@ public class FilterService : IFilterService
         IEnumerable<Policy.Filters.Strategies.AbstractFilterStrategy>? policyStrategies, FilterType filterType,
         PhileasPolicy policy, IContextService contextService)
     {
+        return BuildConfig(policyFilter, policy,
+            BuildStrategies(policyStrategies, () => CreateDictionaryRuntimeStrategy(filterType), policy,
+                contextService));
+    }
+
+    /// <summary>
+    ///     Copies each policy strategy onto a runtime one and wires it up.
+    ///     <para>
+    ///         Shared by both construction paths. The dictionary path used to hand-copy eleven named
+    ///         properties and skip <see cref="ResolveMapReplace" />, so a dictionary filter silently
+    ///         lost <c>MAP_REPLACE</c>'s lookup table and every other property not on that list. A
+    ///         third path cannot repeat that without going around this method. See
+    ///         philterd/phileas-dotnet#125.
+    ///     </para>
+    /// </summary>
+    /// <param name="policyStrategies">The strategies declared on the filter, or <see langword="null" />.</param>
+    /// <param name="createRuntimeStrategy">Creates the runtime strategy this filter type takes.</param>
+    /// <param name="policy">The active policy, for resolving generators and mapping files.</param>
+    /// <param name="contextService">The context service each strategy is given.</param>
+    private static List<AbstractFilterStrategy> BuildStrategies(IEnumerable? policyStrategies,
+        Func<AbstractFilterStrategy> createRuntimeStrategy, PhileasPolicy policy, IContextService contextService)
+    {
         var strategies = new List<AbstractFilterStrategy>();
+
         if (policyStrategies != null)
-            foreach (var s in policyStrategies)
+            foreach (var policyStrategy in policyStrategies)
             {
-                var runtimeStrategy = CreateDictionaryRuntimeStrategy(filterType);
-                runtimeStrategy.Strategy = s.Strategy;
-                runtimeStrategy.RedactionFormat = s.RedactionFormat;
-                runtimeStrategy.Color = s.Color;
-                runtimeStrategy.StaticReplacement = s.StaticReplacement ?? string.Empty;
-                runtimeStrategy.MaskCharacter = s.MaskCharacter;
-                runtimeStrategy.MaskLength = s.MaskLength;
-                runtimeStrategy.Condition = s.Condition;
-                runtimeStrategy.Salt = s.Salt;
-                runtimeStrategy.AnonymizationMethod = s.AnonymizationMethod;
-                runtimeStrategy.AnonymizationCandidates = s.AnonymizationCandidates;
-                runtimeStrategy.ReplacementScope = s.ReplacementScope;
+                var runtimeStrategy = createRuntimeStrategy();
+                CopyStrategyProperties(policyStrategy, runtimeStrategy);
                 runtimeStrategy.ContextService = contextService;
+                ResolveMapReplace(runtimeStrategy, policy);
                 strategies.Add(runtimeStrategy);
             }
 
         if (strategies.Count == 0)
         {
-            var runtimeStrategy = CreateDictionaryRuntimeStrategy(filterType);
+            var runtimeStrategy = createRuntimeStrategy();
             runtimeStrategy.ContextService = contextService;
             strategies.Add(runtimeStrategy);
         }
 
+        return strategies;
+    }
+
+    /// <summary>
+    ///     Copies every property the runtime strategy shares with the policy strategy, by name. Copying
+    ///     the properties rather than listing them means one added to the policy model reaches the
+    ///     runtime without a second edit here.
+    /// </summary>
+    private static void CopyStrategyProperties(object policyStrategy, AbstractFilterStrategy runtimeStrategy)
+    {
+        var runtimeType = runtimeStrategy.GetType();
+
+        foreach (var property in policyStrategy.GetType().GetProperties())
+        {
+            var target = runtimeType.GetProperty(property.Name);
+            if (target == null || !target.CanWrite) continue;
+
+            // A policy property left unset carries null. Where the runtime property cannot hold one,
+            // leave the runtime default in place rather than throwing: that is what "the policy did
+            // not say" means.
+            var value = property.GetValue(policyStrategy);
+            if (value == null && target.PropertyType.IsValueType
+                              && Nullable.GetUnderlyingType(target.PropertyType) == null)
+                continue;
+
+            target.SetValue(runtimeStrategy, value);
+        }
+    }
+
+    /// <summary>
+    ///     Builds the filter configuration shared by both construction paths, so a filter cannot be
+    ///     built without the policy's crypto and FPE settings: the dictionary path omitted them, and a
+    ///     dictionary filter asking for <c>CRYPTO_REPLACE</c> threw "Missing crypto encryption
+    ///     property" against a policy that supplied one.
+    /// </summary>
+    private FilterConfiguration BuildConfig(AbstractPolicyFilter policyFilter, PhileasPolicy policy,
+        List<AbstractFilterStrategy> strategies)
+    {
         var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (policyFilter.Ignored != null)
-            foreach (var s in policyFilter.Ignored)
-                ignored.Add(s);
+            foreach (var term in policyFilter.Ignored)
+                ignored.Add(term);
 
-        var config = new FilterConfiguration.Builder()
+        return new FilterConfiguration.Builder()
             .WithStrategies(strategies)
             .WithIgnored(ignored)
             .WithIgnoredPatterns(policyFilter.IgnoredPatterns ?? new List<IgnoredPattern>())
+            .WithCrypto(policy.Crypto)
+            .WithFpe(policy.Fpe)
             .WithWindowSize(policyFilter.GetWindowSizeOrDefault(DefaultWindowSize))
             .WithPriority(policyFilter.Priority)
             .WithPostFilters(policy.Config.PostFilters)
             .Build();
-
-        return config;
     }
+
 
     private static AbstractFilterStrategy CreateDictionaryRuntimeStrategy(FilterType filterType)
     {
@@ -609,62 +662,14 @@ public class FilterService : IFilterService
         AbstractPolicyFilter policyFilter, PhileasPolicy policy, IContextService contextService)
         where TStrategy : AbstractFilterStrategy, new()
     {
-        // Extract strategies from the policyFilter using reflection
-        var strategiesProperty = policyFilter.GetType().GetProperty("Strategies");
-        var strategies = new List<AbstractFilterStrategy>();
+        // The filter's own strategy list, whose property type differs per filter.
+        var policyStrategies = policyFilter.GetType().GetProperty("Strategies")?.GetValue(policyFilter)
+            as IEnumerable;
 
-        if (strategiesProperty != null)
-        {
-            var policyStrategies = strategiesProperty.GetValue(policyFilter) as IEnumerable;
-            if (policyStrategies != null)
-                foreach (var s in policyStrategies)
-                {
-                    // Copy strategy properties to runtime strategy object
-                    var runtimeStrategy = new TStrategy();
-                    var sourceType = s.GetType();
-
-                    // Copy all properties from policy strategy to runtime strategy
-                    foreach (var prop in sourceType.GetProperties())
-                    {
-                        var targetProp = typeof(TStrategy).GetProperty(prop.Name);
-                        if (targetProp == null || !targetProp.CanWrite) continue;
-
-                        // A policy property left unset carries null. Where the runtime property cannot
-                        // hold one, leave the runtime default in place rather than throwing: that is
-                        // what "the policy did not say" means.
-                        var value = prop.GetValue(s);
-                        if (value == null && targetProp.PropertyType.IsValueType
-                                          && Nullable.GetUnderlyingType(targetProp.PropertyType) == null)
-                            continue;
-
-                        targetProp.SetValue(runtimeStrategy, value);
-                    }
-
-                    runtimeStrategy.ContextService = contextService;
-                    ResolveMapReplace(runtimeStrategy, policy);
-                    strategies.Add(runtimeStrategy);
-                }
-        }
-
-        // If no strategies defined, create a default one
-        if (strategies.Count == 0) strategies.Add(new TStrategy { ContextService = contextService });
-
-        var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (policyFilter.Ignored != null)
-            foreach (var s in policyFilter.Ignored)
-                ignored.Add(s);
-
-        return new FilterConfiguration.Builder()
-            .WithStrategies(strategies)
-            .WithIgnored(ignored)
-            .WithIgnoredPatterns(policyFilter.IgnoredPatterns ?? new List<IgnoredPattern>())
-            .WithCrypto(policy.Crypto)
-            .WithFpe(policy.Fpe)
-            .WithWindowSize(policyFilter.GetWindowSizeOrDefault(DefaultWindowSize))
-            .WithPriority(policyFilter.Priority)
-            .WithPostFilters(policy.Config.PostFilters)
-            .Build();
+        return BuildConfig(policyFilter, policy,
+            BuildStrategies(policyStrategies, () => new TStrategy(), policy, contextService));
     }
+
 
     // Shared across generator calls; per-call timeouts are enforced with a CancellationToken in the generator.
     private static readonly HttpClient GeneratorHttpClient = new();
