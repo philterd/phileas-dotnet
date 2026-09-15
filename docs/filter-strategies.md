@@ -2,6 +2,10 @@
 
 A **filter strategy** controls what happens to a detected PII token. Each identifier type supports a `Strategies` list; the first strategy whose `condition` evaluates to `true` is applied. If the list is empty, the default `REDACT` strategy is used.
 
+Every strategy is available on every identifier type, including the dictionary-backed ones
+(`surname`, `firstName`, `city`, `county`, `state`, `hospital`) and the custom `dictionaries`
+list, and behaves the same on each.
+
 Strategy names are matched without regard to case, so `MASK`, `mask` and `Mask` all select the same strategy. The names below are the canonical form and what the redaction policy schema declares; write them uppercase in a new policy.
 
 A date filter raises on a name that is not one of the strategies below, rather than falling back to
