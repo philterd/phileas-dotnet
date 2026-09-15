@@ -50,7 +50,7 @@ public class Policy
 |---|---|---|---|
 | `Enabled` | `enabled` | `false` | Enable splitting of long inputs. |
 | `Threshold` | `threshold` | `10000` | Minimum input length (characters) before splitting applies. |
-| `Method` | `method` | `"newline"` | Split method: `"newline"`, `"width"`, or `"characters"`. |
+| `Method` | `method` | `"newline"` | Split method: `"newline"`, `"width"`, or `"characters"` (`"character"` is accepted as an alias). Names are case-insensitive. An unrecognised name is a policy error. |
 | `Overlap` | `overlap` | `0` | Characters each piece shares with the end of the previous piece. |
 
 ```csharp
@@ -63,6 +63,11 @@ var policy = new Policy
     }
 };
 ```
+
+An unrecognised split method raises rather than falling back to another method, so a policy cannot
+quietly be split by a method it did not ask for. The name is resolved whenever splitting is enabled,
+not only once a document exceeds the threshold, so a mistake surfaces on the first document rather
+than on the first large one.
 
 Splitting is an internal optimisation and is not observable in the result. Each piece is located in
 the original input, so span offsets index into the input you passed, and the replacements are applied

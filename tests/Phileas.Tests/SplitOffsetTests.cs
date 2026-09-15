@@ -168,6 +168,50 @@ public class SplitOffsetTests
         Assert.Equal(unsplit.FilteredText, result.FilteredText);
     }
 
+    [Theory]
+    [InlineData("newline")]
+    [InlineData("width")]
+    [InlineData("characters")]
+    [InlineData("character")] // the singular the policy specification's own example uses
+    [InlineData("NEWLINE")] // names are case-insensitive
+    public void AnAcceptedSplitMethod_Filters(string method)
+    {
+        var result = new FilterService().Filter(Policy(method), "ctx", 0, Document);
+
+        AssertOffsetsIndexTheInput(Document, result);
+    }
+
+    [Fact]
+    public void AnUnknownSplitMethod_RaisesRatherThanSplittingByAnotherMethod()
+    {
+        // It used to fall back to newline splitting, so a policy naming a method that does not exist
+        // was split by one it never asked for, with nothing reported. See #105.
+        var ex = Assert.Throws<ArgumentException>(
+            () => new FilterService().Filter(Policy("not-a-method"), "ctx", 0, Document));
+
+        Assert.Contains("not-a-method", ex.Message);
+        Assert.Contains("characters", ex.Message);
+    }
+
+    [Fact]
+    public void AnUnknownSplitMethod_RaisesEvenBelowTheThreshold()
+    {
+        // The name is resolved whenever splitting is enabled, so a typo does not lie dormant until a
+        // document large enough to split finally arrives.
+        Assert.Throws<ArgumentException>(
+            () => new FilterService().Filter(Policy("not-a-method"), "ctx", 0, "short"));
+    }
+
+    [Fact]
+    public void AnUnknownSplitMethod_IsIgnoredWhenSplittingIsDisabled()
+    {
+        var policy = Policy("not-a-method", enabled: false);
+
+        var result = new FilterService().Filter(policy, "ctx", 0, Document);
+
+        Assert.NotEmpty(result.Spans);
+    }
+
     [Fact]
     public void Overlap_DefaultsToZero()
     {
