@@ -65,6 +65,13 @@ public abstract class AbstractFilterStrategy
     /// <summary>Replacement strategy constant: shift a detected date by configured days, months, and/or years.</summary>
     public const string ShiftDate = "SHIFT_DATE";
 
+    /// <summary>
+    ///     The name the redaction policy schema and the PhiSQL compiler use for date shifting.
+    ///     <see cref="ShiftDate" /> is the name this port has always used and is still accepted, so a
+    ///     policy written against either is honored.
+    /// </summary>
+    public const string Shift = "SHIFT";
+
     /// <summary>Replacement strategy constant: keep only the first character.</summary>
     public const string Truncate = "TRUNCATE";
 

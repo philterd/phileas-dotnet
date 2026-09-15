@@ -186,7 +186,7 @@ Identifiers = new Identifiers
 }
 ```
 
-> The date strategies list uses the JSON key `dateFilterStrategies`. The `SHIFT_DATE` strategy (see [Filter Strategies](filter-strategies.md#shift_date)) is specific to the Date filter.
+> The date strategies list uses the JSON key `dateFilterStrategies`. The `SHIFT` strategy (see [Filter Strategies](filter-strategies.md#shift)) is specific to the Date filter.
 
 ---
 
