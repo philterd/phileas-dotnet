@@ -651,7 +651,14 @@ Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
 
 ### URL
 
-Detects HTTP and HTTPS URLs.
+Detects HTTP, HTTPS and FTP URLs.
+
+A span ends at the last character that belongs to the URL, so a trailing `/`, `&` or `#` is kept.
+Punctuation that prose puts after a URL is not, so `see http://example.com/page.` redacts the URL and
+leaves the sentence's period behind. This holds for punctuation outside ASCII too, including the
+ideographic full stop and comma, so a URL in Japanese or Chinese text is not extended by the sentence
+mark that follows it. Punctuation inside a path is untouched either way, so `/a/b.html` and `?q=1,2`
+are matched whole.
 
 ```csharp
 Identifiers = new Identifiers { Url = new Url() }

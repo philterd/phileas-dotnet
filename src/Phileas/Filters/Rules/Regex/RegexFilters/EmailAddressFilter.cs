@@ -50,7 +50,6 @@ public class EmailAddressFilter : RegexFilter
     ///     Initializes a new <see cref="EmailAddressFilter" /> with the given configuration.
     /// </summary>
     /// <param name="configuration">Runtime filter configuration.</param>
-    /// <param name="configuration">Runtime filter configuration.</param>
     /// <param name="onlyStrictMatches">Use the RFC-conformant local part instead of the lenient one.</param>
     /// <param name="onlyValidTlds">Keep only addresses whose top-level domain is IANA-registered.</param>
     public EmailAddressFilter(FilterConfiguration configuration, bool onlyStrictMatches = true,
