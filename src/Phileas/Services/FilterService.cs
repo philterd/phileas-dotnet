@@ -101,47 +101,57 @@ public class FilterService : IFilterService
 
         // Split the input when the policy enables splitting and the document is over the threshold.
         var splitting = policy.Config.Splitting;
-        if (splitting.Enabled && input.Length >= splitting.Threshold)
+        if (splitting.Enabled)
         {
+            // Resolve the method whenever splitting is enabled, not only once a document is large
+            // enough to split, so a name the policy got wrong surfaces on the first document rather
+            // than lying dormant until a large one arrives.
             var splitService = SplitFactory.GetSplitService(splitting.Method, splitting.Threshold);
 
-            // Locating each piece in the input is what keeps span offsets indexing into the input, so
-            // it runs whether or not an overlap is configured. Null when a piece is not a verbatim
-            // substring of the input, which is the only case that falls back to concatenation.
-            var located = splitService.SplitWithOverlap(input, splitting.Overlap);
-
-            if (located != null)
-            {
-                // Filtered pieces cannot simply be concatenated: pieces may share text under an
-                // overlap, an entity on a seam belongs to neither piece alone, and concatenation drops
-                // the whitespace the splitter trimmed. Detect across all the pieces, then apply the
-                // replacements once to the original input.
-                var identified = new List<Span>();
-                var timeouts = new List<string>();
-
-                for (var i = 0; i < located.Count; i++)
-                {
-                    var (spans, pieceTimeouts) = Detect(policy, filters, context, i, located[i].Text);
-                    identified.AddRange(Span.ShiftSpans(located[i].Offset, spans));
-                    timeouts.AddRange(pieceTimeouts);
-                }
-
-                // An entity inside an overlap is found by both pieces; dropping overlapping spans
-                // keeps one of the duplicates.
-                return Apply(policy, context, piece, input, identified, timeouts);
-            }
-
-            var results = new List<TextFilterResult>();
-            var splits = splitService.Split(input);
-            for (var i = 0; i < splits.Count; i++)
-            {
-                results.Add(ProcessPiece(policy, filters, context, i, splits[i]));
-            }
-
-            return TextFilterResult.Combine(results, context, splitService.GetSeparator());
+            if (input.Length >= splitting.Threshold)
+                return FilterSplit(policy, filters, context, piece, input, splitting, splitService);
         }
 
         return ProcessPiece(policy, filters, context, piece, input);
+    }
+
+    private TextFilterResult FilterSplit(PhileasPolicy policy, IList<AbstractFilter> filters, string context,
+        int piece, string input, Splitting splitting, ISplitService splitService)
+    {
+        // Locating each piece in the input is what keeps span offsets indexing into the input, so
+        // it runs whether or not an overlap is configured. Null when a piece is not a verbatim
+        // substring of the input, which is the only case that falls back to concatenation.
+        var located = splitService.SplitWithOverlap(input, splitting.Overlap);
+
+        if (located != null)
+        {
+            // Filtered pieces cannot simply be concatenated: pieces may share text under an
+            // overlap, an entity on a seam belongs to neither piece alone, and concatenation drops
+            // the whitespace the splitter trimmed. Detect across all the pieces, then apply the
+            // replacements once to the original input.
+            var identified = new List<Span>();
+            var timeouts = new List<string>();
+
+            for (var i = 0; i < located.Count; i++)
+            {
+                var (spans, pieceTimeouts) = Detect(policy, filters, context, i, located[i].Text);
+                identified.AddRange(Span.ShiftSpans(located[i].Offset, spans));
+                timeouts.AddRange(pieceTimeouts);
+            }
+
+            // An entity inside an overlap is found by both pieces; dropping overlapping spans
+            // keeps one of the duplicates.
+            return Apply(policy, context, piece, input, identified, timeouts);
+        }
+
+        var results = new List<TextFilterResult>();
+        var splits = splitService.Split(input);
+        for (var i = 0; i < splits.Count; i++)
+        {
+            results.Add(ProcessPiece(policy, filters, context, i, splits[i]));
+        }
+
+        return TextFilterResult.Combine(results, context, splitService.GetSeparator());
     }
 
     private TextFilterResult ProcessPiece(PhileasPolicy policy, IList<AbstractFilter> filters, string context,

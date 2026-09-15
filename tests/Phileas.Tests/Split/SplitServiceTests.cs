@@ -95,6 +95,13 @@ public class SplitServiceTests
         Assert.IsType<NewLineSplitService>(SplitFactory.GetSplitService("newline", 100));
         Assert.IsType<LineWidthSplitService>(SplitFactory.GetSplitService("width", 100));
         Assert.IsType<CharacterCountSplitService>(SplitFactory.GetSplitService("characters", 100));
-        Assert.IsType<NewLineSplitService>(SplitFactory.GetSplitService("unknown", 100));
+        Assert.IsType<CharacterCountSplitService>(SplitFactory.GetSplitService("character", 100));
+
+        // An unknown method used to be replaced silently with newline splitting, which gave a policy
+        // pieces it never asked for. See philterd/phileas-dotnet#105.
+        var ex = Assert.Throws<ArgumentException>(() => SplitFactory.GetSplitService("unknown", 100));
+        Assert.Contains("newline", ex.Message);
+        Assert.Contains("width", ex.Message);
+        Assert.Contains("characters", ex.Message);
     }
 }
