@@ -19,6 +19,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Phileas.Filters;
 using Phileas.Filters.PhEye;
+using Phileas.Filters.PostFilters;
 using Phileas.Filters.Rules;
 using Phileas.Filters.Rules.Dictionary;
 using Phileas.Filters.Rules.Regex;
@@ -189,10 +190,35 @@ public class FilterService : IFilterService
 
         var finalSpans = Span.DropOverlappingSpans(disambiguatedSpans);
         finalSpans = ApplyGlobalIgnored(policy, finalSpans);
+        finalSpans = ApplyGlobalIgnoredPatterns(policy, finalSpans, regexTimeouts);
         var (filteredText, incrementalRedactions) = ApplyReplacements(input, finalSpans);
 
         return new TextFilterResult(filteredText, context, piece, finalSpans, incrementalRedactions,
             TokenCounter.CountTokens(input), regexTimeouts);
+    }
+
+    /// <summary>
+    ///     Applies the policy's document-scoped <c>ignoredPatterns</c>, removing any span whose entity
+    ///     text matches one of them, regardless of which filter produced the span.
+    ///     <para>
+    ///         The sibling <c>ignored</c> list has always been applied here; this was declared by the
+    ///         schema at the same level, documented as applying across all identifier types, and never
+    ///         read. See philterd/phileas-dotnet#124.
+    ///     </para>
+    /// </summary>
+    private static IList<Span> ApplyGlobalIgnoredPatterns(PhileasPolicy policy, IList<Span> spans,
+        IList<string> regexTimeouts)
+    {
+        if (policy.IgnoredPatterns == null || policy.IgnoredPatterns.Count == 0)
+            return spans;
+
+        // The default match budget: this pass is document-scoped, so there is no filter configuration
+        // to take one from, and nothing on the policy sets it either.
+        //
+        // A pattern that cannot be evaluated must not drop a detection, which would leave the value in
+        // the clear; the post-filter keeps the span and reports the timeout, as the per-filter path does.
+        return IgnoredPatternsPostFilter.Apply(spans, policy.IgnoredPatterns,
+            RegexDefaults.MatchTimeout, regexTimeouts.Add);
     }
 
     /// <summary>

@@ -257,7 +257,11 @@ validate. **This changes behavior:** patterns previously matched case-insensitiv
 
 ## Global Ignored Values
 
-The top-level `Ignored` and `IgnoredPatterns` lists apply **across all identifier types** — any span whose text matches is dropped, no matter which filter produced it.
+The top-level `Ignored` and `IgnoredPatterns` lists apply **across all identifier types**: any span
+whose text matches is dropped, no matter which filter produced it. An `IgnoredPatterns` entry that
+cannot be evaluated within the regex match budget keeps the span rather than dropping it, so a
+pattern that fails never leaves a detected value in the document; the pattern is reported on
+`TextFilterResult.RegexTimeouts`.
 
 Each `Ignored` entry is a named set of terms:
 
