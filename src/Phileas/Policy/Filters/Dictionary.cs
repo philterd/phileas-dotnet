@@ -56,14 +56,21 @@ public class Dictionary : AbstractPolicyFilter
             Strategies = Strategies?.Select(CopyStrategy).ToList()
         };
 
-        converted.Enabled = Enabled;
-        converted.Ignored = Ignored;
-        converted.IgnoredFiles = IgnoredFiles;
-        converted.IgnoredPatterns = IgnoredPatterns;
-        converted.WindowSize = WindowSize;
-        converted.Priority = Priority;
+        CopySharedProperties(converted);
 
         return converted;
+    }
+
+    /// <summary>
+    ///     Copies the properties both shapes inherit from <see cref="AbstractPolicyFilter" />. Copied
+    ///     rather than listed: a hand-written list silently drops whatever is added to the base later,
+    ///     which is how <c>id</c> came to be lost here.
+    /// </summary>
+    private void CopySharedProperties(CustomDictionary converted)
+    {
+        foreach (var property in typeof(AbstractPolicyFilter).GetProperties())
+            if (property.CanRead && property.CanWrite)
+                property.SetValue(converted, property.GetValue(this));
     }
 
     /// <summary>

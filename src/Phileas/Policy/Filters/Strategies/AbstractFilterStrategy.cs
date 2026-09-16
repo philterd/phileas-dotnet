@@ -76,6 +76,13 @@ public abstract class AbstractFilterStrategy
 #pragma warning restore CS1591
 
     /// <summary>
+    ///     Gets or sets an optional identifier for this strategy instance, so it can be named in logs
+    ///     and diagnostics. Carries no PII and has no effect on the replacement produced.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    /// <summary>
     ///     Gets or sets the replacement strategy name (e.g. <c>"REDACT"</c>, <c>"STATIC_REPLACE"</c>). Defaults to
     ///     <c>"REDACT"</c>.
     /// </summary>

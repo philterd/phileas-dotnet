@@ -1,0 +1,22 @@
+{
+  "identifiers": {
+    "ssn": {
+      "ssnFilterStrategies": [
+        {
+          "strategy": "MASK",
+          "id": "ssn-mask"
+        }
+      ],
+      "id": "ssn-filter"
+    },
+    "creditCard": {
+      "creditCardFilterStrategies": [
+        {
+          "strategy": "LAST_4",
+          "id": "cc-last4-highconf",
+          "condition": "confidence >= 0.9"
+        }
+      ]
+    }
+  }
+}
