@@ -1,0 +1,1854 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Developer documentation for phileas-dotnet, a .NET PII filtering library">
+      
+      
+        <meta name="author" content="philterd">
+      
+      
+        <link rel="canonical" href="https://philterd.github.io/phileas-dotnet/filter-conditions/">
+      
+      
+        <link rel="prev" href="../filter-strategies/">
+      
+      
+        <link rel="next" href="../context-service/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Filter Conditions - phileas-dotnet</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-SQ49ZGCWT2"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-SQ49ZGCWT2",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-SQ49ZGCWT2",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>if("undefined"!=typeof __md_analytics){var consent=__md_get("__consent");consent&&consent.analytics&&__md_analytics()}</script>
+  
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#filter-strategy-conditions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="https://www.philterd.ai" title="phileas-dotnet" class="md-header__button md-logo" aria-label="phileas-dotnet" data-md-component="logo">
+      
+  <img src="../img/philterd.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            phileas-dotnet
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Filter Conditions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://www.github.com/philterd/phileas-dotnet" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Www
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://www.philterd.ai" title="phileas-dotnet" class="md-nav__button md-logo" aria-label="phileas-dotnet" data-md-component="logo">
+      
+  <img src="../img/philterd.png" alt="logo">
+
+    </a>
+    phileas-dotnet
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://www.github.com/philterd/phileas-dotnet" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Www
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supported-identifiers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Identifiers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pheye-filter-usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PhEye Filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../filter-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filter Strategies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filter Conditions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filter Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-condition-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Condition Fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Operators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supported Operators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comparison-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        String Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logical-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logical Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#confidence-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#combined-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combined Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-level-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Level Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#condition-evaluation-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Condition Evaluation Rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#progressive-disclosure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progressive Disclosure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-specific-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context-Specific Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-pattern-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Pattern Matching
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#population-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Population Conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../context-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Context Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../span-disambiguation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Span Disambiguation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pdf-redaction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PDF Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../office-redaction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Word & Excel Redaction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rest-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-condition-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Condition Fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Operators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supported Operators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comparison-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        String Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logical-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logical Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#confidence-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#combined-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combined Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-based-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type-Based Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-level-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Level Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#condition-evaluation-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Condition Evaluation Rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#progressive-disclosure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progressive Disclosure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-specific-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context-Specific Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-pattern-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Pattern Matching
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#population-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Population Conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="filter-strategy-conditions">Filter Strategy Conditions</h1>
+<p>Filter strategy conditions allow you to apply different strategies based on the detected token's properties. Each strategy in a filter's <code>Strategies</code> list can include a <code>condition</code> property that determines when that strategy should be applied.</p>
+<h2 id="overview">Overview</h2>
+<p>When multiple strategies are defined for a filter, phileas-dotnet evaluates their conditions in order. The <strong>first strategy whose condition evaluates to <code>true</code></strong> is applied. If no strategy conditions match, the default redaction format is used.</p>
+<h2 id="supported-condition-fields">Supported Condition Fields</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>confidence</code></td>
+<td><code>double</code></td>
+<td>The detection confidence score (0.0 to 1.0)</td>
+<td><code>confidence &gt; 0.9</code></td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td><code>string</code></td>
+<td>The context name passed to <code>FilterService.Filter()</code></td>
+<td><code>context == "medical"</code></td>
+</tr>
+<tr>
+<td><code>token</code></td>
+<td><code>string</code></td>
+<td>The detected text value</td>
+<td><code>token startswith "555"</code></td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td><code>string</code></td>
+<td>The classification type (e.g., <code>PER</code>, <code>LOC</code>)</td>
+<td><code>type == "PER"</code></td>
+</tr>
+<tr>
+<td><code>population</code></td>
+<td><code>number</code></td>
+<td>Census population of the detected ZIP code (looks the token up in the bundled census data)</td>
+<td><code>population &gt; 50000</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="supported-operators">Supported Operators</h2>
+<h3 id="comparison-operators">Comparison Operators</h3>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>==</code> or <code>is</code></td>
+<td>Equals</td>
+<td><code>confidence == 0.95</code></td>
+</tr>
+<tr>
+<td><code>!=</code> or <code>is not</code></td>
+<td>Not equals</td>
+<td><code>context is not "public"</code></td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td>Greater than</td>
+<td><code>confidence &gt; 0.8</code></td>
+</tr>
+<tr>
+<td><code>&lt;</code></td>
+<td>Less than</td>
+<td><code>confidence &lt; 0.5</code></td>
+</tr>
+<tr>
+<td><code>&gt;=</code></td>
+<td>Greater than or equal</td>
+<td><code>confidence &gt;= 0.9</code></td>
+</tr>
+<tr>
+<td><code>&lt;=</code></td>
+<td>Less than or equal</td>
+<td><code>confidence &lt;= 0.7</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="string-operators">String Operators</h3>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>startswith</code></td>
+<td>String starts with</td>
+<td><code>token startswith "123"</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="logical-operators">Logical Operators</h3>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>and</code></td>
+<td>Logical AND</td>
+<td><code>confidence &gt; 0.8 and context == "medical"</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note:</strong> Multiple conditions can be combined with <code>and</code>. All conditions must be true for the strategy to apply.</p>
+<h2 id="basic-examples">Basic Examples</h2>
+<h3 id="confidence-based-filtering">Confidence-Based Filtering</h3>
+<p>Apply different strategies based on detection confidence:</p>
+<pre><code class="language-csharp">using Phileas.Policy;
+using Phileas.Policy.Filters;
+using Phileas.Policy.Filters.Strategies;
+
+var policy = new Policy
+{
+    Name = &quot;confidence-policy&quot;,
+    Identifiers = new Identifiers
+    {
+        PhoneNumber = new PhoneNumber
+        {
+            Strategies = new List&lt;PhoneNumberFilterStrategy&gt;
+            {
+                // High confidence: full redaction
+                new PhoneNumberFilterStrategy
+                {
+                    Strategy = &quot;REDACT&quot;,
+                    Condition = &quot;confidence &gt;= 0.95&quot;
+                },
+                // Medium confidence: mask
+                new PhoneNumberFilterStrategy
+                {
+                    Strategy = &quot;MASK&quot;,
+                    Condition = &quot;confidence &gt;= 0.8&quot;
+                },
+                // Low confidence: keep last 4 digits
+                new PhoneNumberFilterStrategy
+                {
+                    Strategy = &quot;LAST_4&quot;
+                }
+            }
+        }
+    }
+};
+
+var result = new FilterService().Filter(policy, &quot;context&quot;, 0, &quot;Call 555-867-5309&quot;);
+</code></pre>
+<h3 id="context-based-filtering">Context-Based Filtering</h3>
+<p>Apply different strategies depending on the context:</p>
+<pre><code class="language-csharp">var policy = new Policy
+{
+    Name = &quot;context-policy&quot;,
+    Identifiers = new Identifiers
+    {
+        EmailAddress = new EmailAddress
+        {
+            Strategies = new List&lt;EmailAddressFilterStrategy&gt;
+            {
+                // Fully redact in medical context
+                new EmailAddressFilterStrategy
+                {
+                    Strategy = &quot;REDACT&quot;,
+                    Condition = &quot;context == \&quot;medical\&quot;&quot;
+                },
+                // Mask in internal context
+                new EmailAddressFilterStrategy
+                {
+                    Strategy = &quot;MASK&quot;,
+                    Condition = &quot;context == \&quot;internal\&quot;&quot;
+                },
+                // Leave unchanged in public context
+                new EmailAddressFilterStrategy
+                {
+                    Strategy = &quot;SAME&quot;
+                }
+            }
+        }
+    }
+};
+
+// Medical context - email will be redacted
+var result1 = new FilterService().Filter(policy, &quot;medical&quot;, 0, &quot;Contact: john@example.com&quot;);
+// Output: &quot;Contact: {{{REDACTED-email-address}}}&quot;
+
+// Public context - email unchanged
+var result2 = new FilterService().Filter(policy, &quot;public&quot;, 0, &quot;Contact: john@example.com&quot;);
+// Output: &quot;Contact: john@example.com&quot;
+</code></pre>
+<h3 id="token-based-filtering">Token-Based Filtering</h3>
+<p>Apply strategies based on the token's value:</p>
+<pre><code class="language-csharp">var policy = new Policy
+{
+    Name = &quot;token-policy&quot;,
+    Identifiers = new Identifiers
+    {
+        Ssn = new Ssn
+        {
+            Strategies = new List&lt;SsnFilterStrategy&gt;
+            {
+                // Redact SSNs starting with 123
+                new SsnFilterStrategy
+                {
+                    Strategy = &quot;REDACT&quot;,
+                    Condition = &quot;token startswith \&quot;123\&quot;&quot;
+                },
+                // Hash all other SSNs
+                new SsnFilterStrategy
+                {
+                    Strategy = &quot;HASH_SHA256_REPLACE&quot;
+                }
+            }
+        }
+    }
+};
+
+var result1 = new FilterService().Filter(policy, &quot;ctx&quot;, 0, &quot;SSN: 123-45-6789&quot;);
+// Output: &quot;SSN: {{{REDACTED-ssn}}}&quot;
+
+var result2 = new FilterService().Filter(policy, &quot;ctx&quot;, 0, &quot;SSN: 987-65-4321&quot;);
+// Output: &quot;SSN: a1b2c3d4...&quot; (SHA-256 hash)
+</code></pre>
+<h2 id="advanced-examples">Advanced Examples</h2>
+<h3 id="combined-conditions">Combined Conditions</h3>
+<p>Use multiple conditions with <code>and</code>:</p>
+<pre><code class="language-csharp">var policy = new Policy
+{
+    Name = &quot;combined-policy&quot;,
+    Identifiers = new Identifiers
+    {
+        ZipCode = new ZipCode
+        {
+            Strategies = new List&lt;ZipCodeFilterStrategy&gt;
+            {
+                // Replace with 00000 for high-confidence medical data
+                new ZipCodeFilterStrategy
+                {
+                    Strategy = &quot;STATIC_REPLACE&quot;,
+                    StaticReplacement = &quot;00000&quot;,
+                    Condition = &quot;confidence &gt;= 0.9 and context == \&quot;medical\&quot;&quot;
+                },
+                // Mask for medium confidence
+                new ZipCodeFilterStrategy
+                {
+                    Strategy = &quot;MASK&quot;,
+                    Condition = &quot;confidence &gt;= 0.7&quot;
+                },
+                // Leave others unchanged
+                new ZipCodeFilterStrategy
+                {
+                    Strategy = &quot;SAME&quot;
+                }
+            }
+        }
+    }
+};
+</code></pre>
+<h3 id="type-based-filtering">Type-Based Filtering</h3>
+<p>Filter based on classification type (useful for named entity recognition):</p>
+<pre><code class="language-csharp">var policy = new Policy
+{
+    Name = &quot;type-policy&quot;,
+    Identifiers = new Identifiers
+    {
+        PhEyes = new List&lt;PhEye&gt;
+        {
+            new PhEye
+            {
+                Strategies = new List&lt;PhEyeFilterStrategy&gt;
+                {
+                    // Replace person names with consistent pseudonyms
+                    new PhEyeFilterStrategy
+                    {
+                        Strategy = &quot;RANDOM_REPLACE&quot;,
+                        Condition = &quot;type == \&quot;PER\&quot;&quot;
+                    },
+                    // Redact locations
+                    new PhEyeFilterStrategy
+                    {
+                        Strategy = &quot;REDACT&quot;,
+                        Condition = &quot;type == \&quot;LOC\&quot;&quot;
+                    },
+                    // Leave other types unchanged
+                    new PhEyeFilterStrategy
+                    {
+                        Strategy = &quot;SAME&quot;
+                    }
+                }
+            }
+        }
+    }
+};
+</code></pre>
+<h3 id="multi-level-security">Multi-Level Security</h3>
+<p>Different strategies for different security levels:</p>
+<pre><code class="language-csharp">var policy = new Policy
+{
+    Name = &quot;security-levels&quot;,
+    Identifiers = new Identifiers
+    {
+        CreditCard = new CreditCard
+        {
+            Strategies = new List&lt;CreditCardFilterStrategy&gt;
+            {
+                // Top secret: hash everything
+                new CreditCardFilterStrategy
+                {
+                    Strategy = &quot;HASH_SHA256_REPLACE&quot;,
+                    Condition = &quot;context == \&quot;top-secret\&quot;&quot;
+                },
+                // Confidential: show last 4
+                new CreditCardFilterStrategy
+                {
+                    Strategy = &quot;LAST_4&quot;,
+                    Condition = &quot;context == \&quot;confidential\&quot;&quot;
+                },
+                // Internal: mask
+                new CreditCardFilterStrategy
+                {
+                    Strategy = &quot;MASK&quot;,
+                    Condition = &quot;context == \&quot;internal\&quot;&quot;
+                },
+                // Public: full redaction
+                new CreditCardFilterStrategy
+                {
+                    Strategy = &quot;REDACT&quot;
+                }
+            }
+        }
+    }
+};
+</code></pre>
+<h2 id="json-configuration">JSON Configuration</h2>
+<p>Conditions can also be specified in JSON policy files:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;json-conditions&quot;,
+  &quot;identifiers&quot;: {
+    &quot;emailAddress&quot;: {
+      &quot;emailAddressFilterStrategies&quot;: [
+        {
+          &quot;strategy&quot;: &quot;MASK&quot;,
+          &quot;condition&quot;: &quot;confidence &gt; 0.8 and context == \&quot;internal\&quot;&quot;
+        },
+        {
+          &quot;strategy&quot;: &quot;SAME&quot;
+        }
+      ]
+    }
+  }
+}
+</code></pre>
+<h2 id="condition-evaluation-rules">Condition Evaluation Rules</h2>
+<ol>
+<li>
+<p><strong>Order Matters</strong>: Strategies are evaluated in the order they appear in the list. The first matching condition wins.</p>
+</li>
+<li>
+<p><strong>Default Strategy</strong>: Always include a final strategy with no condition to serve as a fallback. Without this, unmatched tokens will use the default redaction format.</p>
+</li>
+<li>
+<p><strong>Case Insensitivity</strong>: Field names and operators are case-insensitive (<code>CONFIDENCE</code>, <code>confidence</code>, and <code>Confidence</code> all work).</p>
+</li>
+<li>
+<p><strong>String Quoting</strong>: String values must be enclosed in double quotes: <code>context == "medical"</code>.</p>
+</li>
+<li>
+<p><strong>Invalid Conditions</strong>: If a condition cannot be parsed, it defaults to <code>true</code> and the strategy is applied.</p>
+</li>
+</ol>
+<h2 id="common-patterns">Common Patterns</h2>
+<h3 id="progressive-disclosure">Progressive Disclosure</h3>
+<p>Show more detail as confidence decreases:</p>
+<pre><code class="language-csharp">Strategies = new List&lt;SsnFilterStrategy&gt;
+{
+    new SsnFilterStrategy { Strategy = &quot;REDACT&quot;, Condition = &quot;confidence &gt;= 0.95&quot; },
+    new SsnFilterStrategy { Strategy = &quot;LAST_4&quot;, Condition = &quot;confidence &gt;= 0.8&quot; },
+    new SsnFilterStrategy { Strategy = &quot;SAME&quot; }
+}
+</code></pre>
+<h3 id="context-specific-handling">Context-Specific Handling</h3>
+<p>Different behavior for different contexts:</p>
+<pre><code class="language-csharp">Strategies = new List&lt;PhoneNumberFilterStrategy&gt;
+{
+    new PhoneNumberFilterStrategy { Strategy = &quot;REDACT&quot;, Condition = &quot;context == \&quot;public\&quot;&quot; },
+    new PhoneNumberFilterStrategy { Strategy = &quot;HASH_SHA256_REPLACE&quot;, Condition = &quot;context == \&quot;audit\&quot;&quot; },
+    new PhoneNumberFilterStrategy { Strategy = &quot;SAME&quot;, Condition = &quot;context == \&quot;internal\&quot;&quot; }
+}
+</code></pre>
+<h3 id="token-pattern-matching">Token Pattern Matching</h3>
+<p>Special handling for specific patterns:</p>
+<pre><code class="language-csharp">Strategies = new List&lt;IpAddressFilterStrategy&gt;
+{
+    new IpAddressFilterStrategy { Strategy = &quot;SAME&quot;, Condition = &quot;token startswith \&quot;192.168\&quot;&quot; },
+    new IpAddressFilterStrategy { Strategy = &quot;SAME&quot;, Condition = &quot;token startswith \&quot;10.\&quot;&quot; },
+    new IpAddressFilterStrategy { Strategy = &quot;HASH_SHA256_REPLACE&quot; }
+}
+</code></pre>
+<h2 id="population-conditions">Population Conditions</h2>
+<p>The <code>population</code> field applies to <strong>ZIP code</strong> tokens. phileas-dotnet looks the detected ZIP code up in its bundled US census population data and compares the result against the configured value. A ZIP code that is not present in the census data <strong>fails</strong> the condition.</p>
+<pre><code class="language-csharp">var policy = new Policy
+{
+    Name = &quot;population-policy&quot;,
+    Identifiers = new Identifiers
+    {
+        ZipCode = new ZipCode
+        {
+            Strategies = new List&lt;ZipCodeFilterStrategy&gt;
+            {
+                // Only redact ZIP codes for places with a small population (more identifying).
+                new ZipCodeFilterStrategy
+                {
+                    Strategy = &quot;REDACT&quot;,
+                    Condition = &quot;population &lt; 20000&quot;
+                },
+                // Leave large-population ZIP codes unchanged.
+                new ZipCodeFilterStrategy { Strategy = &quot;SAME&quot; }
+            }
+        }
+    }
+};
+</code></pre>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li><strong>OR Operator</strong>: Only <code>and</code> is supported for combining conditions. Use multiple strategies for OR logic.</li>
+<li><strong>Complex Expressions</strong>: Parentheses and nested conditions are not supported.</li>
+<li><strong>Regular Expressions</strong>: The <code>token</code> field supports <code>startswith</code> but not full regex matching.</li>
+</ul>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="../filter-strategies/">Filter Strategies</a> - Available strategy types</li>
+<li><a href="../policies/">Policies</a> - Policy configuration</li>
+<li><a href="../api-reference/">API Reference</a> - FilterService methods</li>
+</ul>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../filter-strategies/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Filter Strategies">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Filter Strategies
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../context-service/" class="md-footer__link md-footer__link--next" aria-label="Next: Context Service">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Context Service
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright 2026 Philterd, LLC
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/company/philterd/" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zM102.2 96a38.5 38.5 0 1 1 0 77 38.5 38.5 0 1 1 0-77m282.1 320h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.github.com/philterd/" target="_blank" rel="noopener" title="www.github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our documentation and whether users find what they're searching for. With your consent, you're helping us to make our documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="analytics" checked>
+      <span class="task-list-indicator"></span>
+      Google Analytics
+    </label>
+  </li>
+
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.expand", "navigation.footer"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "3.0.0"}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
