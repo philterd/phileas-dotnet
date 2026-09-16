@@ -234,6 +234,12 @@ var result = new PdfFilterService().Filter(policy, "ctx", inputPdf, MimeType.App
 | `X`, `Y` | `x`, `y` | Lower-left corner, in PDF user-space points. |
 | `W`, `H` | `w`, `h` | Width and height, in points. |
 | `Color` | `color` | Box color (a named color or 6-digit hex, same set as `RedactionColor`; unrecognized renders black), or `null` to use the policy `RedactionColor`. |
+| `Enabled` | `enabled` | Whether the box is drawn. Defaults to `true`; set it to `false` to keep the box in the policy without applying it. |
+| `Priority` | `priority` | Draw order where boxes overlap. Boxes are opaque, so a higher priority is drawn last and lands on top. Defaults to `0`; boxes sharing a priority keep the order the policy declared them. |
+
+A bounding box also accepts `ignored`, `ignoredFiles`, `ignoredPatterns` and `windowSize`, which the
+schema declares for it alongside every other filter. They have no effect on a box, which covers a
+fixed region rather than matching text.
 
 ## Notes and limitations
 

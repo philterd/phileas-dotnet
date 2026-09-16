@@ -86,7 +86,7 @@ public sealed class PdfRedactor
                             DrawReplacement(canvas, span.Replacement, rect, pdf, scaleY);
                     }
 
-                    foreach (var box in boundingBoxes.Where(b => BoxAppliesToPage(b, pageNumber)))
+                    foreach (var box in BoxesForPage(boundingBoxes, pageNumber))
                     {
                         var rect = ToPixelRect(box.X, box.Y, box.X + box.W, box.Y + box.H,
                             heightPts, scaleX, scaleY);
@@ -116,6 +116,26 @@ public sealed class PdfRedactor
     ///     without knowing the page count up front: <c>0</c> covers <b>every</b> page, and a negative value
     ///     <c>-N</c> covers page <c>N</c> through the last page (so <c>-2</c> is "all but the first page").
     /// </summary>
+    /// <summary>
+    ///     The boxes to draw on a page, in the order to draw them.
+    ///     <para>
+    ///         A box switched off with <c>enabled: false</c> is not drawn, and boxes are ordered by
+    ///         <c>priority</c> so a higher-priority box is drawn last and therefore lands on top of any
+    ///         it overlaps. Both are declared by the schema for a bounding box and neither was read,
+    ///         so a disabled box still covered the page. See philterd/phileas-dotnet#85.
+    ///     </para>
+    ///     <para>
+    ///         The ordering is stable, so boxes sharing a priority keep the order the policy declared.
+    ///     </para>
+    /// </summary>
+    internal static IEnumerable<BoundingBoxModel> BoxesForPage(IEnumerable<BoundingBoxModel> boxes,
+        int pageNumber)
+    {
+        return boxes
+            .Where(box => box.Enabled && BoxAppliesToPage(box, pageNumber))
+            .OrderBy(box => box.Priority);
+    }
+
     internal static bool BoxAppliesToPage(BoundingBoxModel box, int pageNumber) => box.Page switch
     {
         0 => true,                     // all pages
