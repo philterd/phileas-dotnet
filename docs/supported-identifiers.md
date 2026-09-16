@@ -49,7 +49,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `CustomDictionaries` | `dictionaries` | Custom term lists with `classification` and `sensitivity`-based fuzzy matching |
 | `CustomIdentifiers` | `identifiers` | Custom regex identifiers |
 | `Sections` | `sections` | Spans of text delimited by a start and end pattern |
-| `PhEyes` | `pheye` | AI-powered NER via a remote PhEye service |
+| `PhEyes` | `pheyes` | AI-powered NER via a remote PhEye service |
 
 ---
 
@@ -495,6 +495,11 @@ JSON configuration:
   ]
 }
 ```
+
+> The redaction policy schema also declares `identifiers.person`, a deprecated alias carrying a single
+> PhEye configuration rather than a list. A policy using it still loads: the entry is folded into
+> `pheyes`, after any declared there. It is written back as `pheyes`, so a policy that goes in with
+> `person` comes out with the canonical key.
 
 **Configuration Options:**
 
