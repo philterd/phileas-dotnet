@@ -49,7 +49,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `CustomDictionaries` | `dictionaries` | Custom term lists with `classification` and `sensitivity`-based fuzzy matching |
 | `CustomIdentifiers` | `identifiers` | Custom regex identifiers |
 | `Sections` | `sections` | Spans of text delimited by a start and end pattern |
-| `PhEyes` | `pheye` | AI-powered NER via a remote PhEye service |
+| `PhEyes` | `pheyes` | AI-powered NER via a remote PhEye service |
 
 ---
 
@@ -72,6 +72,7 @@ public abstract class AbstractPolicyFilter
 | Property | JSON key | Default | Description |
 |---|---|---|---|
 | `Enabled` | `enabled` | `true` | Whether the filter is active. Set it to `false` and the filter is not built, so it detects nothing and costs nothing. Each entry of a list-valued identifier (`dictionaries`, `identifiers`, `sections`, `pheyes`) carries its own setting. |
+| `Id` | `id` | none | Optional label for this filter, so it can be named in logs and diagnostics. Carries no PII and has no effect on detection or redaction. |
 | `Ignored` | `ignored` | `null` | Exact values that should not be redacted. |
 | `IgnoredFiles` | `ignoredFiles` | `null` | Files whose lines provide additional ignored terms. |
 | `IgnoredPatterns` | `ignoredPatterns` | `null` | Regex patterns whose matches are not redacted. |
@@ -495,6 +496,11 @@ JSON configuration:
   ]
 }
 ```
+
+> The redaction policy schema also declares `identifiers.person`, a deprecated alias carrying a single
+> PhEye configuration rather than a list. A policy using it still loads: the entry is folded into
+> `pheyes`, after any declared there. It is written back as `pheyes`, so a policy that goes in with
+> `person` comes out with the canonical key.
 
 **Configuration Options:**
 

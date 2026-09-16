@@ -31,9 +31,44 @@ public class Identifiers
     ///     Gets or sets the list of PhEye (NLP-based) filter configurations. Serialized as <c>pheyes</c>, matching the
     ///     canonical Phileas policy schema and the JSON produced by the PhiSQL <c>DETECT PHEYE</c> / <c>MODEL</c> clause;
     ///     a policy using the singular <c>pheye</c> key will not bind here.
+    ///     <para>
+    ///         An entry set through the deprecated <see cref="Person" /> key is folded in here, after any
+    ///         declared under <c>pheyes</c>.
+    ///     </para>
     /// </summary>
     [JsonPropertyName("pheyes")]
-    public List<PhEye>? PhEyes { get; set; }
+    public List<PhEye>? PhEyes
+    {
+        get
+        {
+            // The stored list itself when there is no deprecated key to fold in, so nothing about the
+            // ordinary path changes.
+            if (_person == null) return _phEyes;
+
+            var merged = new List<PhEye>(_phEyes ?? new List<PhEye>()) { _person };
+            return merged;
+        }
+        set => _phEyes = value;
+    }
+
+    /// <summary>
+    ///     Gets or sets the deprecated <c>person</c> filter configuration.
+    ///     <para>
+    ///         The redaction policy schema marks this a deprecated alias for a single <c>pheyes</c>
+    ///         entry, and this port did not bind it at all, so a legacy policy using it loaded and
+    ///         detected nothing. It is read and folded into <see cref="PhEyes" />, and written back as
+    ///         <c>pheyes</c>: the getter returns <see langword="null" /> and the serializer omits nulls.
+    ///     </para>
+    /// </summary>
+    [JsonPropertyName("person")]
+    public PhEye? Person
+    {
+        get => null;
+        set => _person = value;
+    }
+
+    private List<PhEye>? _phEyes;
+    private PhEye? _person;
 
     /// <summary>
     ///     Gets or sets the deprecated <c>dictionary</c> filter configurations.
