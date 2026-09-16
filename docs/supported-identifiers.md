@@ -72,6 +72,7 @@ public abstract class AbstractPolicyFilter
 | Property | JSON key | Default | Description |
 |---|---|---|---|
 | `Enabled` | `enabled` | `true` | Whether the filter is active. Set it to `false` and the filter is not built, so it detects nothing and costs nothing. Each entry of a list-valued identifier (`dictionaries`, `identifiers`, `sections`, `pheyes`) carries its own setting. |
+| `Id` | `id` | none | Optional label for this filter, so it can be named in logs and diagnostics. Carries no PII and has no effect on detection or redaction. |
 | `Ignored` | `ignored` | `null` | Exact values that should not be redacted. |
 | `IgnoredFiles` | `ignoredFiles` | `null` | Files whose lines provide additional ignored terms. |
 | `IgnoredPatterns` | `ignoredPatterns` | `null` | Regex patterns whose matches are not redacted. |

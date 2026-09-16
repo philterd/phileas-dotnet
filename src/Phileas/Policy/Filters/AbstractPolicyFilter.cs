@@ -24,6 +24,13 @@ namespace Phileas.Policy.Filters;
 /// </summary>
 public abstract class AbstractPolicyFilter
 {
+    /// <summary>
+    ///     Gets or sets an optional identifier for this filter, so it can be named in logs and
+    ///     diagnostics. Carries no PII and has no effect on detection or redaction.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
     /// <summary>Gets or sets a value indicating whether this filter is enabled. Defaults to <see langword="true" />.</summary>
     [JsonPropertyName("enabled")]
     public bool Enabled { get; set; } = true;
