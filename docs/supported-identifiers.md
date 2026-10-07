@@ -654,7 +654,8 @@ Identifiers = new Identifiers { StreetAddress = new StreetAddress() }
 
 ### Tracking Number
 
-Detects parcel tracking numbers from major carriers (UPS, FedEx, USPS, DHL).
+Detects parcel tracking numbers from UPS, FedEx, and USPS. A number is matched only as a whole: a run of letters
+or digits that no format matches in full, such as a 16-digit number, is not matched rather than redacted in part.
 
 ```csharp
 Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }

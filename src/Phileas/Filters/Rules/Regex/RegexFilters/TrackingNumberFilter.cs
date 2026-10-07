@@ -63,11 +63,16 @@ public class TrackingNumberFilter : RegexFilter
             // With spaces allowed a separator may sit between any two characters, so a number printed
             // in groups matches whole rather than as its separate runs. The run still has to end on a
             // character, so a trailing space is never part of the span.
+            //
+            // The run ends on a word boundary, as the Java filter's patterns do. Without it a pattern
+            // matched the start of a longer run of letters or digits, and the rest of the number was
+            // left in the output: "7012345678901234" was redacted as its first fifteen digits. A run that
+            // no pattern matches in full is now not matched at all. See philterd/phileas-dotnet#156.
             string Run(string character, int min, int max)
             {
-                return key.Spaces
+                return (key.Spaces
                     ? $"{character}(?:[ ]?{character}){{{min - 1},{max - 1}}}"
-                    : $"{character}{{{min},{max}}}";
+                    : $"{character}{{{min},{max}}}") + @"\b";
             }
 
             if (key.Ups)

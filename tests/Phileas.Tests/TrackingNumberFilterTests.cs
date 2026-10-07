@@ -103,4 +103,108 @@ public class TrackingNumberFilterTests
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("1Z12345E0205271688", result.FilteredText);
     }
+
+    // --- No partial spans: philterd/phileas-dotnet#156 ----------------------------------------------
+
+    private static TextFilterResult FilterThroughService(string number, bool allowSpaces = false)
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "t",
+            Identifiers = new Identifiers { TrackingNumber = new TrackingNumber { AllowSpaces = allowSpaces } }
+        };
+        return new FilterService().Filter(policy, "ctx", 0, $"Ship {number} today");
+    }
+
+    // Either the whole number is one span or there is no span: never a span over only part of it.
+    private static void AssertRedactedInFullOrNotAtAll(string number, TextFilterResult result)
+    {
+        Assert.All(result.Spans, span => Assert.Equal(number, span.Text));
+        Assert.True(
+            result.FilteredText == $"Ship {number} today" || result.FilteredText == "Ship {{{REDACTED-tracking-number}}} today",
+            result.FilteredText);
+    }
+
+    [Theory]
+    [InlineData("7012345678901234")]
+    [InlineData("1234567890123456")]
+    [InlineData("12345678901234567890123")]
+    [InlineData("940010000000000000000000")]
+    [InlineData("1Z999AA10123456784X")]
+    [InlineData("1Z999AA101234567845")]
+    [InlineData("12345678901234567890123456")]
+    [InlineData("1234567890123456789012345678")]
+    [InlineData("123456789012345678901234567890")]
+    [InlineData("1234567890123456789012345678901234")]
+    public void NumberLongerThanAPattern_IsNotPartlyRedacted(string number)
+    {
+        AssertRedactedInFullOrNotAtAll(number, FilterThroughService(number));
+    }
+
+    [Theory]
+    [InlineData("1Z999AA101234567845", false)] // UPS: 1Z + 17
+    [InlineData("1Z999AA101234567845", true)]
+    [InlineData("12345678901234567890123", false)] // USPS: 23 digits, one over 22
+    [InlineData("12345678901234567890123", true)]
+    [InlineData("1234567890123456", false)] // FedEx: 16 digits, one over 15
+    [InlineData("1234567890123456", true)]
+    public void RunOneLongerThanEachPatternsMaximum_IsNotMatched(string number, bool allowSpaces)
+    {
+        TextFilterResult result = FilterThroughService(number, allowSpaces);
+
+        Assert.Empty(result.Spans);
+        Assert.Equal($"Ship {number} today", result.FilteredText);
+    }
+
+    [Theory]
+    [InlineData("1Z999AA10123456784", false)]
+    [InlineData("1Z999AA10123456784", true)]
+    [InlineData("123456789012", false)]
+    [InlineData("123456789012345", false)]
+    [InlineData("12345678901234567890", false)]
+    [InlineData("9400100000000000000000", false)]
+    [InlineData("9400100000000000000000", true)]
+    [InlineData("9400 1000 0000 0000 0000 00", true)]
+    [InlineData("7489 1234 5678", true)]
+    public void NumbersDetectedInFull_AreStillDetectedInFull(string number, bool allowSpaces)
+    {
+        TextFilterResult result = FilterThroughService(number, allowSpaces);
+
+        Span span = Assert.Single(result.Spans);
+        Assert.Equal(number, span.Text);
+        Assert.Equal(5, span.CharacterStart);
+    }
+
+    [Theory]
+    [InlineData("1Z999AA10123456784X")]
+    [InlineData("1Z999AA10123456784ab")]
+    public void UpsNumberFollowedDirectlyByLettersOrDigits_IsNotMatchedOnItsFirst18Characters(string number)
+    {
+        Assert.Empty(FilterThroughService(number).Spans);
+    }
+
+    [Theory]
+    [InlineData("798429808620abc")]
+    [InlineData("798429808620_1")]
+    public void DigitsFollowedDirectlyByWordCharacters_AreNotMatched(string number)
+    {
+        Assert.Empty(FilterThroughService(number).Spans);
+    }
+
+    [Theory]
+    [InlineData("Ship 798429808620.", "798429808620")]
+    [InlineData("Ship (798429808620)", "798429808620")]
+    [InlineData("Ship 1Z999AA10123456784, today", "1Z999AA10123456784")]
+    public void NumberFollowedByPunctuation_IsStillDetected(string input, string number)
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "t",
+            Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
+        };
+
+        TextFilterResult result = new FilterService().Filter(policy, "ctx", 0, input);
+
+        Assert.Equal(number, Assert.Single(result.Spans).Text);
+    }
 }
