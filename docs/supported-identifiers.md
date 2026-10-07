@@ -655,7 +655,7 @@ Identifiers = new Identifiers { StreetAddress = new StreetAddress() }
 ### Tracking Number
 
 Detects parcel tracking numbers from UPS, FedEx, and USPS. A number is matched only as a whole: a run of letters
-or digits that no format matches in full, such as a 16-digit number, is not matched rather than redacted in part.
+or digits that no format matches in full, such as a 17-digit number, is not matched rather than redacted in part.
 
 ```csharp
 Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
@@ -664,10 +664,32 @@ Identifiers = new Identifiers { TrackingNumber = new TrackingNumber() }
 
 | Property | JSON key | Default | Description |
 |---|---|---|---|
-| `Ups` | `ups` | `true` | Detect UPS numbers (`1Z` followed by sixteen characters). |
-| `Fedex` | `fedex` | `true` | Detect FedEx numbers (twelve to fifteen digits). |
-| `Usps` | `usps` | `true` | Detect USPS numbers (twenty to twenty-two digits). |
+| `Ups` | `ups` | `true` | Detect UPS numbers: `1Z` and sixteen letters or digits, `T` and ten digits, or 26 digits. |
+| `Fedex` | `fedex` | `true` | Detect FedEx numbers: 12, 15, 20, or 22 digits. |
+| `Usps` | `usps` | `true` | Detect USPS numbers: 22 or 24 digits starting `92` to `95`, 16 digits starting `70`, `14`, `23`, or `03`, two letters, nine digits, and two letters (`EA123456789US`), or 26, 28, 30, or 34 digits. |
 | `AllowSpaces` | `allowSpaces` | `false` | Also detect a number written in space-separated groups. |
+
+Letters match in either case. Each span's classification is the carrier whose format matched: `ups`, `fedex`,
+or `usps`. A 22-digit number starting `92` to `95` matches both a FedEx and a USPS format and is reported as
+`fedex`; a 26-digit number matches both a UPS and a USPS format and is reported as `ups`, as in the Java port.
+A 20-digit USPS number starting `92` to `95` written in five groups of four (`9400 1000 0000 0000 0000`) is
+detected whether or not `allowSpaces` is set.
+
+The formats match the Java port, with two deliberate differences:
+
+- A bare 9-digit number is not detected. The Java port treats one as a UPS number, which also matches SSNs
+  written without dashes, ZIP+4 codes, and other 9-digit identifiers.
+- A UPS `T` number must have ten digits after the `T`. The Java port also accepts letters there, which matches
+  ordinary words such as "Temperature".
+
+With `allowSpaces` set, the USPS international format allows a space between its letters and digits, so two
+two-letter words around a 9-digit number can match: `is 123456789 on` is redacted as one tracking number,
+words included. The Java port behaves the same way.
+
+The grouped USPS form matches exactly five groups of four. Without `allowSpaces`, a grouped number with more
+groups after them is redacted up to the fifth group and the rest is left: `9400 1000 0000 0000 0000 0000` keeps
+its last `0000`. With `allowSpaces` set, the same number is redacted whole when its length matches a format, as
+this 24-digit one does. The Java port behaves the same way.
 
 ---
 
