@@ -103,7 +103,7 @@ produce identical output.
 | `Redact(inputPath, outputPath, filter, highlight = false, redactHeadersFooters = true, redactCharts = true, removeEmbeddedObjects = true)` | Detects and redacts, writes the output, and returns the applied spans. |
 | `Detect(inputPath, filter, redactHeadersFooters = true, redactCharts = true)` | Detects only (no file is written); returns the spans `Redact` would apply. Used for previews and post-redaction verification. |
 | `ApplySpans(inputPath, outputPath, spans, highlight, drawingFilter = null, redactCharts = true, removeEmbeddedObjects = true)` | Applies an explicit set of spans (detected or user-supplied) by **position** (paragraph index + character offsets). Supply `drawingFilter` to also re-redact non-positional content (drawings, hyperlink targets, field instructions, charts) via the policy. |
-| `ReadParagraphs(inputPath)` | Returns each redactable paragraph's text in canonical order (index `i` is `ParagraphIndex` `i`). Read-only. |
+| `ReadParagraphs(inputPath)` | Returns each redactable paragraph's text in canonical order (index `i` is `ParagraphIndex` `i`). This is the text the filter receives: each line break or carriage return (`w:br`, `w:cr`) is `\n` and each tab (`w:tab`, `w:ptab`) is `\t`, so span offsets index it directly. Read-only. |
 | `ReadReviewLines(inputPath)` | Returns every readable line — paragraphs plus shape/SmartArt/chart text — for a before/after review diff. Read-only. |
 
 ```csharp
@@ -206,7 +206,8 @@ does not survive in a part the eye never sees.
   text is replaced in the XML, not painted over. There is no image rasterization step.
 - **Changed paragraphs are flattened.** When a Word paragraph is rewritten, its inline run formatting is
   flattened (and hyperlinks/fields in it collapse to plain text), since the visible text is what is redacted.
-  Paragraphs with no detected PII are left exactly as they were.
+  Line breaks, page and column breaks, carriage returns and tabs are kept, with their type; one inside a
+  redacted value is placed after its replacement. Paragraphs with no detected PII are left exactly as they were.
 - **Opaque embedded objects.** An embedded object that isn't a Word/Excel document (for example a legacy OLE
   object) can't be inspected. With the removal option on it is deleted; otherwise it is kept and flagged so the
   caller can warn that its content was not redacted.
