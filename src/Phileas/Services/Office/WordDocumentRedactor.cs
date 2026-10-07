@@ -169,11 +169,17 @@ namespace Phileas.Services.Office
                 }
                 paragraphIndex++;
             }
-            // Deleted tracked-change text (w:delText) isn't a body paragraph, so scan it too — otherwise
-            // the preview/verification would miss residual PII in a tracked deletion.
-            captured.AddRange(ScanDeletedText(document, filter, write: false, ref order));
+            // The passes RedactOpenWordDocument runs after the body, in the same order, so Detect reports
+            // what Redact would redact with the same Order values. Shape/SmartArt text and hyperlink targets
+            // were missing, so a preview didn't show them and verifying an output didn't check them. See
+            // philterd/phileas-dotnet#153.
+            captured.AddRange(RedactDrawingText(document, filter, write: false, ref order));
+            captured.AddRange(RedactHyperlinkTargets(document, filter, write: false, ref order));
             // Field instruction text (HYPERLINK/INCLUDETEXT/merge sources) isn't a body paragraph either.
             captured.AddRange(RedactFieldInstructions(document, filter, write: false, ref order));
+            // Deleted tracked-change text (w:delText) isn't a body paragraph, so scan it too, otherwise
+            // the preview/verification would miss residual PII in a tracked deletion.
+            captured.AddRange(ScanDeletedText(document, filter, write: false, ref order));
             // Chart title/label/cached-value text likewise isn't a body paragraph.
             if (redactCharts)
             {
@@ -267,8 +273,8 @@ namespace Phileas.Services.Office
                 paragraphIndex++;
             }
 
-            captured.AddRange(RedactDrawingText(document, filter, ref order));
-            captured.AddRange(RedactHyperlinkTargets(document, filter, ref order));
+            captured.AddRange(RedactDrawingText(document, filter, write: true, ref order));
+            captured.AddRange(RedactHyperlinkTargets(document, filter, write: true, ref order));
             captured.AddRange(RedactFieldInstructions(document, filter, write: true, ref order));
             captured.AddRange(ScanDeletedText(document, filter, write: true, ref order));
             if (redactCharts)
@@ -384,8 +390,8 @@ namespace Phileas.Services.Office
                 // body by position). The captured drawing spans are already in the stored history, so the
                 // returns are discarded here.
                 int order = 0;
-                RedactDrawingText(document, drawingFilter, ref order);
-                RedactHyperlinkTargets(document, drawingFilter, ref order);
+                RedactDrawingText(document, drawingFilter, write: true, ref order);
+                RedactHyperlinkTargets(document, drawingFilter, write: true, ref order);
                 RedactFieldInstructions(document, drawingFilter, write: true, ref order);
                 ScanDeletedText(document, drawingFilter, write: true, ref order);
                 if (redactCharts)
@@ -469,7 +475,7 @@ namespace Phileas.Services.Office
         // the main document, headers/footers, notes, chart parts, and SmartArt data is covered. Returns the
         // redactions it made so they're recorded in the report/explanation like any other span.
         private static List<OfficeRedactionSpan> RedactDrawingText(
-            WordprocessingDocument document, Func<string, TextFilterResult> filter, ref int order)
+            WordprocessingDocument document, Func<string, TextFilterResult> filter, bool write, ref int order)
         {
             var captured = new List<OfficeRedactionSpan>();
             MainDocumentPart? main = document.MainDocumentPart;
@@ -499,7 +505,7 @@ namespace Phileas.Services.Office
                 {
                     continue;
                 }
-                ChartRedactor.RedactDrawingText(root, filter, write: true, captured, ref order);
+                ChartRedactor.RedactDrawingText(root, filter, write, captured, ref order);
             }
             return captured;
         }
@@ -607,7 +613,8 @@ namespace Phileas.Services.Office
         // policy filter; any target the policy flags is rewritten to a neutral placeholder (keeping the
         // relationship id so the document stays valid). Benign targets are left untouched. Every part is
         // walked, so links in the body, headers/footers, notes, and comments are all covered.
-        private static List<OfficeRedactionSpan> RedactHyperlinkTargets(WordprocessingDocument document, Func<string, TextFilterResult> filter, ref int order)
+        private static List<OfficeRedactionSpan> RedactHyperlinkTargets(WordprocessingDocument document, Func<string, TextFilterResult> filter,
+            bool write, ref int order)
         {
             var captured = new List<OfficeRedactionSpan>();
             MainDocumentPart? main = document.MainDocumentPart;
@@ -627,8 +634,11 @@ namespace Phileas.Services.Office
                     }
 
                     string target = rel.Uri?.ToString() ?? string.Empty;
-                    if (string.IsNullOrEmpty(target))
+                    if (string.IsNullOrEmpty(target)
+                        || string.Equals(target, RedactedHyperlinkTarget, StringComparison.OrdinalIgnoreCase))
                     {
+                        // A target this pass already redacted. A URL filter matches the placeholder, so
+                        // without this, verifying a redacted file would report it as leftover PII.
                         continue;
                     }
 
@@ -638,9 +648,12 @@ namespace Phileas.Services.Office
                         continue; // policy found nothing in this target -> keep the link intact
                     }
 
-                    string id = rel.Id;
-                    part.DeleteReferenceRelationship(rel);
-                    part.AddHyperlinkRelationship(new Uri(RedactedHyperlinkTarget, UriKind.Absolute), isExternal: true, id);
+                    if (write)
+                    {
+                        string id = rel.Id;
+                        part.DeleteReferenceRelationship(rel);
+                        part.AddHyperlinkRelationship(new Uri(RedactedHyperlinkTarget, UriKind.Absolute), isExternal: true, id);
+                    }
 
                     var entity = new OfficeRedactionSpan
                     {

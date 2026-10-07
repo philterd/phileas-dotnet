@@ -181,7 +181,8 @@ does not survive in a part the eye never sees.
 - Footnotes, endnotes, and comments (including modern threaded comments)
 - Shape, text-box, and SmartArt text (DrawingML)
 - Charts — title/axis/label text and cached series/category values *(toggle: `redactCharts`)*
-- Hyperlink URL **targets** (the address behind a link, not just its visible text)
+- Hyperlink URL **targets** (the address behind a link, not just its visible text). A redacted target is
+  replaced with `https://redacted.invalid/`, which is not reported again when the output is detected or redacted.
 - Field instructions (`HYPERLINK`, `INCLUDETEXT`, mail-merge sources)
 - Tracked **deletions** (`w:delText`) — text recoverable via "Reject Changes"
 - Embedded Word/Excel objects (redacted in place); opaque OLE objects are removed or kept-and-flagged *(toggle: `removeEmbeddedObjects`)*

@@ -94,7 +94,7 @@ namespace Phileas.Tests
         private static string Render(string path)
         {
             using WordprocessingDocument doc = WordprocessingDocument.Open(path, false);
-            Paragraph paragraph = doc.MainDocumentPart!.Document.Body!.Elements<Paragraph>().First();
+            Paragraph paragraph = doc.MainDocumentPart!.Document!.Body!.Elements<Paragraph>().First();
             var builder = new StringBuilder();
             foreach (OpenXmlElement element in paragraph.Descendants())
             {

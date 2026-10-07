@@ -84,7 +84,7 @@ namespace Phileas.Tests
         private static string Render(string path)
         {
             using WordprocessingDocument doc = WordprocessingDocument.Open(path, false);
-            Paragraph paragraph = doc.MainDocumentPart!.Document.Body!.Elements<Paragraph>().First();
+            Paragraph paragraph = doc.MainDocumentPart!.Document!.Body!.Elements<Paragraph>().First();
             var builder = new StringBuilder();
             foreach (OpenXmlElement element in paragraph.Descendants())
             {
@@ -101,7 +101,7 @@ namespace Phileas.Tests
         private static List<T> Elements<T>(string path) where T : OpenXmlElement
         {
             using WordprocessingDocument doc = WordprocessingDocument.Open(path, false);
-            return doc.MainDocumentPart!.Document.Body!.Descendants<T>().Select(e => (T)e.CloneNode(true)).ToList();
+            return doc.MainDocumentPart!.Document!.Body!.Descendants<T>().Select(e => (T)e.CloneNode(true)).ToList();
         }
 
         [Fact]
