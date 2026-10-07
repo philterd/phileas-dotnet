@@ -117,9 +117,26 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
                 ? FpeReplacement(context, token, window, confidence, classification, filterPattern, filterType, fpe, salt)
                 : new Replacement(GetRedactedToken(token, classification, filterType), salt),
             Same => new Replacement(token, salt, false),
-            Truncate => new Replacement(token.Length > 0 ? token[..1] : token, salt),
+            Truncate => new Replacement(TruncateToken(token), salt),
             _ => new Replacement(GetRedactedToken(token, classification, filterType), salt)
         };
+    }
+
+    // Keeps TruncateLeaveCharacters characters at the LEADING or TRAILING end and puts TruncateCharacter in place
+    // of each of the others, so the value keeps its length, as the Java port does. The settings were not bound
+    // and every value was cut to its first character. See philterd/phileas-dotnet#160.
+    //
+    // A value no longer than the characters to leave is kept whole, as Java keeps one of exactly that length.
+    // Java throws on a shorter one, which this port does not copy.
+    private string TruncateToken(string token)
+    {
+        var leave = Math.Max(TruncateLeaveCharacters ?? 4, 1);
+        if (token.Length <= leave) return token;
+
+        var removed = string.Concat(Enumerable.Repeat(TruncateCharacter ?? "*", token.Length - leave));
+        return string.Equals(TruncateDirection ?? "LEADING", "LEADING", StringComparison.OrdinalIgnoreCase)
+            ? token[..leave] + removed
+            : removed + token[^leave..];
     }
 
     private static string AbbreviateToken(string token)

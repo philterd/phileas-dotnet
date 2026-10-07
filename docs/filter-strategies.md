@@ -27,7 +27,7 @@ Every other filter type still falls back to `REDACT`.
 | `ABBREVIATE` | `AbstractFilterStrategy.Abbreviate` | Reduce the token to the initials of its words |
 | `MAP_REPLACE` | `AbstractFilterStrategy.MapReplace` | Replace from a lookup table, then a generator, then a fallback strategy |
 | `SAME` | `AbstractFilterStrategy.Same` | Leave the token unchanged (mark as detected but not replaced) |
-| `TRUNCATE` | `AbstractFilterStrategy.Truncate` | Keep only the first character |
+| `TRUNCATE` | `AbstractFilterStrategy.Truncate` | Keep some characters at one end and mask the rest |
 | `SHIFT` | `AbstractFilterStrategy.Shift` | Shift a detected date by a configurable offset (date filters only). `SHIFT_DATE` is accepted as an alias |
 | `TRUNCATE_TO_YEAR` | `AbstractFilterStrategy.TruncateToYear` | Replace a detected date with its year (date filters only) |
 | `RELATIVE` | `AbstractFilterStrategy.Relative` | Replace a detected date with a readable interval from today (date filters only) |
@@ -306,10 +306,25 @@ The `prompt` template supports the `{{token}}` placeholder (the detected value) 
 
 ### TRUNCATE
 
-Keeps only the first character of the token.
+Keeps a number of characters at one end of the token and replaces each of the others with a truncation
+character, so the value keeps its length.
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `TruncateLeaveCharacters` | `truncateLeaveCharacters` | `4` | How many characters to leave visible. At least 1. |
+| `TruncateDirection` | `truncateDirection` | `LEADING` | Which end to keep: `LEADING` or `TRAILING`. |
+| `TruncateCharacter` | `truncateCharacter` | `*` | The character put in place of each removed character. |
+
+A token no longer than `truncateLeaveCharacters` is left unchanged.
+
+```json
+{ "strategy": "TRUNCATE", "truncateLeaveCharacters": 4, "truncateDirection": "TRAILING" }
+```
+
+With this strategy, `4111111111111111` becomes `************1111`. With no settings it becomes `4111************`.
 
 ```csharp
-new EmailAddressFilterStrategy { Strategy = "TRUNCATE" }
+new CreditCardFilterStrategy { Strategy = "TRUNCATE", TruncateLeaveCharacters = 4, TruncateDirection = "TRAILING" }
 ```
 
 ---

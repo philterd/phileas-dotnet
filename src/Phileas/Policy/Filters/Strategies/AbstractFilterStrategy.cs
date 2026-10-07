@@ -112,6 +112,26 @@ public abstract class AbstractFilterStrategy
     public string MaskLength { get; set; } = "same";
 
     /// <summary>
+    ///     Gets or sets how many characters the <c>TRUNCATE</c> strategy leaves visible. Defaults to 4 when unset.
+    /// </summary>
+    [JsonPropertyName("truncateLeaveCharacters")]
+    public int? TruncateLeaveCharacters { get; set; }
+
+    /// <summary>
+    ///     Gets or sets which end of the value the <c>TRUNCATE</c> strategy keeps: <c>LEADING</c> or <c>TRAILING</c>.
+    ///     Defaults to <c>LEADING</c> when unset.
+    /// </summary>
+    [JsonPropertyName("truncateDirection")]
+    public string? TruncateDirection { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the character the <c>TRUNCATE</c> strategy puts in place of each character it removes. Defaults
+    ///     to <c>"*"</c> when unset.
+    /// </summary>
+    [JsonPropertyName("truncateCharacter")]
+    public string? TruncateCharacter { get; set; }
+
+    /// <summary>
     ///     Gets or sets an optional condition expression. When <see langword="null" /> or empty the strategy always
     ///     applies.
     /// </summary>

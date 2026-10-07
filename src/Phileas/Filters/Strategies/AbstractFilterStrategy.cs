@@ -121,6 +121,24 @@ public abstract class AbstractFilterStrategy
     public string MaskLength { get; set; } = "same";
 
     /// <summary>
+    ///     Gets or sets how many characters the <see cref="Truncate" /> strategy leaves visible. <see langword="null" />
+    ///     means 4.
+    /// </summary>
+    public int? TruncateLeaveCharacters { get; set; }
+
+    /// <summary>
+    ///     Gets or sets which end of the value the <see cref="Truncate" /> strategy keeps: <c>LEADING</c> or
+    ///     <c>TRAILING</c>. <see langword="null" /> means <c>LEADING</c>.
+    /// </summary>
+    public string? TruncateDirection { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the character put in place of each character the <see cref="Truncate" /> strategy removes.
+    ///     <see langword="null" /> means <c>"*"</c>.
+    /// </summary>
+    public string? TruncateCharacter { get; set; }
+
+    /// <summary>
     ///     Gets or sets an optional filter condition expression. When <see langword="null" /> or empty the strategy
     ///     always applies.
     /// </summary>

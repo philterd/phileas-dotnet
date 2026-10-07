@@ -48,7 +48,7 @@ public class StrategyNameCaseTests
         // REDACT and RANDOM_REPLACE are omitted: redaction is the fallback the switch already lands on,
         // so neither can distinguish a matched name from an unmatched one.
         Assert.Equal("6789", Replace(new SsnFilterStrategy { Strategy = "last_4" }, "123-45-6789"));
-        Assert.Equal("1", Replace(new SsnFilterStrategy { Strategy = "truncate" }, "123-45-6789"));
+        Assert.Equal("123-*******", Replace(new SsnFilterStrategy { Strategy = "truncate" }, "123-45-6789")); // 4 leading, as in Java (#160)
         Assert.Equal("***********", Replace(new SsnFilterStrategy { Strategy = "mask" }, "123-45-6789"));
         Assert.Equal("S", Replace(new SsnFilterStrategy { Strategy = "abbreviate" }, "Smith"));
         Assert.Equal("fixed",

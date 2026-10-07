@@ -270,7 +270,7 @@ public class DateShiftStrategyTests
     {
         // The date filter shares the standard switch with every other filter, so the leniency has to
         // hold on both sides of the dispatch or "relative" would work while "truncate" still redacted.
-        Assert.Equal("seen on 0 today", Filter(PolicyJson("truncate", "\"shiftDays\": 0")));
+        Assert.Equal("seen on 01/1****** today", Filter(PolicyJson("truncate", "\"shiftDays\": 0"))); // 4 leading (#160)
         Assert.Equal("seen on 1990 today", Filter(PolicyJson("truncate_to_year", "\"shiftDays\": 0")));
 
         // SAME is accepted by this port's date filter but is not in the schema's date strategy enum,
