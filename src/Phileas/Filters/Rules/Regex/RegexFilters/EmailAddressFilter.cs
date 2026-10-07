@@ -31,7 +31,7 @@ public class EmailAddressFilter : RegexFilter
     private static readonly Analyzer StrictAnalyzer = new(
         new FilterPattern.Builder()
             .WithPattern(@"\b[A-Za-z0-9!#$%&'*+/=?^_`{|}~.\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
-            .WithInitialConfidence(0.99)
+            .WithInitialConfidence(0.90)
             .Build()
     );
 
@@ -39,7 +39,7 @@ public class EmailAddressFilter : RegexFilter
     private static readonly Analyzer LenientAnalyzer = new(
         new FilterPattern.Builder()
             .WithPattern(@"\b[\w.\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
-            .WithInitialConfidence(0.99)
+            .WithInitialConfidence(0.90)
             .Build()
     );
 

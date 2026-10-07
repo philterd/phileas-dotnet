@@ -101,13 +101,13 @@ public class DateFilter : RegexFilter
         {
             patterns.Add(new FilterPattern.Builder()
                 .WithPattern($@"\b{month}{regexDelimiter}{day}{regexDelimiter}(19|20)\d{{2}}\b")
-                .WithInitialConfidence(0.85)
+                .WithInitialConfidence(0.75)
                 .WithFormat($"M{formatDelimiter}d{formatDelimiter}yyyy")
                 .Build());
 
             patterns.Add(new FilterPattern.Builder()
                 .WithPattern($@"\b{month}{regexDelimiter}{day}{regexDelimiter}\d{{2}}\b")
-                .WithInitialConfidence(0.85)
+                .WithInitialConfidence(0.75)
                 .WithFormat($"M{formatDelimiter}d{formatDelimiter}yy")
                 .Build());
 
@@ -118,13 +118,13 @@ public class DateFilter : RegexFilter
             // are collapsed by DropOverlappingSpans.
             patterns.Add(new FilterPattern.Builder()
                 .WithPattern($@"\b{day}{regexDelimiter}{month}{regexDelimiter}(19|20)\d{{2}}\b")
-                .WithInitialConfidence(0.85)
+                .WithInitialConfidence(0.75)
                 .WithFormat($"d{formatDelimiter}M{formatDelimiter}yyyy")
                 .Build());
 
             patterns.Add(new FilterPattern.Builder()
                 .WithPattern($@"\b{day}{regexDelimiter}{month}{regexDelimiter}\d{{2}}\b")
-                .WithInitialConfidence(0.85)
+                .WithInitialConfidence(0.75)
                 .WithFormat($"d{formatDelimiter}M{formatDelimiter}yy")
                 .Build());
 
@@ -135,7 +135,7 @@ public class DateFilter : RegexFilter
             patterns.Add(new FilterPattern.Builder()
                 .WithPattern(
                     $@"\b(19|20)\d{{2}}{regexDelimiter}{paddedMonth}{regexDelimiter}{paddedDay}{isoDateEnd}")
-                .WithInitialConfidence(0.85)
+                .WithInitialConfidence(0.75)
                 .WithFormat($"yyyy{formatDelimiter}MM{formatDelimiter}dd")
                 .Build());
         }
@@ -143,7 +143,7 @@ public class DateFilter : RegexFilter
         // Month-name dates are specific enough that they are always treated as valid dates.
         patterns.Add(new FilterPattern.Builder()
             .WithPattern($@"\b({monthNames})\s+\d{{1,2}},?\s+\d{{4}}\b", RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.90).WithAlwaysValid(true).Build());
+            .WithInitialConfidence(0.75).WithAlwaysValid(true).Build());
 
         // Day-first month-name dates: 15 January 1990, 15 Jan 1990, 15-Jan-1990, 15/Jan/1990. An
         // abbreviation may carry a trailing period, which the backreferenced separator would
@@ -151,11 +151,11 @@ public class DateFilter : RegexFilter
         patterns.Add(new FilterPattern.Builder()
             .WithPattern($@"\b{day}{nameSeparator}(?:{monthNames}|{monthAbbreviations})\.?\k<sep>\d{{4}}\b",
                 RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.90).WithAlwaysValid(true).Build());
+            .WithInitialConfidence(0.75).WithAlwaysValid(true).Build());
 
         patterns.Add(new FilterPattern.Builder()
             .WithPattern($@"\b({monthAbbreviations})[.\s]\s*\d{{1,2}},?\s*\d{{4}}\b", RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.85).WithAlwaysValid(true).Build());
+            .WithInitialConfidence(0.75).WithAlwaysValid(true).Build());
 
         return patterns.ToArray();
     }

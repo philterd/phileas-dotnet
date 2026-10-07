@@ -422,10 +422,8 @@ Detects IPv4 addresses (e.g. `192.168.1.1`) and IPv6 addresses in every written 
 IPv4-mapped (`::ffff:192.0.2.128`), and link-local with a zone identifier (`fe80::1%eth0`).
 
 An IPv4 address with a letter or underscore immediately against it, such as the `1.2.3.4` of
-`v1.2.3.4`, is still detected and still redacted, but at a lower confidence (0.70 rather than 0.95),
-because it is as likely to be a version string or an identifier. Span disambiguation weighs that
-confidence when another filter claims the same text. An address delimited by punctuation, such as
-`build-10.0.0.1-rc`, is cleanly bounded and keeps the higher confidence.
+`v1.2.3.4`, is still detected and still redacted, as is one delimited by punctuation, such as
+`build-10.0.0.1-rc`. Every IPv4 and IPv6 address reports a confidence of 0.9, as in the Java port.
 
 A bare `::` on its own is not treated as an address. It is the unspecified address, but accepting it
 meant every `::` in prose or code became a span, so `std::vector` and `Foo::Bar` were reported as IP

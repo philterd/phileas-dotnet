@@ -98,7 +98,7 @@ public abstract class RegexFilter : RulesFilter
                 if (Span.DoesSpanExist(matchStart, matchEnd, spans)) continue;
 
                 var window = GetWindow(input, matchStart, matchEnd);
-                var confidence = filterPattern.InitialConfidence;
+                var confidence = ApplyConfidenceModifiers(filterPattern, input, matchStart, matchEnd);
 
                 var replacement = GetReplacement(policy, context, matchText, window, confidence,
                     filterPattern.Classification ?? Classification, filterPattern);
@@ -119,5 +119,42 @@ public abstract class RegexFilter : RulesFilter
         }
 
         return spans;
+    }
+
+    // The pattern's confidence, adjusted by its modifiers from the characters either side of the match, as the
+    // Java port's RulesFilter does: each modifier in turn either adds its delta or, with no delta, sets its
+    // confidence, and the result is kept between 0 and 1. The modifiers were declared on FilterPattern but
+    // never applied. See philterd/phileas-dotnet#159.
+    private static double ApplyConfidenceModifiers(FilterPattern filterPattern, string input, int start, int end)
+    {
+        var confidence = filterPattern.InitialConfidence;
+        if (filterPattern.ConfidenceModifiers == null || filterPattern.ConfidenceModifiers.Count == 0)
+            return confidence;
+
+        var before = start > 0 ? input[start - 1].ToString() : null;
+        var after = end < input.Length ? input[end].ToString() : null;
+
+        bool Is(string? character, string expected) =>
+            character != null && string.Equals(character, expected, StringComparison.OrdinalIgnoreCase);
+
+        foreach (var modifier in filterPattern.ConfidenceModifiers)
+        {
+            var applies = modifier.Condition switch
+            {
+                ConfidenceCondition.CharacterSequenceBefore => Is(before, modifier.Characters),
+                ConfidenceCondition.CharacterSequenceAfter => Is(after, modifier.Characters),
+                ConfidenceCondition.CharacterSequenceSurrounding =>
+                    Is(before, modifier.Characters) && Is(after, modifier.Characters),
+                ConfidenceCondition.CharacterRegexSurrounding =>
+                    before != null && after != null && modifier.MatchingPattern != null
+                    && modifier.MatchingPattern.IsMatch(before) && modifier.MatchingPattern.IsMatch(after),
+                _ => false
+            };
+            if (!applies) continue;
+
+            confidence = modifier.ConfidenceDelta != 0 ? confidence + modifier.ConfidenceDelta : modifier.Confidence;
+        }
+
+        return Math.Clamp(confidence, 0.0, 1.0);
     }
 }

@@ -25,7 +25,7 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 public class BankRoutingNumberFilter : RegexFilter
 {
     private static readonly Analyzer BankRoutingAnalyzer = new(
-        new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.50).Build()
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.95).Build()
     );
 
     /// <summary>

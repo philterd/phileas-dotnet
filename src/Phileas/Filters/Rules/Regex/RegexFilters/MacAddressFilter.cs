@@ -26,7 +26,7 @@ public class MacAddressFilter : RegexFilter
 {
     private static readonly Analyzer MacAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b([0-9A-Fa-f]{2}[:\-]){5}([0-9A-Fa-f]{2})\b")
-            .WithInitialConfidence(0.95).Build()
+            .WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>

@@ -30,9 +30,9 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 ///     </para>
 ///     <para>
 ///         An IPv4 address with a letter or underscore against it, such as the <c>1.2.3.4</c> of
-///         <c>v1.2.3.4</c>, is still detected but at a lower confidence, because it is as likely to be a
-///         version string. The strict pattern is listed first so a cleanly delimited address keeps the
-///         higher score; see the analyzer below.
+///         <c>v1.2.3.4</c>, is still detected, by a second pattern that only requires no digit on either
+///         side. Both report 0.9, the Java port's confidence for any IPv4 address
+///         (philterd/phileas-dotnet#159).
 ///     </para>
 /// </summary>
 public class IpAddressFilter : RegexFilter
@@ -43,20 +43,19 @@ public class IpAddressFilter : RegexFilter
     /// <summary>
     ///     The strict form of each address is listed first and the relaxed form second, because
     ///     <see cref="Analyzer" /> patterns are applied in order and a span already found at exactly
-    ///     the same offsets is not added again. An address standing on its own is therefore reported
-    ///     at the higher confidence, and only one that abuts other text falls through to the lower one.
+    ///     the same offsets is not added again. Only an address that abuts other text is found by the
+    ///     relaxed form.
     /// </summary>
     private static readonly Analyzer IpAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b" + Ipv4 + @"\b")
-            .WithInitialConfidence(0.95).Build(),
+            .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder().WithPattern(Ipv6Patterns.Address, RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.95).Build(),
+            .WithInitialConfidence(0.90).Build(),
 
         // An address with a letter or underscore against it, such as the "1.2.3.4" of "v1.2.3.4",
-        // is still an address and is still redacted, but it is as likely to be a version string or
-        // an identifier, so it carries a lower confidence for span disambiguation to weigh.
+        // is still an address and is still redacted. Java's single IPv4 pattern finds it at 0.9 too.
         new FilterPattern.Builder().WithPattern(@"(?<![0-9])" + Ipv4 + @"(?![0-9])")
-            .WithInitialConfidence(0.70).Build()
+            .WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>

@@ -116,6 +116,27 @@ public class CreditCardFilter : RegexFilter
         return new string(text.Where(char.IsAsciiDigit).ToArray());
     }
 
+    // The Java filter's confidence modifiers: a hyphen against the number lowers it to 0.6, or 0.5 with one
+    // on both sides. Without word boundaries a number standing between spaces or hyphens gains 0.2. See
+    // philterd/phileas-dotnet#159.
+    private static List<ConfidenceModifier> ConfidenceModifiers(bool onlyWordBoundaries)
+    {
+        var modifiers = new List<ConfidenceModifier>
+        {
+            new() { Condition = ConfidenceCondition.CharacterSequenceBefore, Characters = "-", Confidence = 0.6 },
+            new() { Condition = ConfidenceCondition.CharacterSequenceAfter, Characters = "-", Confidence = 0.6 },
+            new() { Condition = ConfidenceCondition.CharacterSequenceSurrounding, Characters = "-", Confidence = 0.5 }
+        };
+        if (!onlyWordBoundaries)
+            modifiers.Add(new ConfidenceModifier
+            {
+                Condition = ConfidenceCondition.CharacterRegexSurrounding,
+                MatchingPattern = new Rx(@"^[\s\-]$"),
+                ConfidenceDelta = 0.2
+            });
+        return modifiers;
+    }
+
     private static Analyzer AnalyzerFor(bool onlyWordBoundaries)
     {
         return Analyzers.GetOrAdd(onlyWordBoundaries, wordBoundaries =>
@@ -125,10 +146,12 @@ public class CreditCardFilter : RegexFilter
             // overlapping candidates be found, matching the Java filter.
             return wordBoundaries
                 ? new Analyzer(new FilterPattern.Builder()
-                    .WithPattern(@"\b" + CardShape + @"\b").WithInitialConfidence(0.90).Build())
+                    .WithPattern(@"\b" + CardShape + @"\b").WithInitialConfidence(0.90)
+                    .WithConfidenceModifiers(ConfidenceModifiers(true)).Build())
                 : new Analyzer(new FilterPattern.Builder()
                     .WithPattern("(?=(" + CardShape + "))").WithGroupNumber(1)
-                    .WithInitialConfidence(0.70).Build());
+                    .WithInitialConfidence(0.70)
+                    .WithConfidenceModifiers(ConfidenceModifiers(false)).Build());
         });
     }
 

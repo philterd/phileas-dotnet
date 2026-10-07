@@ -27,7 +27,7 @@ public class PhoneNumberExtensionFilter : RegexFilter
 {
     private static readonly Analyzer PhoneExtAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b(?:ext|x|extension)\.?\s*[0-9]{1,6}\b", RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.80).Build()
+            .WithInitialConfidence(0.75).Build()
     );
 
     /// <summary>

@@ -25,7 +25,7 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 public class VinFilter : RegexFilter
 {
     private static readonly Analyzer VinAnalyzer = new(
-        new FilterPattern.Builder().WithPattern(@"\b[A-HJ-NPR-Z0-9]{17}\b").WithInitialConfidence(0.80).Build()
+        new FilterPattern.Builder().WithPattern(@"\b[A-HJ-NPR-Z0-9]{17}\b").WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>

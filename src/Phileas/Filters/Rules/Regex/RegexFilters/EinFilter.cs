@@ -40,7 +40,7 @@ public class EinFilter : RegexFilter
             .WithPattern(IdentifierSeparators.NotWordOrHyphenBefore
                          + Digit + "{2}" + IdentifierSeparators.Wrap + Digit + "{7}"
                          + IdentifierSeparators.NotWordOrHyphenAfter)
-            .WithInitialConfidence(0.90).Build()
+            .WithInitialConfidence(0.95).Build()
     );
 
     /// <summary>

@@ -65,32 +65,32 @@ public class Ipv6AddressTests
         var span = Assert.Single(Detect("addr " + address + " end"));
 
         Assert.Equal(address, span.Text);
-        Assert.Equal(0.95, span.Confidence);
+        Assert.Equal(0.90, span.Confidence);
     }
 
     [Theory]
     [InlineData("v1.2.3.4", "1.2.3.4")]
     [InlineData("abc192.168.1.1def", "192.168.1.1")]
     [InlineData("file10.0.0.1.txt", "10.0.0.1")]
-    public void AnIpv4AddressAbuttingText_IsDetectedAtALowerConfidence(string input, string address)
+    public void AnIpv4AddressAbuttingText_IsStillDetected(string input, string address)
     {
-        // Still redacted, because it may well be an address, but it is as likely to be a version
-        // string or an identifier, so the confidence reflects that for span disambiguation.
+        // Still redacted, because it may well be an address. It reports 0.9, the Java port's confidence
+        // for any IPv4 address, rather than a lower one of its own (philterd/phileas-dotnet#159).
         var span = Assert.Single(Detect("x " + input + " y"));
 
         Assert.Equal(address, span.Text);
-        Assert.Equal(0.70, span.Confidence);
+        Assert.Equal(0.90, span.Confidence);
     }
 
     [Theory]
     [InlineData("build-10.0.0.1-rc", "10.0.0.1")] // hyphens delimit, so the boundary is clean
     [InlineData("version 1.2.3.4 released", "1.2.3.4")]
-    public void AnIpv4AddressCleanlyDelimited_KeepsTheHigherConfidence(string input, string address)
+    public void AnIpv4AddressCleanlyDelimited_IsDetected(string input, string address)
     {
         var span = Assert.Single(Detect("x " + input + " y"));
 
         Assert.Equal(address, span.Text);
-        Assert.Equal(0.95, span.Confidence);
+        Assert.Equal(0.90, span.Confidence);
     }
 
     [Theory]

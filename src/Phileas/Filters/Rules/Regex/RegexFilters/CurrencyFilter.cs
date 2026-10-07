@@ -28,9 +28,9 @@ public class CurrencyFilter : RegexFilter
     private static readonly Analyzer CurrencyAnalyzer = new(
         new FilterPattern.Builder()
             .WithPattern(@"\$\s?[0-9,]+(\.[0-9]{1,2})?(?:\s?(million|billion|trillion|thousand))?",
-                RegexOptions.IgnoreCase).WithInitialConfidence(0.90).Build(),
+                RegexOptions.IgnoreCase).WithInitialConfidence(0.80).Build(),
         new FilterPattern.Builder().WithPattern(@"\b[0-9,]+(\.[0-9]{1,2})?\s?(USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY)\b")
-            .WithInitialConfidence(0.90).Build()
+            .WithInitialConfidence(0.80).Build()
     );
 
     /// <summary>

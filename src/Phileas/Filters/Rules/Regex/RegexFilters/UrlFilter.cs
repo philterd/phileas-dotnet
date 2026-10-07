@@ -55,9 +55,9 @@ public class UrlFilter : RegexFilter
 
     private static readonly Analyzer PrefixedAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.95).Build(),
+            .WithInitialConfidence(0.80).Build(),
         new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.90).Build()
+            .WithInitialConfidence(0.80).Build()
     );
 
     /// <summary>
@@ -67,13 +67,13 @@ public class UrlFilter : RegexFilter
     /// </summary>
     private static readonly Analyzer UnprefixedAnalyzer = new(
         new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.95).Build(),
+            .WithInitialConfidence(0.80).Build(),
         new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.90).Build(),
+            .WithInitialConfidence(0.80).Build(),
         new FilterPattern.Builder()
             .WithPattern(@"\b[a-z\d]+(?:[\-.][a-z\d]+)*\.[a-z]{2,5}(?::\d{1,5})?(?:/[^\s]*)?" + EndsOnUrlCharacter,
                 RegexOptions.IgnoreCase)
-            .WithInitialConfidence(0.70).Build()
+            .WithInitialConfidence(0.10).Build()
     );
 
     private readonly bool _requireHttpWwwPrefix;
