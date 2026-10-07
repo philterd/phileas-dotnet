@@ -269,6 +269,20 @@ PhEyes = new List<PhEye>
 }
 ```
 
+`MAP_REPLACE` maps each detected name to a stand-in, so the same person is replaced the same way
+everywhere. Names not in the table use the strategy's `fallbackStrategy`:
+
+```json
+{
+  "strategy": "MAP_REPLACE",
+  "mappings": { "George Washington": "Alex Smith" },
+  "fallbackStrategy": "MASK"
+}
+```
+
+`CRYPTO_REPLACE` and `FPE_ENCRYPT_REPLACE` use the policy's `crypto` and `fpe` settings, as for any other
+filter. The Java port does not support `MAP_REPLACE` on PhEye: it logs a warning and redacts instead.
+
 See [Filter Strategies](filter-strategies.md) for all available options.
 
 ## Ignored Terms

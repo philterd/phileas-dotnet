@@ -398,44 +398,13 @@ public class FilterService : IFilterService
         if (identifiers.PhEyes != null)
             foreach (var phEye in identifiers.PhEyes.Where(IsEnabled))
             {
-                var strategies = new List<AbstractFilterStrategy>();
-                if (phEye.Strategies != null)
-                    foreach (var s in phEye.Strategies)
-                        strategies.Add(new PhEyeFilterStrategy
-                        {
-                            Strategy = s.Strategy,
-                            RedactionFormat = s.RedactionFormat,
-                            Color = s.Color,
-                            StaticReplacement = s.StaticReplacement ?? string.Empty,
-                            MaskCharacter = s.MaskCharacter,
-                            MaskLength = s.MaskLength,
-                            TruncateLeaveCharacters = s.TruncateLeaveCharacters,
-                            TruncateDirection = s.TruncateDirection,
-                            TruncateCharacter = s.TruncateCharacter,
-                            Condition = s.Condition,
-                            Salt = s.Salt,
-                            AnonymizationMethod = s.AnonymizationMethod,
-                            AnonymizationCandidates = s.AnonymizationCandidates,
-                            ReplacementScope = s.ReplacementScope,
-                            ContextService = contextService
-                        });
-
-                if (strategies.Count == 0)
-                    strategies.Add(new PhEyeFilterStrategy { ContextService = contextService });
-
-                var ignored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                if (phEye.Ignored != null)
-                    foreach (var s in phEye.Ignored)
-                        ignored.Add(s);
-
-                var config = new FilterConfiguration.Builder()
-                    .WithStrategies(strategies)
-                    .WithIgnored(ignored)
-                    .WithIgnoredPatterns(phEye.IgnoredPatterns ?? new List<IgnoredPattern>())
-                    .WithWindowSize(phEye.GetWindowSizeOrDefault(DefaultWindowSize))
-                    .WithPriority(phEye.Priority)
-                    .WithPostFilters(policy.Config.PostFilters)
-                    .Build();
+                // Built the same way as every other filter. PhEye used to copy its strategy settings field
+                // by field and build its own configuration, which dropped MAP_REPLACE's mappings, mapping
+                // files, caseSensitive, fallbackStrategy and generator, skipped ResolveMapReplace, and left
+                // out the policy's crypto and fpe settings. See philterd/phileas-dotnet#161.
+                var strategies = BuildStrategies(phEye.Strategies, () => new PhEyeFilterStrategy(), policy,
+                    contextService);
+                var config = BuildConfig(phEye, policy, strategies);
 
                 filters.Add(
                     new PhEyeFilter(config, phEye.PhEyeConfiguration, phEye.RemovePunctuation, phEye.Thresholds));
