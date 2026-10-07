@@ -123,6 +123,7 @@ public class PhEyeFilter : AbstractFilter, IDisposable
             var replacement = GetReplacement(policy, context, phEyeSpan.Text, window, phEyeSpan.Score, phEyeSpan.Label,
                 null);
 
+            if (replacement == null) continue; // no strategy's condition was satisfied: leave it
             if (string.Equals(replacement.Value, phEyeSpan.Text, StringComparison.OrdinalIgnoreCase))
                 continue;
 

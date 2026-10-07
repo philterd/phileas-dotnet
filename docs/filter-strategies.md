@@ -1,6 +1,6 @@
 # Filter Strategies
 
-A **filter strategy** controls what happens to a detected PII token. Each identifier type supports a `Strategies` list; the first strategy whose `condition` evaluates to `true` is applied. If the list is empty, the default `REDACT` strategy is used.
+A **filter strategy** controls what happens to a detected PII token. Each identifier type supports a `Strategies` list; the first strategy whose `condition` evaluates to `true`, or that has no condition, is applied. If every strategy has a condition and none is satisfied, the value is left unchanged. If the list is empty, the default `REDACT` strategy is used.
 
 Every strategy is available on every identifier type, including the dictionary-backed ones
 (`surname`, `firstName`, `city`, `county`, `state`, `hospital`) and the custom `dictionaries`
@@ -507,7 +507,7 @@ Combined with [strategy conditions](#strategy-conditions), this colors spans by 
 
 ## Strategy Conditions
 
-Strategies can include a `condition` property that controls when they are applied. When multiple strategies are defined, phileas-dotnet evaluates their conditions in order and applies the first strategy whose condition evaluates to `true`.
+Strategies can include a `condition` property that controls when they are applied. When multiple strategies are defined, phileas-dotnet evaluates their conditions in order and applies the first strategy whose condition evaluates to `true`. When none is satisfied, the value is left unchanged and no span is reported for it, so end the list with a strategy that has no condition, such as `REDACT`, when every detected value must be transformed.
 
 ```csharp
 new EmailAddressFilterStrategy

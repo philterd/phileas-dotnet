@@ -89,6 +89,7 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
             const double confidence = 1.0;
             var window = GetWindow(input, characterStart, characterEnd);
             var replacement = GetReplacement(policy, context, originalToken, window, confidence, Classification, null);
+            if (replacement == null) continue; // no strategy's condition was satisfied: leave it
 
             spans.Add(Span.Make(characterStart, characterEnd, FilterType, context, confidence, originalToken,
                 replacement.Value, replacement.Salt, isIgnored, replacement.Applied, window, Priority,

@@ -4,7 +4,7 @@ Filter strategy conditions allow you to apply different strategies based on the 
 
 ## Overview
 
-When multiple strategies are defined for a filter, phileas-dotnet evaluates their conditions in order. The **first strategy whose condition evaluates to `true`** is applied. If no strategy conditions match, the default redaction format is used.
+When multiple strategies are defined for a filter, phileas-dotnet evaluates their conditions in order. The **first strategy whose condition evaluates to `true`** is applied, and a strategy with no condition always applies. If every strategy has a condition and none is satisfied, the value is **left unchanged** and no span is reported for it. A filter with no strategies at all uses the default `REDACT`.
 
 ## Supported Condition Fields
 
@@ -320,7 +320,7 @@ Conditions can also be specified in JSON policy files:
 
 1. **Order Matters**: Strategies are evaluated in the order they appear in the list. The first matching condition wins.
 
-2. **Default Strategy**: Always include a final strategy with no condition to serve as a fallback. Without this, unmatched tokens will use the default redaction format.
+2. **Default Strategy**: When every detected value must be transformed, end the list with a strategy that has no condition, such as `REDACT`. Without one, a value that satisfies none of the conditions is left unchanged.
 
 3. **Case Insensitivity**: Field names and operators are case-insensitive (`CONFIDENCE`, `confidence`, and `Confidence` all work).
 

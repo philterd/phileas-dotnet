@@ -76,7 +76,7 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
 
                     // The document's own text, not the dictionary's spelling of it, so a span's text is
                     // what sits at its offsets. SetDictionaryFilter has always done this.
-                    spans.Add(CreateSpan(input, match.Index, match.Index + match.Length, 1.0, context, piece,
+                    AddIfReplaced(spans, CreateSpan(input, match.Index, match.Index + match.Length, 1.0, context, piece,
                         match.Value, policy));
                     covered.Add(new Position(match.Index, match.Index + match.Length));
                 }
@@ -104,15 +104,15 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
                             NormalizeWhitespace(ngram).ToLowerInvariant());
                         if (_sensitivityLevel == SensitivityLevel.High && distance == 0)
                         {
-                            spans.Add(CreateSpan(input, position.Start, position.End, 0.9, context, piece, ngram, policy));
+                            AddIfReplaced(spans, CreateSpan(input, position.Start, position.End, 0.9, context, piece, ngram, policy));
                         }
                         else if (_sensitivityLevel == SensitivityLevel.Medium && distance <= 1)
                         {
-                            spans.Add(CreateSpan(input, position.Start, position.End, 0.7, context, piece, ngram, policy));
+                            AddIfReplaced(spans, CreateSpan(input, position.Start, position.End, 0.7, context, piece, ngram, policy));
                         }
                         else if (_sensitivityLevel == SensitivityLevel.Low && distance <= 2)
                         {
-                            spans.Add(CreateSpan(input, position.Start, position.End, 0.5, context, piece, ngram, policy));
+                            AddIfReplaced(spans, CreateSpan(input, position.Start, position.End, 0.5, context, piece, ngram, policy));
                         }
                     }
                 }
@@ -129,7 +129,15 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
         return new Filtered(context, piece, PostFilter(spans, input));
     }
 
-    private Span CreateSpan(string text, int characterStart, int characterEnd, double confidence, string context,
+    // An exact match whose strategies leave it unchanged still marks its position as covered, so the
+    // near-match scan does not report the same text under a different condition.
+    private static void AddIfReplaced(List<Span> spans, Span? span)
+    {
+        if (span != null) spans.Add(span);
+    }
+
+    // Null when no strategy's condition is satisfied, so the value is left unchanged.
+    private Span? CreateSpan(string text, int characterStart, int characterEnd, double confidence, string context,
         int piece, string token, PhileasPolicy policy)
     {
         // The matched value, not the whole document: passing the input meant the check never fired and
@@ -137,6 +145,7 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
         var ignored = IsIgnored(token) || IsIgnoredTerm(token);
         var window = GetWindow(text, characterStart, characterEnd);
         var replacement = GetReplacement(policy, context, token, window, confidence, Classification, null);
+        if (replacement == null) return null;
         return Span.Make(characterStart, characterEnd, FilterType, context, confidence, token, replacement.Value,
             replacement.Salt, ignored, replacement.Applied, window, Priority, replacement.Color);
     }

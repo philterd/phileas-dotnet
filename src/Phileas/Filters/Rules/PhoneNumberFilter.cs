@@ -95,6 +95,7 @@ public class PhoneNumberFilter : RulesFilter
 
             var window = GetWindow(input, start, end);
             var replacement = GetReplacement(policy, context, text, window, confidence, Classification, null);
+            if (replacement == null) continue; // no strategy's condition was satisfied: leave it
 
             spans.Add(Span.Make(start, end, FilterType, context, confidence, text,
                 replacement.Value, replacement.Salt, IsIgnored(text), replacement.Applied, window, Priority,

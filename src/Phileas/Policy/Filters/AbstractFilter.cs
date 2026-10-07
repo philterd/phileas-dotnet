@@ -220,7 +220,15 @@ public abstract class AbstractFilter
 
     /// <summary>
     ///     Iterates the configured strategies and returns the replacement produced by the first strategy
-    ///     whose condition is satisfied. Falls back to a default redaction token when no strategy matches.
+    ///     whose condition is satisfied, or that has no condition.
+    ///     <para>
+    ///         When every strategy has a condition and none is satisfied, the value is left unchanged and
+    ///         this returns <see langword="null" />: the caller does not report a span for it, as with an
+    ///         ignored value. A filter with no strategies at all redacts with the default format. This is the
+    ///         rule decided in philterd/phisql#57, and what the Java and Python ports do. Redacting the
+    ///         unmatched value instead meant a policy that narrowed a strategy with a condition redacted
+    ///         everything the condition was meant to leave alone. See philterd/phileas-dotnet#145.
+    ///     </para>
     /// </summary>
     /// <param name="policy">The active policy.</param>
     /// <param name="context">The context identifier.</param>
@@ -229,8 +237,11 @@ public abstract class AbstractFilter
     /// <param name="confidence">Confidence score of the detection.</param>
     /// <param name="classification">Optional entity classification label.</param>
     /// <param name="filterPattern">The <see cref="FilterPattern" /> that produced the match, or <see langword="null" />.</param>
-    /// <returns>A <see cref="Replacement" /> containing the replacement value and salt.</returns>
-    protected Replacement GetReplacement(Policy.Policy policy, string context, string token, string[] window,
+    /// <returns>
+    ///     A <see cref="Replacement" /> containing the replacement value and salt, or <see langword="null" />
+    ///     when no strategy's condition is satisfied.
+    /// </returns>
+    protected Replacement? GetReplacement(Policy.Policy policy, string context, string token, string[] window,
         double confidence, string? classification, FilterPattern? filterPattern)
     {
         foreach (var strategy in Strategies)
@@ -243,6 +254,9 @@ public abstract class AbstractFilter
                 return replacement;
             }
 
-        return new Replacement("{{{REDACTED-" + FilterType.GetFilterTypeName() + "}}}", string.Empty);
+        if (Strategies.Count == 0)
+            return new Replacement("{{{REDACTED-" + FilterType.GetFilterTypeName() + "}}}", string.Empty);
+
+        return null;
     }
 }

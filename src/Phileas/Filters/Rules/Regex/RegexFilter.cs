@@ -102,6 +102,7 @@ public abstract class RegexFilter : RulesFilter
 
                 var replacement = GetReplacement(policy, context, matchText, window, confidence,
                     filterPattern.Classification ?? Classification, filterPattern);
+                if (replacement == null) continue; // no strategy's condition was satisfied: leave it
 
                 var span = Span.Make(
                     matchStart, matchEnd,
