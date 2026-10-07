@@ -230,9 +230,9 @@ of identifiers, how confidence and disambiguation work, and how each strategy re
 | Container format | .NET | Java | Python |
 |---|:---:|:---:|:---:|
 | Plain text | ✅ | ✅ | ✅ |
-| PDF | ✅ | ✅ | ✅ |
-| Word `.docx` | ✅ | — | — |
-| Excel `.xlsx` | ✅ | — | — |
+| PDF | ✅ | ✅ | ❌ |
+| Word `.docx` | ✅ | ❌ | ❌ |
+| Excel `.xlsx` | ✅ | ❌ | ❌ |
 
 Word/Excel redaction in the .NET port does not imply the Java or Python ports gain it; bringing `.docx`/`.xlsx`
 to those ports (via Apache POI / openpyxl) is a separate decision.
