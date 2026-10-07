@@ -126,12 +126,12 @@ public abstract class StandardFilterStrategy : AbstractFilterStrategy
     // of each of the others, so the value keeps its length, as the Java port does. The settings were not bound
     // and every value was cut to its first character. See philterd/phileas-dotnet#160.
     //
-    // A value no longer than the characters to leave is kept whole, as Java keeps one of exactly that length.
-    // Java throws on a shorter one, which this port does not copy.
+    // At most length - 1 characters are kept, so at least one is always replaced, as in the Java port. A value no
+    // longer than the characters to leave used to be returned whole, so a short detected value was left in the
+    // output. See philterd/phileas-dotnet#163.
     private string TruncateToken(string token)
     {
-        var leave = Math.Max(TruncateLeaveCharacters ?? 4, 1);
-        if (token.Length <= leave) return token;
+        var leave = Math.Min(Math.Max(TruncateLeaveCharacters ?? 4, 1), Math.Max(token.Length - 1, 0));
 
         var removed = string.Concat(Enumerable.Repeat(TruncateCharacter ?? "*", token.Length - leave));
         return string.Equals(TruncateDirection ?? "LEADING", "LEADING", StringComparison.OrdinalIgnoreCase)

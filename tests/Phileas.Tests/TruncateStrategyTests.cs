@@ -79,17 +79,51 @@ public class TruncateStrategyTests
         Assert.DoesNotContain("truncate", written);
     }
 
-    [Theory]
-    [InlineData(4, "LEADING", "ref ID-7 here")]   // exactly as long as the characters to leave: kept whole, as in Java
-    [InlineData(10, "LEADING", "ref ID-7 here")]  // shorter: kept whole (Java throws)
-    [InlineData(10, "TRAILING", "ref ID-7 here")]
-    public void AValueNoLongerThanTheCharactersToLeave_IsKeptWhole(int leave, string direction, string expected)
-    {
-        var json = "{\"identifiers\":{\"identifiers\":[{\"pattern\":\"ID-\\\\d+\",\"identifierFilterStrategies\":[{"
-                   + $"\"strategy\":\"TRUNCATE\",\"truncateLeaveCharacters\":{leave},\"truncateDirection\":\"{direction}\""
-                   + "}]}]}}";
+    // At most length - 1 characters are kept, so a value no longer than the characters to leave still has at least
+    // one character replaced, as in the Java port. See philterd/phileas-dotnet#163.
+    private static string TruncateWord(string word, string settings) =>
+        Filter("{\"identifiers\":{\"identifiers\":[{\"pattern\":\"\\\\b[A-Z][A-Z0-9]*\\\\b\","
+               + "\"identifierFilterStrategies\":[{\"strategy\":\"TRUNCATE\"" + settings + "}]}]}}", $"value {word} end");
 
-        Assert.Equal(expected, Filter(json, "ref ID-7 here"));
+    [Theory]
+    [InlineData("AB", "", "A*")]
+    [InlineData("ABCD", "", "ABC*")]
+    [InlineData("ABCD1234", "", "ABCD****")]
+    [InlineData("AB", ",\"truncateDirection\":\"TRAILING\"", "*B")]
+    [InlineData("ABCD", ",\"truncateDirection\":\"TRAILING\"", "*BCD")]
+    [InlineData("ABCD1234", ",\"truncateDirection\":\"TRAILING\"", "****1234")]
+    [InlineData("A", ",\"truncateLeaveCharacters\":2", "*")]
+    [InlineData("ABC", ",\"truncateLeaveCharacters\":2", "AB*")]
+    [InlineData("ABC", ",\"truncateLeaveCharacters\":2,\"truncateDirection\":\"TRAILING\"", "*BC")]
+    [InlineData("ABCDE", ",\"truncateLeaveCharacters\":4", "ABCD*")]
+    [InlineData("ABCDE", ",\"truncateLeaveCharacters\":4,\"truncateDirection\":\"TRAILING\"", "*BCDE")]
+    public void AtLeastOneCharacterIsAlwaysReplaced(string word, string settings, string expected)
+    {
+        Assert.Equal($"value {expected} end", TruncateWord(word, settings));
+    }
+
+    [Fact]
+    public void FewerThanOneCharacterToLeave_IsOne()
+    {
+        // The schema rejects 0 in JSON, so this is set in code.
+        var policy = new PhileasPolicy
+        {
+            Name = "p",
+            Identifiers = new Identifiers
+            {
+                CustomIdentifiers = new List<Identifier>
+                {
+                    new()
+                    {
+                        Pattern = @"\b[A-Z][A-Z0-9]*\b",
+                        Strategies = new List<IdentifierFilterStrategy>
+                            { new() { Strategy = "TRUNCATE", TruncateLeaveCharacters = 0 } }
+                    }
+                }
+            }
+        };
+
+        Assert.Equal("value A*** end", Filter(policy, "value ABCD end"));
     }
 
     // Settings the schema rejects in JSON can still be set in code. They behave as in Java: the direction is

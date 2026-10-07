@@ -315,7 +315,8 @@ character, so the value keeps its length.
 | `TruncateDirection` | `truncateDirection` | `LEADING` | Which end to keep: `LEADING` or `TRAILING`. |
 | `TruncateCharacter` | `truncateCharacter` | `*` | The character put in place of each removed character. |
 
-A token no longer than `truncateLeaveCharacters` is left unchanged.
+At most one fewer character than the token's length is kept, so at least one character is always replaced: with
+the defaults, `ABCD` becomes `ABC*` and `AB` becomes `A*`.
 
 ```json
 { "strategy": "TRUNCATE", "truncateLeaveCharacters": 4, "truncateDirection": "TRAILING" }
