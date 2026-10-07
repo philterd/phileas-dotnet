@@ -81,18 +81,19 @@ namespace Phileas.Services.Office
             }
         }
 
-        // Concatenates a DrawingML paragraph's runs, filters, and (when changed) flattens the result into
-        // the first run — the same approach the Word body/drawing rebuild uses; the run/chart structure is
-        // preserved.
+        // Filters a DrawingML paragraph's text and, when it changed, writes the result back run by run.
+        // Each line break (<a:br>) is a "\n" in the filtered text, so the words on either side are not
+        // joined, and the break is left where it is. Pouring the whole result into the first run, as this
+        // used to, put every break after all of the text. See philterd/phileas-dotnet#151.
         private static void RedactDrawingParagraph(A.Paragraph paragraph, Func<string, TextFilterResult> filter,
             bool write, List<OfficeRedactionSpan>? captured, ref int order)
         {
-            List<A.Text> texts = paragraph.Descendants<A.Text>().ToList();
-            if (texts.Count == 0)
+            List<(OpenXmlElement Element, string Text)> content = DrawingContent(paragraph);
+            if (!content.Any(c => c.Element is A.Text))
             {
                 return;
             }
-            string original = string.Concat(texts.Select(t => t.Text));
+            string original = string.Concat(content.Select(c => c.Text));
             if (string.IsNullOrEmpty(original))
             {
                 return;
@@ -104,13 +105,118 @@ namespace Phileas.Services.Office
             }
             if (write)
             {
-                texts[0].Text = result.FilteredText;
-                for (int i = 1; i < texts.Count; i++)
+                List<ReplacementRange> ranges = OfficeSpanMath.ResolveNonOverlapping(result.Spans
+                    .Where(s => s.CharacterStart >= 0 && s.CharacterEnd <= original.Length && s.CharacterEnd > s.CharacterStart)
+                    .Select(s => new ReplacementRange(s.CharacterStart, s.CharacterEnd, s.Replacement ?? string.Empty)));
+                if (!Rewrite(content, original, ranges, result.FilteredText))
                 {
-                    texts[i].Text = string.Empty;
+                    // The spans don't account for the filtered text, as a hand-written filter delegate's
+                    // may not. Write the filtered text whole rather than risk leaving PII in place: the
+                    // breaks move to the end, but nothing the filter removed survives. Its "\n"s become
+                    // spaces, since the <a:br> elements they stand for are still in the paragraph.
+                    List<A.Text> texts = content.Select(c => c.Element).OfType<A.Text>().ToList();
+                    texts[0].Text = result.FilteredText.Replace("\n", " ");
+                    for (int i = 1; i < texts.Count; i++)
+                    {
+                        texts[i].Text = string.Empty;
+                    }
                 }
             }
             Capture(result, original, captured, ref order);
+        }
+
+        /// <summary>
+        /// The text of a DrawingML paragraph as the filter sees it: its <c>&lt;a:t&gt;</c> text, with
+        /// <c>"\n"</c> for each line break (<c>&lt;a:br&gt;</c>). Used for the review diff so it shows the
+        /// same text that was redacted.
+        /// </summary>
+        internal static string DrawingParagraphText(A.Paragraph paragraph) =>
+            string.Concat(DrawingContent(paragraph).Select(c => c.Text));
+
+        // A DrawingML paragraph's text elements and line breaks in document order, each with the text it
+        // contributes. A line break is one character, so its offset maps back to it.
+        private static List<(OpenXmlElement Element, string Text)> DrawingContent(A.Paragraph paragraph)
+        {
+            var content = new List<(OpenXmlElement, string)>();
+            foreach (OpenXmlElement element in paragraph.Descendants())
+            {
+                if (element is A.Text text)
+                {
+                    content.Add((text, text.Text ?? string.Empty));
+                }
+                else if (element is A.Break)
+                {
+                    content.Add((element, "\n"));
+                }
+            }
+            return content;
+        }
+
+        // Applies the replacements to each text element's own slice of the paragraph, leaving the line
+        // breaks untouched. A replacement is written where its span starts, at the first character of the
+        // span that is not a line break; the rest of the span's characters are removed from whichever runs
+        // hold them. Each run keeps its own formatting and each break stays between the same text.
+        // Returns false, changing nothing, when the replacements do not produce
+        // <paramref name="filteredText"/>.
+        private static bool Rewrite(List<(OpenXmlElement Element, string Text)> content, string original,
+            IReadOnlyList<ReplacementRange> ranges, string filteredText)
+        {
+            var rangeAt = new int[original.Length];
+            Array.Fill(rangeAt, -1);
+            for (int r = 0; r < ranges.Count; r++)
+            {
+                for (int i = ranges[r].Start; i < ranges[r].End; i++)
+                {
+                    rangeAt[i] = r;
+                }
+            }
+
+            var written = new bool[ranges.Count];
+            var rewrites = new List<(A.Text Element, string Text)>();
+            var produced = new System.Text.StringBuilder(filteredText.Length);
+            int offset = 0;
+            foreach ((OpenXmlElement element, string text) in content)
+            {
+                if (element is not A.Text textElement)
+                {
+                    // A break inside a replaced span is kept in the paragraph but is not in the filtered
+                    // text, which replaced it along with the rest of the span.
+                    if (rangeAt[offset] < 0)
+                    {
+                        produced.Append(text);
+                    }
+                }
+                else
+                {
+                    var rewritten = new System.Text.StringBuilder(text.Length);
+                    for (int i = offset; i < offset + text.Length; i++)
+                    {
+                        int r = rangeAt[i];
+                        if (r < 0)
+                        {
+                            rewritten.Append(original[i]);
+                        }
+                        else if (!written[r])
+                        {
+                            rewritten.Append(ranges[r].Replacement);
+                            written[r] = true;
+                        }
+                    }
+                    rewrites.Add((textElement, rewritten.ToString()));
+                    produced.Append(rewritten);
+                }
+                offset += text.Length;
+            }
+
+            if (!string.Equals(produced.ToString(), filteredText, StringComparison.Ordinal))
+            {
+                return false;
+            }
+            foreach ((A.Text element, string text) in rewrites)
+            {
+                element.Text = text;
+            }
+            return true;
         }
 
         private static void RedactLeaf(OpenXmlLeafTextElement element, Func<string, TextFilterResult> filter,

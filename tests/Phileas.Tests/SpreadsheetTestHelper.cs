@@ -249,11 +249,15 @@ namespace Phileas.Tests
         /// name, and cached category value — shared by the Word and Excel chart fixtures.
         /// </summary>
         public static string ChartSpaceXml(string title, string seriesName, string category) =>
+            ChartSpaceXmlWithTitleParagraph($"<a:p><a:r><a:t>{Escape(title)}</a:t></a:r></a:p>", seriesName, category);
+
+        /// <summary>As <see cref="ChartSpaceXml"/>, with the title given as raw DrawingML paragraph (&lt;a:p&gt;) XML.</summary>
+        public static string ChartSpaceXmlWithTitleParagraph(string titleAParagraphXml, string seriesName, string category) =>
             "<c:chartSpace xmlns:c=\"http://schemas.openxmlformats.org/drawingml/2006/chart\" " +
             "xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" " +
             "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">" +
             "<c:chart>" +
-            $"<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>{Escape(title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val=\"0\"/></c:title>" +
+            $"<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/>{titleAParagraphXml}</c:rich></c:tx><c:overlay val=\"0\"/></c:title>" +
             "<c:autoTitleDeleted val=\"0\"/>" +
             "<c:plotArea><c:layout/>" +
             "<c:barChart><c:barDir val=\"col\"/><c:grouping val=\"clustered\"/>" +
@@ -268,7 +272,12 @@ namespace Phileas.Tests
 
         /// <summary>Creates a single-sheet workbook with an embedded chart (under the worksheet's drawing).</summary>
         public static void CreateXlsxWithChart(
-            string path, IReadOnlyList<string?[]> rows, string title, string seriesName, string category, string sheetName = "Sheet1")
+            string path, IReadOnlyList<string?[]> rows, string title, string seriesName, string category, string sheetName = "Sheet1") =>
+            CreateXlsxWithChartXml(path, rows, ChartSpaceXml(title, seriesName, category), sheetName);
+
+        /// <summary>Creates a single-sheet workbook with an embedded chart whose chart part is <paramref name="chartSpaceXml"/>.</summary>
+        public static void CreateXlsxWithChartXml(
+            string path, IReadOnlyList<string?[]> rows, string chartSpaceXml, string sheetName = "Sheet1")
         {
             CreateXlsx(path, rows, sheetName);
 
@@ -277,7 +286,7 @@ namespace Phileas.Tests
 
             DrawingsPart drawingsPart = wsPart.AddNewPart<DrawingsPart>();
             ChartPart chartPart = drawingsPart.AddNewPart<ChartPart>();
-            WriteXml(chartPart, ChartSpaceXml(title, seriesName, category));
+            WriteXml(chartPart, chartSpaceXml);
 
             string chartRelId = drawingsPart.GetIdOfPart(chartPart);
             string drawingXml =
@@ -303,7 +312,13 @@ namespace Phileas.Tests
         /// paragraph holds the given runs. Pass more than one run to exercise PII split across <c>a:t</c> runs.
         /// </summary>
         public static void CreateXlsxWithTextBox(
-            string path, IReadOnlyList<string?[]> rows, params string[] runs)
+            string path, IReadOnlyList<string?[]> rows, params string[] runs) =>
+            CreateXlsxWithTextBoxParagraph(path, rows,
+                "<a:p>" + string.Concat(runs.Select(r => $"<a:r><a:t>{Escape(r)}</a:t></a:r>")) + "</a:p>");
+
+        /// <summary>As <see cref="CreateXlsxWithTextBox"/>, with the text box's paragraph given as raw &lt;a:p&gt; XML.</summary>
+        public static void CreateXlsxWithTextBoxParagraph(
+            string path, IReadOnlyList<string?[]> rows, string aParagraphXml)
         {
             CreateXlsx(path, rows);
 
@@ -311,7 +326,6 @@ namespace Phileas.Tests
             WorksheetPart wsPart = doc.WorkbookPart!.WorksheetParts.First();
 
             DrawingsPart drawingsPart = wsPart.AddNewPart<DrawingsPart>();
-            string runsXml = string.Concat(runs.Select(r => $"<a:r><a:t>{Escape(r)}</a:t></a:r>"));
             string drawingXml =
                 "<xdr:wsDr xmlns:xdr=\"http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing\" " +
                 "xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\">" +
@@ -322,7 +336,7 @@ namespace Phileas.Tests
                 "<xdr:nvSpPr><xdr:cNvPr id=\"2\" name=\"TextBox 1\"/><xdr:cNvSpPr txBox=\"1\"/></xdr:nvSpPr>" +
                 "<xdr:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"1000000\" cy=\"500000\"/></a:xfrm>" +
                 "<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></xdr:spPr>" +
-                $"<xdr:txBody><a:bodyPr/><a:lstStyle/><a:p>{runsXml}</a:p></xdr:txBody>" +
+                $"<xdr:txBody><a:bodyPr/><a:lstStyle/>{aParagraphXml}</xdr:txBody>" +
                 "</xdr:sp><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>";
             WriteXml(drawingsPart, drawingXml);
 

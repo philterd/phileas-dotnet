@@ -104,7 +104,7 @@ produce identical output.
 | `Detect(inputPath, filter, redactHeadersFooters = true, redactCharts = true)` | Detects only (no file is written); returns the spans `Redact` would apply. Used for previews and post-redaction verification. |
 | `ApplySpans(inputPath, outputPath, spans, highlight, drawingFilter = null, redactCharts = true, removeEmbeddedObjects = true)` | Applies an explicit set of spans (detected or user-supplied) by **position** (paragraph index + character offsets). Supply `drawingFilter` to also re-redact non-positional content (drawings, hyperlink targets, field instructions, charts) via the policy. |
 | `ReadParagraphs(inputPath)` | Returns each redactable paragraph's text in canonical order (index `i` is `ParagraphIndex` `i`). This is the text the filter receives: each line break or carriage return (`w:br`, `w:cr`) is `\n` and each tab (`w:tab`, `w:ptab`) is `\t`, so span offsets index it directly. Read-only. |
-| `ReadReviewLines(inputPath)` | Returns every readable line — paragraphs plus shape/SmartArt/chart text — for a before/after review diff. Read-only. |
+| `ReadReviewLines(inputPath)` | Returns every readable line (paragraphs plus shape/SmartArt/chart text) for a before/after review diff. A line break in shape, SmartArt, or chart text is `\n`. Read-only. |
 
 ```csharp
 public static List<OfficeRedactionSpan> Redact(
@@ -208,6 +208,10 @@ does not survive in a part the eye never sees.
   flattened (and hyperlinks/fields in it collapse to plain text), since the visible text is what is redacted.
   Line breaks, page and column breaks, carriage returns and tabs are kept, with their type; one inside a
   redacted value is placed after its replacement. Paragraphs with no detected PII are left exactly as they were.
+- **Shape, SmartArt, and chart text keeps its structure.** DrawingML text (`a:t`) is filtered a paragraph at a
+  time, with each line break (`a:br`) as `\n`. A changed paragraph is rewritten run by run: each run keeps its
+  formatting and each line break stays where it was. A replacement is written into the run where the value
+  starts, and the rest of the value is removed from the runs that held it.
 - **Opaque embedded objects.** An embedded object that isn't a Word/Excel document (for example a legacy OLE
   object) can't be inspected. With the removal option on it is deleted; otherwise it is kept and flagged so the
   caller can warn that its content was not redacted.

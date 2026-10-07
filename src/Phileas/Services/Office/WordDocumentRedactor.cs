@@ -79,9 +79,9 @@ namespace Phileas.Services.Office
             return lines;
         }
 
-        // The concatenated text of each DrawingML paragraph across every part, in the same AllParts walk
-        // order RedactDrawingText uses — redaction preserves the drawing structure (it flattens each
-        // paragraph's text into its first run without removing paragraphs), so source and output align.
+        // The text of each DrawingML paragraph across every part, as the filter sees it, in the same
+        // AllParts walk order RedactDrawingText uses. Redaction rewrites each paragraph's runs in place
+        // without removing paragraphs, so source and output align.
         private static IEnumerable<string> ReadDrawingParagraphText(WordprocessingDocument document)
         {
             MainDocumentPart? main = document.MainDocumentPart;
@@ -107,10 +107,9 @@ namespace Phileas.Services.Office
                 }
                 foreach (A.Paragraph paragraph in root.Descendants<A.Paragraph>())
                 {
-                    List<A.Text> texts = paragraph.Descendants<A.Text>().ToList();
-                    if (texts.Count > 0)
+                    if (paragraph.Descendants<A.Text>().Any())
                     {
-                        yield return string.Concat(texts.Select(t => t.Text));
+                        yield return ChartRedactor.DrawingParagraphText(paragraph);
                     }
                 }
             }
@@ -465,8 +464,8 @@ namespace Phileas.Services.Office
 
         // Redacts DrawingML text (<a:t> runs in shapes, SmartArt, and charts) — which is not made of
         // WordprocessingML <w:p> paragraphs and so is missed by the body/notes enumeration. Each DrawingML
-        // paragraph's runs are concatenated, filtered, and (when changed) flattened into its first run so
-        // PII in a shape/SmartArt/chart label doesn't survive. Walks every part of the package so text in
+        // paragraph is filtered and rewritten through ChartRedactor, the same path Excel shapes and charts
+        // take, so PII in a shape/SmartArt/chart label doesn't survive. Walks every part of the package so text in
         // the main document, headers/footers, notes, chart parts, and SmartArt data is covered. Returns the
         // redactions it made so they're recorded in the report/explanation like any other span.
         private static List<OfficeRedactionSpan> RedactDrawingText(
@@ -500,62 +499,9 @@ namespace Phileas.Services.Office
                 {
                     continue;
                 }
-                foreach (A.Paragraph paragraph in root.Descendants<A.Paragraph>().ToList())
-                {
-                    RedactDrawingParagraph(paragraph, filter, ref order, captured);
-                }
+                ChartRedactor.RedactDrawingText(root, filter, write: true, captured, ref order);
             }
             return captured;
-        }
-
-        private static void RedactDrawingParagraph(
-            A.Paragraph paragraph, Func<string, TextFilterResult> filter, ref int order, List<OfficeRedactionSpan> captured)
-        {
-            List<A.Text> texts = paragraph.Descendants<A.Text>().ToList();
-            if (texts.Count == 0)
-            {
-                return;
-            }
-
-            string original = string.Concat(texts.Select(t => t.Text));
-            if (string.IsNullOrEmpty(original))
-            {
-                return;
-            }
-
-            TextFilterResult result = filter(original);
-            if (string.Equals(result.FilteredText, original, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            // Flatten the (possibly multi-run) text into the first run, clearing the rest — the same
-            // approach the WordprocessingML rebuild uses; the run structure (and the drawing) is preserved.
-            texts[0].Text = result.FilteredText;
-            for (int i = 1; i < texts.Count; i++)
-            {
-                texts[i].Text = string.Empty;
-            }
-
-            // Record each detection so shape/SmartArt/chart redactions appear in the report count, the
-            // "What was removed" table, and the explanation export. ParagraphIndex -1: not a body paragraph.
-            foreach (Span s in result.Spans
-                         .Where(s => s.CharacterStart >= 0 && s.CharacterEnd <= original.Length && s.CharacterEnd > s.CharacterStart)
-                         .OrderBy(s => s.CharacterStart))
-            {
-                var entity = new OfficeRedactionSpan
-                {
-                    Order = order++,
-                    ParagraphIndex = -1,
-                    CharacterStart = s.CharacterStart,
-                    CharacterEnd = s.CharacterEnd,
-                    Text = original.Substring(s.CharacterStart, s.CharacterEnd - s.CharacterStart),
-                    Replacement = s.Replacement ?? string.Empty,
-                    Classification = s.Classification ?? string.Empty
-                };
-                OfficeSpanExplanation.Populate(entity, s);
-                captured.Add(entity);
-            }
         }
 
         // Redacts the text of tracked *deletions* (w:delText). Word keeps deleted-but-tracked text in
