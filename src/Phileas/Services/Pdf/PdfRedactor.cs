@@ -20,6 +20,7 @@ using PDFtoImage;
 using Phileas.Model;
 using SkiaSharp;
 using UglyToad.PdfPig;
+using UglyToad.PdfPig.Writer;
 using BoundingBoxModel = Phileas.Policy.BoundingBox;
 using PdfConfig = Phileas.Policy.Pdf;
 
@@ -28,8 +29,9 @@ namespace Phileas.Services.Pdf;
 /// <summary>
 ///     Renders each PDF page to a raster image, burns redaction rectangles (and optional replacement
 ///     text) over the detected spans and graphical bounding boxes, and reassembles the pages into an
-///     image-only PDF or a ZIP of per-page images. Because every page becomes an image, the output has
-///     no recoverable text layer. Mirrors the Java <c>PdfRedactor</c>.
+///     image-only PDF or a ZIP of per-page images. A rasterized page has no recoverable text layer. With
+///     <c>preserveUnredactedPages</c>, a page with nothing to redact is copied into a PDF output unchanged
+///     instead. Mirrors the Java <c>PdfRedactor</c>.
 /// </summary>
 public sealed class PdfRedactor
 {
@@ -45,6 +47,24 @@ public sealed class PdfRedactor
     public byte[] Process(byte[] document, IList<Span> spans, PdfConfig pdf,
         IList<BoundingBoxModel> boundingBoxes, MimeType outputMimeType)
     {
+        return Process(document, spans, pdf, boundingBoxes, outputMimeType, pdf.PreserveUnredactedPages);
+    }
+
+    /// <summary>
+    ///     Redacts the document, copying the pages that need no redaction unchanged when
+    ///     <paramref name="preserveUnredactedPages" /> is set and the output is a PDF.
+    ///     <para>
+    ///         A page needs redaction when a span is on it, located or not (a span from an annotation or form
+    ///         field has no box but its text is still on the page), or an enabled bounding box covers it. A span
+    ///         whose page is not one of the document's pages leaves no page safe to copy, so every page is
+    ///         rasterized. The Java port copies a page whose only redaction is a bounding box, which leaves the
+    ///         text under the box in the output's text layer; this port rasterizes it. See
+    ///         philterd/phileas-dotnet#146.
+    ///     </para>
+    /// </summary>
+    internal byte[] Process(byte[] document, IList<Span> spans, PdfConfig pdf,
+        IList<BoundingBoxModel> boundingBoxes, MimeType outputMimeType, bool preserveUnredactedPages)
+    {
         // Page dimensions (PDF user-space points) are needed to map coordinates and size output pages.
         var pageSizes = new List<(double Width, double Height)>();
         using (var pdfDocument = PdfDocument.Open(document))
@@ -53,61 +73,112 @@ public sealed class PdfRedactor
                 pageSizes.Add((page.Width, page.Height));
         }
 
+        var pageNumbers = Enumerable.Range(1, pageSizes.Count).ToList();
+        var toRasterize = preserveUnredactedPages && outputMimeType != MimeType.ImageJpeg
+            ? PagesNeedingRedaction(spans, boundingBoxes, pageSizes.Count)
+            : pageNumbers;
+
         var bitmaps = new List<SKBitmap>();
         try
         {
-            for (var pageNumber = 1; pageNumber <= pageSizes.Count; pageNumber++)
-            {
-                var (widthPts, heightPts) = pageSizes[pageNumber - 1];
+            foreach (var pageNumber in toRasterize)
+                bitmaps.Add(RenderPage(document, pageNumber, pageSizes[pageNumber - 1], spans, boundingBoxes, pdf));
 
-                var bitmap = Conversion.ToImage(document, page: pageNumber - 1,
-                    options: new RenderOptions(Dpi: pdf.Dpi));
+            if (outputMimeType == MimeType.ImageJpeg)
+                return BuildImageArchive(bitmaps, pdf);
 
-                var scaleX = bitmap.Width / widthPts;
-                var scaleY = bitmap.Height / heightPts;
+            if (toRasterize.Count == pageNumbers.Count)
+                return BuildPdf(bitmaps, pageSizes, pdf);
 
-                using (var canvas = new SKCanvas(bitmap))
-                {
-                    foreach (var span in spans.Where(s => s.PageNumber == pageNumber))
-                    {
-                        var rect = ToPixelRect(span.LowerLeftX, span.LowerLeftY, span.UpperRightX,
-                            span.UpperRightY, heightPts, scaleX, scaleY);
-                        // A span with no located box (e.g. one detected in an annotation or form field, whose
-                        // text isn't rendered into the image) has nothing to burn in — skip it.
-                        if (rect.Width <= 0 || rect.Height <= 0)
-                            continue;
-                        // The bar uses the redacting strategy's color when set, else the policy-wide PDF color,
-                        // else black. A set-but-unrecognized color renders black (never left un-redacted).
-                        using var redactionPaint = new SKPaint
-                            { Color = ParseColor(span.Color ?? pdf.RedactionColor, SKColors.Black), Style = SKPaintStyle.Fill };
-                        canvas.DrawRect(rect, redactionPaint);
-
-                        if (pdf.ShowReplacement && !string.IsNullOrEmpty(span.Replacement))
-                            DrawReplacement(canvas, span.Replacement, rect, pdf, scaleY);
-                    }
-
-                    foreach (var box in BoxesForPage(boundingBoxes, pageNumber))
-                    {
-                        var rect = ToPixelRect(box.X, box.Y, box.X + box.W, box.Y + box.H,
-                            heightPts, scaleX, scaleY);
-                        using var boxPaint = new SKPaint
-                            { Color = ParseColor(box.Color ?? pdf.RedactionColor, SKColors.Black), Style = SKPaintStyle.Fill };
-                        canvas.DrawRect(rect, boxPaint);
-                    }
-                }
-
-                bitmaps.Add(bitmap);
-            }
-
-            return outputMimeType == MimeType.ImageJpeg
-                ? BuildImageArchive(bitmaps, pdf)
-                : BuildPdf(bitmaps, pageSizes, pdf);
+            // With nothing to rasterize there is no rasterized document to copy from: Skia writes no
+            // readable PDF for zero pages.
+            var rasterized = toRasterize.Count == 0
+                ? null
+                : BuildPdf(bitmaps, toRasterize.Select(n => pageSizes[n - 1]).ToList(), pdf);
+            return Assemble(document, rasterized, toRasterize, pageSizes.Count);
         }
         finally
         {
             foreach (var bitmap in bitmaps)
                 bitmap.Dispose();
         }
+    }
+
+    /// <summary>The 1-based pages that have something to redact, in page order.</summary>
+    internal static List<int> PagesNeedingRedaction(IEnumerable<Span> spans, IList<BoundingBoxModel> boundingBoxes,
+        int pageCount)
+    {
+        var spanPages = spans.Select(s => s.PageNumber).ToHashSet();
+        if (spanPages.Any(page => page < 1 || page > pageCount))
+            return Enumerable.Range(1, pageCount).ToList();
+
+        return Enumerable.Range(1, pageCount)
+            .Where(page => spanPages.Contains(page) || BoxesForPage(boundingBoxes, page).Any())
+            .ToList();
+    }
+
+    // Puts each page back in order: a rasterized page from rasterized (whose pages are toRasterize, in order),
+    // and every other page copied from the source document unchanged, text layer and all.
+    private static byte[] Assemble(byte[] source, byte[]? rasterized, List<int> toRasterize, int pageCount)
+    {
+        using var sourceDocument = PdfDocument.Open(source);
+        using var rasterDocument = rasterized == null ? null : PdfDocument.Open(rasterized);
+        var builder = new PdfDocumentBuilder();
+        for (var page = 1; page <= pageCount; page++)
+        {
+            var rasterIndex = toRasterize.IndexOf(page);
+            if (rasterIndex >= 0)
+                builder.AddPage(rasterDocument!, rasterIndex + 1);
+            else
+                builder.AddPage(sourceDocument, page);
+        }
+
+        return builder.Build();
+    }
+
+    // Renders one page and burns in the redaction boxes for its spans and bounding boxes.
+    private static SKBitmap RenderPage(byte[] document, int pageNumber, (double Width, double Height) pageSize,
+        IList<Span> spans, IList<BoundingBoxModel> boundingBoxes, PdfConfig pdf)
+    {
+        var (widthPts, heightPts) = pageSize;
+
+        var bitmap = Conversion.ToImage(document, page: pageNumber - 1,
+            options: new RenderOptions(Dpi: pdf.Dpi));
+
+        var scaleX = bitmap.Width / widthPts;
+        var scaleY = bitmap.Height / heightPts;
+
+        using (var canvas = new SKCanvas(bitmap))
+        {
+            foreach (var span in spans.Where(s => s.PageNumber == pageNumber))
+            {
+                var rect = ToPixelRect(span.LowerLeftX, span.LowerLeftY, span.UpperRightX,
+                    span.UpperRightY, heightPts, scaleX, scaleY);
+                // A span with no located box (e.g. one detected in an annotation or form field, whose
+                // text isn't rendered into the image) has nothing to burn in — skip it.
+                if (rect.Width <= 0 || rect.Height <= 0)
+                    continue;
+                // The bar uses the redacting strategy's color when set, else the policy-wide PDF color,
+                // else black. A set-but-unrecognized color renders black (never left un-redacted).
+                using var redactionPaint = new SKPaint
+                    { Color = ParseColor(span.Color ?? pdf.RedactionColor, SKColors.Black), Style = SKPaintStyle.Fill };
+                canvas.DrawRect(rect, redactionPaint);
+
+                if (pdf.ShowReplacement && !string.IsNullOrEmpty(span.Replacement))
+                    DrawReplacement(canvas, span.Replacement, rect, pdf, scaleY);
+            }
+
+            foreach (var box in BoxesForPage(boundingBoxes, pageNumber))
+            {
+                var rect = ToPixelRect(box.X, box.Y, box.X + box.W, box.Y + box.H,
+                    heightPts, scaleX, scaleY);
+                using var boxPaint = new SKPaint
+                    { Color = ParseColor(box.Color ?? pdf.RedactionColor, SKColors.Black), Style = SKPaintStyle.Fill };
+                canvas.DrawRect(rect, boxPaint);
+            }
+        }
+
+        return bitmap;
     }
 
     /// <summary>

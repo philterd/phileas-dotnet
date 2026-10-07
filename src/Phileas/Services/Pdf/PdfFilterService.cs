@@ -94,6 +94,7 @@ public sealed class PdfFilterService
         // them. Their text also isn't rendered into the rasterized image (so it is removed from the
         // output), but it must still be detected and reported. These spans carry a page number but no
         // bounding box — the content is already gone, so nothing is burned in (PdfRedactor skips them).
+        var unknownPageSpan = false;
         foreach (var (page, text) in ExtractAnnotationAndFormText(input))
         {
             var result = _filterService.Filter(policy, context, piece++, text);
@@ -101,14 +102,17 @@ public sealed class PdfFilterService
             foreach (var span in result.Spans)
             {
                 var located = span.Copy();
-                located.PageNumber = page;
+                // A form field whose page is unknown is reported on page 1, as before, but its text could be
+                // on any page, so no page is safe to copy unchanged.
+                unknownPageSpan |= page == null;
+                located.PageNumber = page ?? 1;
                 located.LowerLeftX = located.LowerLeftY = located.UpperRightX = located.UpperRightY = 0;
                 spans.Add(located);
             }
         }
 
         var redacted = _redactor.Process(input, spans, policy.Config.Pdf, policy.Graphical.BoundingBoxes,
-            outputMimeType);
+            outputMimeType, policy.Config.Pdf.PreserveUnredactedPages && !unknownPageSpan);
 
         return new BinaryDocumentFilterResult(redacted, context, spans, tokens);
     }
@@ -120,9 +124,9 @@ public sealed class PdfFilterService
     ///     detector still find and report any PII it held. Best effort: a malformed annotation or form must
     ///     never fail the redaction.
     /// </summary>
-    private static IEnumerable<(int Page, string Text)> ExtractAnnotationAndFormText(byte[] input)
+    private static IEnumerable<(int? Page, string Text)> ExtractAnnotationAndFormText(byte[] input)
     {
-        var results = new List<(int, string)>();
+        var results = new List<(int?, string)>();
         try
         {
             using var pdf = PdfDocument.Open(input);
@@ -135,7 +139,7 @@ public sealed class PdfFilterService
             if (pdf.TryGetForm(out var form))
                 foreach (var field in form.Fields)
                     if (field is AcroTextField textField && !string.IsNullOrWhiteSpace(textField.Value))
-                        results.Add((textField.PageNumber ?? 1, textField.Value));
+                        results.Add((textField.PageNumber, textField.Value));
         }
         catch
         {

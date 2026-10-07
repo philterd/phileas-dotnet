@@ -198,10 +198,26 @@ var policy = new Policy
 | `Dpi` | `dpi` | `150` | Resolution at which pages are rasterized. |
 | `Scale` | `scale` | `0.25` | Output page size as a fraction of the original (the rasterized image keeps full DPI). Set to `1.0` for original-size pages. |
 | `CompressionQuality` | `compressionQuality` | `1.0` | JPEG quality (0–1) of the embedded page images. |
-| `PreserveUnredactedPages` | `preserveUnredactedPages` | `false` | *(Not yet implemented in the .NET port — all pages are rasterized.)* |
+| `PreserveUnredactedPages` | `preserveUnredactedPages` | `false` | Copy pages with nothing to redact into a PDF output unchanged instead of rasterizing them. See [Preserving unredacted pages](#preserving-unredacted-pages). |
 
 > **Note on `Scale`.** The default (`0.25`) produces quarter-size pages backed by a high-resolution image,
 > compact output that stays crisp when zoomed. Set `Scale = 1.0f` to keep the original page dimensions.
+
+### Preserving unredacted pages
+
+With `preserveUnredactedPages` set to `true` and a PDF output, a page with nothing to redact is copied into
+the output unchanged, keeping its text layer, and every other page is rasterized as usual. Page order and
+count match the input. A page has something to redact when it has a detected span, including one found in an
+annotation or form field, or an enabled graphical bounding box applies to it. If a form field's value is
+detected but its page cannot be determined, every page is rasterized.
+
+A copied page keeps everything on it that was not detected as PII: its text, annotations, links and the
+widgets that show form-field values. Copied pages keep their original size, while rasterized pages are scaled
+by `scale`, so the two can differ within one document. The option has no effect on image (ZIP) output, where
+every page is rendered.
+
+The Java port also copies a page whose only redaction is a bounding box, which leaves the text under the box
+in the output's text layer. This port rasterizes that page.
 
 > **Per-strategy bar color.** A filter strategy can set its own [`color`](filter-strategies.md#redaction-bar-color) to override `RedactionColor` for the spans it redacts, so different entity types (or the same type at different confidences) can be redacted in different colors. The resolution order for each span's bar is the strategy's `color`, then `RedactionColor`, then black.
 
@@ -253,8 +269,6 @@ fixed region rather than matching text.
   binaries. On Linux you may need the appropriate `SkiaSharp.NativeAssets.Linux*` package for your
   deployment. See the [NOTICE](https://www.github.com/philterd/phileas-dotnet/blob/main/NOTICE) file for the full
   dependency and license list.
-- **`PreserveUnredactedPages`** is accepted in the policy but not yet honored in the .NET port; every page is
-  rasterized.
 
 ## See Also
 
