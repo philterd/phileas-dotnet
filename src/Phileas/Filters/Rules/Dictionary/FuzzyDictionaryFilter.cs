@@ -100,7 +100,8 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
                         if (covered.Any(range => position.Start < range.End && range.Start < position.End))
                             continue;
 
-                        var distance = Levenshtein.Distance(entry.ToLowerInvariant(), ngram.ToLowerInvariant());
+                        var distance = Levenshtein.Distance(entry.ToLowerInvariant(),
+                            NormalizeWhitespace(ngram).ToLowerInvariant());
                         if (_sensitivityLevel == SensitivityLevel.High && distance == 0)
                         {
                             spans.Add(CreateSpan(input, position.Start, position.End, 0.9, context, piece, ngram, policy));
@@ -118,6 +119,10 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
             }
         }
 
+        // Nothing downstream reads the ignored flag: IgnoredTermsPostFilter drops a span only when its
+        // text equals an ignored term, which a match across a line break never does.
+        spans.RemoveAll(span => span.Ignored);
+
         // Per-filter ignoredPatterns, ignored terms and the config.postFilters trailing-punctuation
         // rules all live here. Returning the spans directly meant none of them reached a dictionary
         // filter, while every regex filter honoured them. See philterd/phileas-dotnet#124.
@@ -129,7 +134,7 @@ public class FuzzyDictionaryFilter : AbstractDictionaryFilter
     {
         // The matched value, not the whole document: passing the input meant the check never fired and
         // every span came back not ignored.
-        var ignored = IsIgnored(token);
+        var ignored = IsIgnored(token) || IsIgnoredTerm(token);
         var window = GetWindow(text, characterStart, characterEnd);
         var replacement = GetReplacement(policy, context, token, window, confidence, Classification, null);
         return Span.Make(characterStart, characterEnd, FilterType, context, confidence, token, replacement.Value,

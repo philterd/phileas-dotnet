@@ -73,7 +73,8 @@ public abstract class RulesFilter : AbstractFilter
 
     /// <summary>
     ///     Returns the whitespace-delimited n-grams of exactly <paramref name="length" /> words, each paired
-    ///     with its character <see cref="Position" /> in <paramref name="text" />.
+    ///     with its character <see cref="Position" /> in <paramref name="text" />. Any whitespace character
+    ///     (space, tab, line break, non-breaking space) separates words, and a run of it counts once.
     ///     <para>
     ///         Each position is taken from the words the n-gram was built from, tracked while splitting.
     ///         Searching the text for the n-gram afterwards instead reported the first place that text
@@ -88,26 +89,56 @@ public abstract class RulesFilter : AbstractFilter
         var ngrams = new List<(Position, string)>();
         if (length <= 0) return ngrams;
 
-        var words = text.Split(' ');
-
-        // Where each word begins: the previous start, plus that word and the single space that
-        // followed it. Split(' ') does not coalesce runs of spaces, so a run yields empty words whose
-        // widths still account for every character.
-        var starts = new int[words.Length];
-        var offset = 0;
-        for (var i = 0; i < words.Length; i++)
+        // Words are runs of non-whitespace. Splitting on ' ' alone left a line break or tab inside a
+        // word, so "Dear\nJohn" was one token and neither name matched. See philterd/phileas-dotnet#150.
+        var words = new List<Position>();
+        var i = 0;
+        while (i < text.Length)
         {
-            starts[i] = offset;
-            offset += words[i].Length + 1;
+            while (i < text.Length && char.IsWhiteSpace(text[i])) i++;
+            if (i == text.Length) break;
+            var start = i;
+            while (i < text.Length && !char.IsWhiteSpace(text[i])) i++;
+            words.Add(new Position(start, i));
         }
 
-        for (var i = 0; i + length <= words.Length; i++)
+        for (var w = 0; w + length <= words.Count; w++)
         {
-            var start = starts[i];
-            var end = starts[i + length - 1] + words[i + length - 1].Length;
+            var start = words[w].Start;
+            var end = words[w + length - 1].End;
             ngrams.Add((new Position(start, end), text.Substring(start, end - start)));
         }
 
         return ngrams;
+    }
+
+    /// <summary>
+    ///     Collapses each run of whitespace in <paramref name="text" /> to a single space, so a multi-word
+    ///     n-gram broken across a line or tab compares equal to the same term written with spaces.
+    /// </summary>
+    protected static string NormalizeWhitespace(string text)
+    {
+        var needed = false;
+        for (var i = 0; i < text.Length && !needed; i++)
+            needed = char.IsWhiteSpace(text[i]) && (text[i] != ' ' || (i > 0 && char.IsWhiteSpace(text[i - 1])));
+        if (!needed) return text;
+
+        var builder = new System.Text.StringBuilder(text.Length);
+        var inWhitespace = false;
+        foreach (var c in text)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                if (!inWhitespace) builder.Append(' ');
+                inWhitespace = true;
+            }
+            else
+            {
+                builder.Append(c);
+                inWhitespace = false;
+            }
+        }
+
+        return builder.ToString();
     }
 }

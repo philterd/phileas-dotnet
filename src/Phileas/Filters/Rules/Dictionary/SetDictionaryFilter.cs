@@ -52,7 +52,7 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
         {
             var split = Rx.Split(term, @"\s", RegexOptions.None, RegexDefaults.MatchTimeout);
             if (split.Length > _maxNgramSize) _maxNgramSize = split.Length;
-            _lowerCaseTerms.Add(term.ToLowerInvariant());
+            _lowerCaseTerms.Add(NormalizeWhitespace(term).ToLowerInvariant());
         }
     }
 
@@ -65,7 +65,9 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
         {
             var begin = 0;
             var end = ngram.Length;
-            var matched = _lowerCaseTerms.Contains(ngram.ToLowerInvariant());
+            // A multi-word n-gram keeps the document's own separators, so one broken across a line
+            // still compares equal to the term written with spaces.
+            var matched = _lowerCaseTerms.Contains(NormalizeWhitespace(ngram).ToLowerInvariant());
 
             if (!matched)
             {
@@ -73,7 +75,8 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
                 while (end > begin && !char.IsLetterOrDigit(ngram[end - 1])) end--;
                 if (begin != 0 || end != ngram.Length)
                 {
-                    matched = _lowerCaseTerms.Contains(ngram.Substring(begin, end - begin).ToLowerInvariant());
+                    matched = _lowerCaseTerms.Contains(
+                        NormalizeWhitespace(ngram.Substring(begin, end - begin)).ToLowerInvariant());
                 }
             }
 
@@ -82,7 +85,7 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
             var characterStart = position.Start + begin;
             var characterEnd = position.Start + end;
             var originalToken = input.Substring(characterStart, characterEnd - characterStart);
-            var isIgnored = Ignored.Contains(originalToken);
+            var isIgnored = IsIgnoredTerm(originalToken);
             const double confidence = 1.0;
             var window = GetWindow(input, characterStart, characterEnd);
             var replacement = GetReplacement(policy, context, originalToken, window, confidence, Classification, null);
@@ -91,6 +94,10 @@ public class SetDictionaryFilter : AbstractDictionaryFilter
                 replacement.Value, replacement.Salt, isIgnored, replacement.Applied, window, Priority,
                 replacement.Color));
         }
+
+        // Nothing downstream reads the ignored flag: IgnoredTermsPostFilter drops a span only when its
+        // text equals an ignored term, which a match across a line break never does.
+        spans.RemoveAll(span => span.Ignored);
 
         // Per-filter ignoredPatterns, ignored terms and the config.postFilters trailing-punctuation
         // rules all live here. Returning the spans directly meant none of them reached a dictionary

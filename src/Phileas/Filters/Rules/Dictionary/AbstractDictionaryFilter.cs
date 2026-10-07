@@ -29,11 +29,23 @@ namespace Phileas.Filters.Rules.Dictionary;
 /// </summary>
 public abstract class AbstractDictionaryFilter : RulesFilter
 {
+    private readonly HashSet<string> _normalizedIgnored;
+
     /// <summary>Initializes the dictionary filter.</summary>
     protected AbstractDictionaryFilter(FilterType filterType, FilterConfiguration configuration)
         : base(filterType, configuration)
     {
+        _normalizedIgnored = new HashSet<string>(Ignored.Select(NormalizeWhitespace),
+            (Ignored as HashSet<string>)?.Comparer ?? StringComparer.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    ///     Whether <paramref name="token" /> is one of the filter's ignored terms, comparing runs of whitespace
+    ///     as a single space. A multi-word match can span a line break, so an ignored "UCLA Medical Center"
+    ///     must still exclude "UCLA Medical\r\nCenter". See philterd/phileas-dotnet#150.
+    /// </summary>
+    protected bool IsIgnoredTerm(string token) =>
+        Ignored.Contains(token) || _normalizedIgnored.Contains(NormalizeWhitespace(token));
 
     /// <summary>Loads the dictionary for a built-in name/location <paramref name="filterType" />.</summary>
     /// <exception cref="ArgumentException">If the filter type has no associated dictionary.</exception>
@@ -60,7 +72,11 @@ public abstract class AbstractDictionaryFilter : RulesFilter
         foreach (var term in terms)
         {
             if (string.IsNullOrWhiteSpace(term)) continue;
-            dictionary[term] = new Rx(@"\b" + Rx.Escape(term) + @"\b", RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout);
+            // Any whitespace between the words of a multi-word term, so "UCLA Medical\nCenter" matches
+            // as "UCLA Medical Center" does. See philterd/phileas-dotnet#150.
+            var words = Rx.Split(term.Trim(), @"\s+", RegexOptions.None, RegexDefaults.MatchTimeout);
+            var pattern = string.Join(@"\s+", words.Select(Rx.Escape));
+            dictionary[term] = new Rx(@"\b" + pattern + @"\b", RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout);
         }
 
         return dictionary;
