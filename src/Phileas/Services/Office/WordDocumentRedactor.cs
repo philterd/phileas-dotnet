@@ -149,7 +149,14 @@ namespace Phileas.Services.Office
                 string original = OwnText(paragraph);
                 if (!string.IsNullOrEmpty(original) && (redactHeadersFooters || !isHeaderFooter))
                 {
-                    foreach (Span s in filter(original).Spans
+                    // Spans are reported only when the filter changed the paragraph, as Redact records them, so
+                    // a span whose replacement is the original text (a SAME strategy) is not reported by one and
+                    // not the other. See philterd/phileas-dotnet#155.
+                    TextFilterResult result = filter(original);
+                    IEnumerable<Span> changed = string.Equals(result.FilteredText, original, StringComparison.Ordinal)
+                        ? Enumerable.Empty<Span>()
+                        : result.Spans;
+                    foreach (Span s in changed
                         .Where(s => s.CharacterStart >= 0 && s.CharacterEnd <= original.Length && s.CharacterEnd > s.CharacterStart)
                         .OrderBy(s => s.CharacterStart))
                     {

@@ -376,7 +376,15 @@ namespace Phileas.Services.Office
                     continue;
                 }
 
-                foreach (Span s in filter(original).Spans
+                // Spans are reported only when the filter changed the cell, as Redact records them. See
+                // philterd/phileas-dotnet#155.
+                TextFilterResult result = filter(original);
+                if (string.Equals(result.FilteredText, original, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                foreach (Span s in result.Spans
                     .Where(s => s.CharacterStart >= 0 && s.CharacterEnd <= original.Length && s.CharacterEnd > s.CharacterStart)
                     .OrderBy(s => s.CharacterStart))
                 {
