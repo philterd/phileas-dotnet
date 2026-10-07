@@ -216,8 +216,8 @@ widgets that show form-field values. Copied pages keep their original size, whil
 by `scale`, so the two can differ within one document. The option has no effect on image (ZIP) output, where
 every page is rendered.
 
-The Java port also copies a page whose only redaction is a bounding box, which leaves the text under the box
-in the output's text layer. This port rasterizes that page.
+A page whose only redaction is a bounding box is rasterized too, since copying it would leave the text under the
+box extractable. The Java port behaves the same way.
 
 > **Per-strategy bar color.** A filter strategy can set its own [`color`](filter-strategies.md#redaction-bar-color) to override `RedactionColor` for the spans it redacts, so different entity types (or the same type at different confidences) can be redacted in different colors. The resolution order for each span's bar is the strategy's `color`, then `RedactionColor`, then black.
 

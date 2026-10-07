@@ -57,9 +57,9 @@ public sealed class PdfRedactor
     ///         A page needs redaction when a span is on it, located or not (a span from an annotation or form
     ///         field has no box but its text is still on the page), or an enabled bounding box covers it. A span
     ///         whose page is not one of the document's pages leaves no page safe to copy, so every page is
-    ///         rasterized. The Java port copies a page whose only redaction is a bounding box, which leaves the
-    ///         text under the box in the output's text layer; this port rasterizes it. See
-    ///         philterd/phileas-dotnet#146.
+    ///         rasterized. A page whose only redaction is a bounding box is rasterized too, since copying it would
+    ///         leave the text under the box in the output's text layer; the Java port does the same since
+    ///         philterd/phileas#420. See philterd/phileas-dotnet#146.
     ///     </para>
     /// </summary>
     internal byte[] Process(byte[] document, IList<Span> spans, PdfConfig pdf,

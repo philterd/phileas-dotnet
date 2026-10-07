@@ -85,7 +85,7 @@ public class PdfPreserveUnredactedPagesTests
     [Fact]
     public void OptionOn_APageCoveredOnlyByABoundingBox_IsRasterized()
     {
-        // The Java port copies this page, which leaves the text under the box in the output's text layer.
+        // Copying this page would leave the text under the box in the output's text layer (philterd/phileas#420).
         var output = Redact(PolicyJson(true, "{\"page\":3,\"x\":60,\"y\":690,\"w\":300,\"h\":30}"),
             TextPdf(Ssn, Clean, Codename));
 
