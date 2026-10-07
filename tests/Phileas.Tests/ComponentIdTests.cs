@@ -117,15 +117,22 @@ public class ComponentIdTests
             IgnoredPatterns = new List<IgnoredPattern> { new() { Name = "n", Pattern = "^x$" } }
         };
 
-        var policy = PolicySerializer.DeserializeFromJson("{\"identifiers\":{}}");
-        policy.Identifiers.Dictionaries = new List<Phileas.Policy.Filters.Dictionary> { deprecated };
+        // Through the "dictionary" key, the only way to reach the deprecated alias (philterd/phileas-dotnet#158).
+        var json = System.Text.Json.JsonSerializer.Serialize(deprecated, new System.Text.Json.JsonSerializerOptions
+        {
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        });
+        var policy = PolicySerializer.DeserializeFromJson("{\"identifiers\":{\"dictionary\":[" + json + "]}}");
         var converted = Assert.Single(policy.Identifiers.CustomDictionaries!);
 
         foreach (var property in typeof(Phileas.Policy.Filters.AbstractPolicyFilter).GetProperties())
         {
             if (!property.CanRead || !property.CanWrite) continue;
 
-            Assert.Equal(property.GetValue(deprecated), property.GetValue(converted));
+            // Compared as JSON: the values went through the serializer, so a reference type such as an
+            // ignored pattern is an equal copy rather than the same instance.
+            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(property.GetValue(deprecated)),
+                System.Text.Json.JsonSerializer.Serialize(property.GetValue(converted)));
         }
     }
 

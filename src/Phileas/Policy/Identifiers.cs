@@ -32,8 +32,8 @@ public class Identifiers
     ///     canonical Phileas policy schema and the JSON produced by the PhiSQL <c>DETECT PHEYE</c> / <c>MODEL</c> clause;
     ///     a policy using the singular <c>pheye</c> key will not bind here.
     ///     <para>
-    ///         An entry set through the deprecated <see cref="Person" /> key is folded in here, after any
-    ///         declared under <c>pheyes</c>.
+    ///         An entry given under the deprecated <c>person</c> key is folded in here, after any declared
+    ///         under <c>pheyes</c>.
     ///     </para>
     /// </summary>
     [JsonPropertyName("pheyes")]
@@ -51,17 +51,16 @@ public class Identifiers
         set => _phEyes = value;
     }
 
-    /// <summary>
-    ///     Gets or sets the deprecated <c>person</c> filter configuration.
-    ///     <para>
-    ///         The redaction policy schema marks this a deprecated alias for a single <c>pheyes</c>
-    ///         entry, and this port did not bind it at all, so a legacy policy using it loaded and
-    ///         detected nothing. It is read and folded into <see cref="PhEyes" />, and written back as
-    ///         <c>pheyes</c>: the getter returns <see langword="null" /> and the serializer omits nulls.
-    ///     </para>
-    /// </summary>
+    // The deprecated "person" key. The redaction policy schema marks it a deprecated alias for a single
+    // "pheyes" entry, and this port did not bind it at all, so a legacy policy using it loaded and
+    // detected nothing. It is read and folded into PhEyes, and written back as "pheyes": the getter
+    // returns null and the serializer omits nulls.
+    //
+    // Private, so anything that discovers filters by reflecting over the public properties does not take
+    // it for a filter that never holds a value. JsonInclude keeps it bound. See philterd/phileas-dotnet#158.
+    [JsonInclude]
     [JsonPropertyName("person")]
-    public PhEye? Person
+    private PhEye? LegacyPerson
     {
         get => null;
         set => _person = value;
@@ -70,18 +69,15 @@ public class Identifiers
     private List<PhEye>? _phEyes;
     private PhEye? _person;
 
-    /// <summary>
-    ///     Gets or sets the deprecated <c>dictionary</c> filter configurations.
-    ///     <para>
-    ///         The redaction policy schema declares only <c>dictionaries</c> and is
-    ///         additionalProperties:false, so a policy carrying this .NET-only key did not validate.
-    ///         Entries set here are folded into <see cref="CustomDictionaries" />, so an existing
-    ///         policy keeps working, and the key is never written back: the getter returns
-    ///         <see langword="null" /> and the serializer omits nulls.
-    ///     </para>
-    /// </summary>
+    // The deprecated, .NET-only "dictionary" key. The redaction policy schema declares only "dictionaries"
+    // and is additionalProperties:false, so a policy carrying this key did not validate. Entries given here
+    // are folded into CustomDictionaries, so an existing policy keeps working, and the key is never written
+    // back: the getter returns null and the serializer omits nulls.
+    //
+    // Private for the same reason as LegacyPerson. See philterd/phileas-dotnet#158.
+    [JsonInclude]
     [JsonPropertyName("dictionary")]
-    public List<Dictionary>? Dictionaries
+    private List<Dictionary>? LegacyDictionaries
     {
         get => null;
         set => _legacyDictionaries = value;

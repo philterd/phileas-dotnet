@@ -297,7 +297,8 @@ This port also accepted `identifiers.dictionary`, a .NET-only spelling with `nam
 
 It is still read, and its entries are folded into `dictionaries`, so an existing policy keeps
 redacting. It is never written back: a policy that goes in with `dictionary` comes out with
-`dictionaries`. Two things change when it is folded:
+`dictionaries`. The key is accepted in JSON only: there is no public `Identifiers` property for it, so
+code sets `CustomDictionaries`. Two things change when it is folded:
 
 - `level` counted upward (`"low"` accepted 1 edit, `"medium"` 2, `"high"` 3) while `sensitivity`
   counts downward, so the mapping goes by the distance each accepts: `level: "low"` becomes
@@ -500,7 +501,8 @@ JSON configuration:
 > The redaction policy schema also declares `identifiers.person`, a deprecated alias carrying a single
 > PhEye configuration rather than a list. A policy using it still loads: the entry is folded into
 > `pheyes`, after any declared there. It is written back as `pheyes`, so a policy that goes in with
-> `person` comes out with the canonical key.
+> `person` comes out with the canonical key. The key is accepted in JSON only: there is no public
+> `Identifiers` property for it, so code sets `PhEyes`.
 
 **Configuration Options:**
 

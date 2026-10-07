@@ -43,14 +43,11 @@ public class DictionaryWhitespaceBoundaryTests
                 new() { Terms = new List<string> { "Zephyrous" }, Fuzzy = fuzzy }
             }
         },
-        // The legacy key, folded into customDictionaries on load. See philterd/phileas-dotnet#88.
-        "Dictionaries" => new PolicyIdentifiers
-        {
-            Dictionaries = new List<Phileas.Policy.Filters.Dictionary>
-            {
-                new() { Terms = new List<string> { "Wanderlust" } }
-            }
-        },
+        // The legacy "dictionary" key, folded into customDictionaries on load (philterd/phileas-dotnet#88).
+        // It is only reachable through JSON (philterd/phileas-dotnet#158).
+        "Dictionaries" => Phileas.Policy.PolicySerializer
+            .DeserializeFromJson("{\"identifiers\":{\"dictionary\":[{\"terms\":[\"Wanderlust\"]}]}}")
+            .Identifiers,
         _ => throw new ArgumentException(filter)
     };
 
