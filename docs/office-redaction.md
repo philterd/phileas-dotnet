@@ -103,7 +103,7 @@ produce identical output.
 | `Redact(inputPath, outputPath, filter, highlight = false, redactHeadersFooters = true, redactCharts = true, removeEmbeddedObjects = true)` | Detects and redacts, writes the output, and returns the applied spans. |
 | `Detect(inputPath, filter, redactHeadersFooters = true, redactCharts = true)` | Detects only (no file is written); returns the spans `Redact` would apply. Used for previews and post-redaction verification. |
 | `ApplySpans(inputPath, outputPath, spans, highlight, drawingFilter = null, redactCharts = true, removeEmbeddedObjects = true)` | Applies an explicit set of spans (detected or user-supplied) by **position** (paragraph index + character offsets). Supply `drawingFilter` to also re-redact non-positional content (drawings, hyperlink targets, field instructions, charts) via the policy. |
-| `ReadParagraphs(inputPath)` | Returns each redactable paragraph's text in canonical order (index `i` is `ParagraphIndex` `i`). This is the text the filter receives: each line break or carriage return (`w:br`, `w:cr`) is `\n` and each tab (`w:tab`, `w:ptab`) is `\t`, so span offsets index it directly. Read-only. |
+| `ReadParagraphs(inputPath)` | Returns each redactable paragraph's text in canonical order (index `i` is `ParagraphIndex` `i`). This is the text the filter receives: each line break or carriage return (`w:br`, `w:cr`) is `\n`, each tab (`w:tab`, `w:ptab`) is `\t`, each non-breaking hyphen (`w:noBreakHyphen`) is `-`, and each symbol-font character (`w:sym`) is a space, so span offsets index it directly. A soft hyphen (`w:softHyphen`) adds nothing, so a word hyphenated with one reads as the whole word. Read-only. |
 | `ReadReviewLines(inputPath)` | Returns every readable line (paragraphs plus shape/SmartArt/chart text) for a before/after review diff. A line break in shape, SmartArt, or chart text is `\n`. Read-only. |
 
 ```csharp
@@ -207,7 +207,9 @@ does not survive in a part the eye never sees.
 - **Changed paragraphs are flattened.** When a Word paragraph is rewritten, its inline run formatting is
   flattened (and hyperlinks/fields in it collapse to plain text), since the visible text is what is redacted.
   Line breaks, page and column breaks, carriage returns and tabs are kept, with their type; one inside a
-  redacted value is placed after its replacement. Paragraphs with no detected PII are left exactly as they were.
+  redacted value is placed after its replacement. Non-breaking hyphens, soft hyphens and symbol-font
+  characters are kept outside a redacted value and removed with it inside one. Paragraphs with no detected PII
+  are left exactly as they were.
 - **Shape, SmartArt, and chart text keeps its structure.** DrawingML text (`a:t`) is filtered a paragraph at a
   time, with each line break (`a:br`) as `\n`. A changed paragraph is rewritten run by run: each run keeps its
   formatting and each line break stays where it was. A replacement is written into the run where the value

@@ -908,12 +908,13 @@ namespace Phileas.Services.Office
         // The paragraph's own visible text, excluding any text inside a nested text box (which is a
         // separate redaction unit). A break or tab in a run contributes one character, so the words on
         // either side are not joined: "George<w:br/>Washington" reads as "George\nWashington". See
-        // philterd/phileas-dotnet#149.
+        // philterd/phileas-dotnet#149 and, for the other run-level characters, #152.
         private static string OwnText(Paragraph paragraph) =>
             string.Concat(OwnContent(paragraph).Select(c => c.Text));
 
-        // The paragraph's own text elements, breaks and tabs in document order, each with the text it
-        // contributes. A break or tab is one character, so its offset in OwnText maps back to it.
+        // The paragraph's own text elements and run-level characters in document order, each with the
+        // text it contributes. Each character element contributes at most one character, so its offset
+        // in OwnText maps back to it.
         private static IEnumerable<(string Text, OpenXmlElement Element)> OwnContent(Paragraph paragraph)
         {
             foreach (OpenXmlElement element in paragraph.Descendants())
@@ -925,25 +926,38 @@ namespace Phileas.Services.Office
                         yield return (text.Text, text);
                     }
                 }
-                else if (BreakCharacter(element) is char c && IsOwnBreak(paragraph, element))
+                else if (RunCharacter(element) is string c && IsOwnRunCharacter(paragraph, element))
                 {
-                    yield return (c.ToString(), element);
+                    yield return (c, element);
                 }
             }
         }
 
-        // The character a run-level break or tab stands for, or null for any other element. Tab stop
+        // The text a run-level character element stands for, or null for any other element. Tab stop
         // definitions in the paragraph properties are TabStop, not TabChar, so they are not counted.
-        private static char? BreakCharacter(OpenXmlElement element) => element switch
+        // - A non-breaking hyphen is a plain "-", which is what the filters match for a hyphen.
+        // - A symbol-font character (w:sym) is a space: its code point means nothing to the filters, and a
+        //   space keeps the words on either side apart.
+        // - A soft hyphen is an optional hyphenation point, normally invisible, so it contributes nothing
+        //   and "Wash<w:softHyphen/>ington" still reads as "Washington".
+        private static string? RunCharacter(OpenXmlElement element) => element switch
         {
-            Break or CarriageReturn => '\n',
-            TabChar or PositionalTab => '\t',
+            Break or CarriageReturn => "\n",
+            TabChar or PositionalTab => "\t",
+            NoBreakHyphen => "-",
+            SymbolChar => " ",
+            SoftHyphen => string.Empty,
             _ => null
         };
 
-        // A break counts when it is in this paragraph's own run (not a nested text box), is not part of
-        // a tracked deletion, and is not in a drawing run, which the rebuild leaves in place.
-        private static bool IsOwnBreak(Paragraph paragraph, OpenXmlElement element) =>
+        // Breaks and tabs are layout, not part of the words they sit between, so one inside a redacted
+        // value is kept after its replacement. The other run-level characters are part of the value.
+        private static bool IsLayout(OpenXmlElement element) =>
+            element is Break or CarriageReturn or TabChar or PositionalTab;
+
+        // A run-level character counts when it is in this paragraph's own run (not a nested text box), is
+        // not part of a tracked deletion, and is not in a drawing run, which the rebuild leaves in place.
+        private static bool IsOwnRunCharacter(Paragraph paragraph, OpenXmlElement element) =>
             element.Parent is Run run
             && BelongsDirectlyTo(paragraph, element)
             && !element.Ancestors<DeletedRun>().Any()
@@ -951,29 +965,46 @@ namespace Phileas.Services.Office
             && !run.Descendants<Drawing>().Any()
             && !run.Descendants<Picture>().Any();
 
-        // The break and tab elements of the paragraph's own text, keyed by their offset in OwnText.
-        private static Dictionary<int, OpenXmlElement> OwnBreaks(Paragraph paragraph)
+        // The run-level character elements of the paragraph's own text, by their offset in OwnText. A
+        // one-character element is keyed by its own offset. A soft hyphen has no character, so it is
+        // keyed by the offset that follows it and goes back after the character before it.
+        private sealed record RunCharacters(
+            Dictionary<int, OpenXmlElement> Characters, Dictionary<int, List<OpenXmlElement>> ZeroWidth);
+
+        private static RunCharacters OwnRunCharacters(Paragraph paragraph)
         {
-            var breaks = new Dictionary<int, OpenXmlElement>();
+            var characters = new Dictionary<int, OpenXmlElement>();
+            var zeroWidth = new Dictionary<int, List<OpenXmlElement>>();
             int offset = 0;
             foreach ((string text, OpenXmlElement element) in OwnContent(paragraph))
             {
                 if (element is not Text)
                 {
-                    breaks[offset] = element;
+                    if (text.Length == 0)
+                    {
+                        if (!zeroWidth.TryGetValue(offset, out List<OpenXmlElement>? list))
+                        {
+                            zeroWidth[offset] = list = new List<OpenXmlElement>();
+                        }
+                        list.Add(element);
+                    }
+                    else
+                    {
+                        characters[offset] = element;
+                    }
                 }
                 offset += text.Length;
             }
-            return breaks;
+            return new RunCharacters(characters, zeroWidth);
         }
 
-        // Runs holding the paragraph's own text (a direct <w:t>) or its own breaks and tabs, excluding
-        // drawing runs and any run inside a nested text box. A run holding only a break is included so
-        // the rebuild, which re-emits the break, does not leave the original behind as well.
+        // Runs holding the paragraph's own text (a direct <w:t>) or its own run-level characters, excluding
+        // drawing runs and any run inside a nested text box. A run holding only a break, hyphen or
+        // symbol is included so the rebuild, which re-emits it, does not leave the original behind as well.
         private static List<Run> OwnTextRuns(Paragraph paragraph) =>
             paragraph.Descendants<Run>()
                 .Where(r => BelongsDirectlyTo(paragraph, r)
-                            && (r.Elements<Text>().Any() || r.ChildElements.Any(e => BreakCharacter(e) is not null && IsOwnBreak(paragraph, e)))
+                            && (r.Elements<Text>().Any() || r.ChildElements.Any(e => RunCharacter(e) is not null && IsOwnRunCharacter(paragraph, e)))
                             && !r.Descendants<Drawing>().Any()
                             && !r.Descendants<Picture>().Any())
                 .ToList();
@@ -1011,14 +1042,14 @@ namespace Phileas.Services.Office
         // text and a highlighted run for each replacement. Only used for simple paragraphs (no drawing).
         private static void RebuildParagraph(Paragraph paragraph, string original, IEnumerable<ReplacementRange> ranges, bool highlight)
         {
-            Dictionary<int, OpenXmlElement> breaks = OwnBreaks(paragraph);
+            RunCharacters marks = OwnRunCharacters(paragraph);
             ParagraphProperties? properties = paragraph.GetFirstChild<ParagraphProperties>();
             paragraph.RemoveAllChildren();
             if (properties is not null)
             {
                 paragraph.AppendChild(properties); // must precede the runs
             }
-            foreach (Run run in BuildRuns(original, ranges, highlight, breaks))
+            foreach (Run run in BuildRuns(original, ranges, highlight, marks))
             {
                 paragraph.AppendChild(run);
             }
@@ -1035,10 +1066,10 @@ namespace Phileas.Services.Office
                 return; // nothing of the paragraph's own to redact (e.g. a drawing-only paragraph)
             }
 
-            Dictionary<int, OpenXmlElement> breaks = OwnBreaks(paragraph);
+            RunCharacters marks = OwnRunCharacters(paragraph);
             Run anchor = ownRuns[0];
             OpenXmlElement parent = anchor.Parent!;
-            foreach (Run run in BuildRuns(ownText, ranges, highlight, breaks))
+            foreach (Run run in BuildRuns(ownText, ranges, highlight, marks))
             {
                 parent.InsertBefore(run, anchor);
             }
@@ -1049,11 +1080,12 @@ namespace Phileas.Services.Office
         }
 
         // Splits text into plain runs for kept spans and a (optionally highlighted) run per replacement.
-        // Each offset in <paramref name="breaks"/> is emitted as a copy of that break or tab element,
-        // rather than as text. One inside a replaced span follows the replacement, so redacting a value
-        // next to a line break, or a name split across one, keeps the break.
+        // Each run-level character in <paramref name="marks"/> is emitted as a copy of its element rather
+        // than as text. A break or tab inside a replaced span follows the replacement, so redacting a value
+        // next to a line break, or a name split across one, keeps the break; a hyphen, symbol or soft
+        // hyphen inside it is part of the value and goes with it.
         private static IEnumerable<Run> BuildRuns(string text, IEnumerable<ReplacementRange> ranges, bool highlight,
-            IReadOnlyDictionary<int, OpenXmlElement> breaks)
+            RunCharacters marks)
         {
             var runs = new List<Run>();
             int last = 0;
@@ -1065,44 +1097,68 @@ namespace Phileas.Services.Office
                 }
                 if (range.Start > last)
                 {
-                    runs.Add(MakeRun(text, last, range.Start, breaks, highlight: false));
+                    runs.Add(MakeRun(text, last, range.Start, marks, highlight: false));
                 }
                 Run replacement = MakeRun(range.Replacement ?? string.Empty, highlight);
-                foreach (int offset in breaks.Keys.Where(o => o >= range.Start && o < range.End).OrderBy(o => o))
+                foreach ((int _, OpenXmlElement element) in marks.Characters
+                             .Where(c => c.Key >= range.Start && c.Key < range.End && IsLayout(c.Value))
+                             .OrderBy(c => c.Key))
                 {
-                    replacement.AppendChild(breaks[offset].CloneNode(true));
+                    replacement.AppendChild(element.CloneNode(true));
                 }
                 runs.Add(replacement);
                 last = range.End;
             }
             if (last < text.Length)
             {
-                runs.Add(MakeRun(text, last, text.Length, breaks, highlight: false));
+                runs.Add(MakeRun(text, last, text.Length, marks, highlight: false));
             }
             return runs;
         }
 
-        // A run for text[start..end), with each break or tab offset in that range emitted as its element.
-        private static Run MakeRun(string text, int start, int end, IReadOnlyDictionary<int, OpenXmlElement> breaks, bool highlight)
+        // A run for text[start..end), with each run-level character in that range emitted as its element,
+        // and each soft hyphen emitted after the character it followed.
+        private static Run MakeRun(string text, int start, int end, RunCharacters marks, bool highlight)
         {
             Run run = NewRun(highlight);
             int segment = start;
+
+            void Flush(int upTo)
+            {
+                if (upTo > segment)
+                {
+                    run.AppendChild(PreservedText(text.Substring(segment, upTo - segment)));
+                }
+                segment = upTo;
+            }
+
+            void EmitZeroWidth(int offset)
+            {
+                if (marks.ZeroWidth.TryGetValue(offset, out List<OpenXmlElement>? elements))
+                {
+                    Flush(offset);
+                    foreach (OpenXmlElement element in elements)
+                    {
+                        run.AppendChild(element.CloneNode(true));
+                    }
+                }
+            }
+
+            if (start == 0)
+            {
+                EmitZeroWidth(0);
+            }
             for (int i = start; i < end; i++)
             {
-                if (breaks.TryGetValue(i, out OpenXmlElement? element))
+                if (marks.Characters.TryGetValue(i, out OpenXmlElement? element))
                 {
-                    if (i > segment)
-                    {
-                        run.AppendChild(PreservedText(text.Substring(segment, i - segment)));
-                    }
+                    Flush(i);
                     run.AppendChild(element.CloneNode(true));
                     segment = i + 1;
                 }
+                EmitZeroWidth(i + 1);
             }
-            if (end > segment)
-            {
-                run.AppendChild(PreservedText(text.Substring(segment, end - segment)));
-            }
+            Flush(end);
             return run;
         }
 
