@@ -27,11 +27,14 @@ public class ZipCodeFilter : RegexFilter
 {
     // With a required delimiter the +4 extension must be dash-separated and the match is high confidence;
     // without it the extension may be undelimited and the match is lower confidence. Mirrors Java's ZipCodeFilter.
-    private static readonly Analyzer DelimitedAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "zip", "zipcode", "postal" };
+
+    private static readonly Analyzer DelimitedAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b[0-9]{5}(?:-[0-9]{4})?\b").WithInitialConfidence(0.90).Build()
     );
 
-    private static readonly Analyzer UndelimitedAnalyzer = new(
+    private static readonly Analyzer UndelimitedAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b[0-9]{5}(?:-?[0-9]{4})?\b").WithInitialConfidence(0.50).Build()
     );
 

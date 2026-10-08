@@ -25,7 +25,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class CurrencyFilter : RegexFilter
 {
-    private static readonly Analyzer CurrencyAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "dollars", "amount", "euros", "pounds", "yen", "rupees", "currency", "price", "cost", "fee", "balance" };
+
+    private static readonly Analyzer CurrencyAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
             .WithPattern(@"\$\s?[0-9,]+(\.[0-9]{1,2})?(?:\s?(million|billion|trillion|thousand))?",
                 RegexOptions.IgnoreCase).WithInitialConfidence(0.80).Build(),

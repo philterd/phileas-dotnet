@@ -36,6 +36,107 @@ public abstract class RulesFilter : AbstractFilter
     {
     }
 
+    /// <summary>The confidence added when a contextual term appears near a match. The result is capped at 1.0.</summary>
+    public const double ContextualTermBoost = 0.05;
+
+    /// <summary>
+    ///     Returns <paramref name="confidence" /> raised by <see cref="ContextualTermBoost" /> when any of
+    ///     <paramref name="terms" /> appears within <see cref="AbstractFilter.WindowSize" /> words before or after the
+    ///     match, capped at 1.0. Words are split on any whitespace and never include the match itself. A word matches
+    ///     a term case-insensitively once punctuation at either end is trimmed from both, so <c>SIN:</c> matches
+    ///     <c>sin</c>. A term of several words matches the same words in a row on one side of the match. The boost is
+    ///     applied once, however many terms appear. A word longer than 64 characters ends the search on its side.
+    /// </summary>
+    protected double ApplyContextualTerms(ISet<string>? terms, double confidence, string input, int start, int end)
+    {
+        if (terms == null || terms.Count == 0 || WindowSize <= 0)
+            return confidence;
+
+        var before = WordsBefore(input, start, WindowSize);
+        var after = WordsAfter(input, end, WindowSize);
+
+        foreach (var term in terms)
+        {
+            var phrase = term.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+                .Select(NormalizeContextWord).Where(word => word.Length > 0).ToArray();
+            if (phrase.Length > 0 && (ContainsPhrase(before, phrase) || ContainsPhrase(after, phrase)))
+                // Rounded so the sum is the decimal it reads as: 0.90 + 0.05 is otherwise 0.9500000000000001,
+                // which would outrank a 0.95 span and fail a "confidence == 0.95" condition.
+                return Math.Min(1.0, Math.Round(confidence + ContextualTermBoost, 6));
+        }
+
+        return confidence;
+    }
+
+    // No term is anywhere near this long. A longer word ends the search in that direction, so each match
+    // scans a bounded distance: without the limit, every match in a long line with no whitespace (a CSV row of
+    // identifiers) scanned to both ends of the line.
+    private const int MaxContextWordLength = 64;
+
+    // Up to count words ending at index start, nearest last. Characters between the previous whitespace and
+    // the match count as a word, so the "SIN:" of "SIN:046454286" is seen.
+    private static List<string> WordsBefore(string input, int start, int count)
+    {
+        var words = new List<string>();
+        var i = start;
+        while (words.Count < count)
+        {
+            while (i > 0 && char.IsWhiteSpace(input[i - 1])) i--;
+            if (i == 0) break;
+            var wordEnd = i;
+            while (i > 0 && !char.IsWhiteSpace(input[i - 1]) && wordEnd - i < MaxContextWordLength) i--;
+            if (i > 0 && !char.IsWhiteSpace(input[i - 1])) break;
+            AddContextWord(words, input[i..wordEnd]);
+        }
+
+        words.Reverse();
+        return words;
+    }
+
+    // Up to count words starting at index end, nearest first.
+    private static List<string> WordsAfter(string input, int end, int count)
+    {
+        var words = new List<string>();
+        var i = end;
+        while (words.Count < count)
+        {
+            while (i < input.Length && char.IsWhiteSpace(input[i])) i++;
+            if (i == input.Length) break;
+            var wordStart = i;
+            while (i < input.Length && !char.IsWhiteSpace(input[i]) && i - wordStart < MaxContextWordLength) i++;
+            if (i < input.Length && !char.IsWhiteSpace(input[i])) break;
+            AddContextWord(words, input[wordStart..i]);
+        }
+
+        return words;
+    }
+
+    // A word that is only punctuation, such as a dash between two clauses, still counts toward the window
+    // so the window is the same number of words wherever punctuation falls; it can never match a term.
+    private static void AddContextWord(List<string> words, string word) => words.Add(NormalizeContextWord(word));
+
+    private static string NormalizeContextWord(string word)
+    {
+        var first = 0;
+        var last = word.Length - 1;
+        while (first <= last && !char.IsLetterOrDigit(word[first])) first++;
+        while (last >= first && !char.IsLetterOrDigit(word[last])) last--;
+        return word[first..(last + 1)].ToLowerInvariant();
+    }
+
+    private static bool ContainsPhrase(List<string> words, string[] phrase)
+    {
+        for (var i = 0; i + phrase.Length <= words.Count; i++)
+        {
+            var found = true;
+            for (var j = 0; j < phrase.Length && found; j++)
+                found = words[i + j] == phrase[j];
+            if (found) return true;
+        }
+
+        return false;
+    }
+
     /// <summary>
     ///     Applies post-processing rules to refine or remove spans after initial matching.
     ///     The default implementation returns the spans unchanged.

@@ -46,7 +46,10 @@ public class IpAddressFilter : RegexFilter
     ///     the same offsets is not added again. Only an address that abuts other text is found by the
     ///     relaxed form.
     /// </summary>
-    private static readonly Analyzer IpAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "ipv4", "ipv6", "ip", "ip address" };
+
+    private static readonly Analyzer IpAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b" + Ipv4 + @"\b")
             .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder().WithPattern(Ipv6Patterns.Address, RegexOptions.IgnoreCase)

@@ -24,7 +24,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class MacAddressFilter : RegexFilter
 {
-    private static readonly Analyzer MacAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "mac", "network" };
+
+    private static readonly Analyzer MacAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b([0-9A-Fa-f]{2}[:\-]){5}([0-9A-Fa-f]{2})\b")
             .WithInitialConfidence(0.90).Build()
     );

@@ -24,7 +24,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class VinFilter : RegexFilter
 {
-    private static readonly Analyzer VinAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "vin", "car", "truck", "vehicle", "automobile" };
+
+    private static readonly Analyzer VinAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b[A-HJ-NPR-Z0-9]{17}\b").WithInitialConfidence(0.90).Build()
     );
 

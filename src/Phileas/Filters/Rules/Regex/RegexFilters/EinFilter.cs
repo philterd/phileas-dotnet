@@ -35,7 +35,10 @@ public class EinFilter : RegexFilter
 {
     private const string Digit = IdentifierSeparators.Digit;
 
-    private static readonly Analyzer EinAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "ein", "fein", "employer", "tax" };
+
+    private static readonly Analyzer EinAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
             .WithPattern(IdentifierSeparators.NotWordOrHyphenBefore
                          + Digit + "{2}" + IdentifierSeparators.Wrap + Digit + "{7}"

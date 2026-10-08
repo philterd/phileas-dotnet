@@ -24,7 +24,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class BankRoutingNumberFilter : RegexFilter
 {
-    private static readonly Analyzer BankRoutingAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "routing", "bank" };
+
+    private static readonly Analyzer BankRoutingAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.95).Build()
     );
 

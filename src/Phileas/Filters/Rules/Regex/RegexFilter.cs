@@ -98,7 +98,8 @@ public abstract class RegexFilter : RulesFilter
                 if (Span.DoesSpanExist(matchStart, matchEnd, spans)) continue;
 
                 var window = GetWindow(input, matchStart, matchEnd);
-                var confidence = ApplyConfidenceModifiers(filterPattern, input, matchStart, matchEnd);
+                var confidence = ApplyContextualTerms(analyzer.ContextualTerms,
+                    ApplyConfidenceModifiers(filterPattern, input, matchStart, matchEnd), input, matchStart, matchEnd);
 
                 var replacement = GetReplacement(policy, context, matchText, window, confidence,
                     filterPattern.Classification ?? Classification, filterPattern);

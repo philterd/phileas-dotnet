@@ -148,7 +148,7 @@ Each identifier class extends `AbstractPolicyFilter` and supports these common o
 | `Ignored` | `ignored` | `List<string>?` | `null` | Exact values that should not be redacted. |
 | `IgnoredFiles` | `ignoredFiles` | `List<string>?` | `null` | Files whose lines provide additional ignored terms. |
 | `IgnoredPatterns` | `ignoredPatterns` | `List<IgnoredPattern>?` | `null` | Regex patterns whose matches are not redacted. |
-| `WindowSize` | `windowSize` | `int` | `0` | Context words on each side of a match; `0` uses the default (5). |
+| `WindowSize` | `windowSize` | `int` | `0` | Context words on each side of a match, searched for [contextual terms](supported-identifiers.md#contextual-terms) and used by span disambiguation; `0` uses the default (5). |
 | `Priority` | `priority` | `int` | `0` | Higher-priority filter spans win when spans overlap. |
 
 ---

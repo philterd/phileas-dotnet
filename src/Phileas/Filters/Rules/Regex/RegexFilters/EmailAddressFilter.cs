@@ -28,7 +28,10 @@ public class EmailAddressFilter : RegexFilter
     ///     The strict form follows RFC 5322's unquoted local part, so it accepts the specials the RFC
     ///     permits. "Strict" means strictly conformant, not narrower: it matches more, not less.
     /// </summary>
-    private static readonly Analyzer StrictAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "email", "e-mail" };
+
+    private static readonly Analyzer StrictAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
             .WithPattern(@"\b[A-Za-z0-9!#$%&'*+/=?^_`{|}~.\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
             .WithInitialConfidence(0.90)
@@ -36,7 +39,7 @@ public class EmailAddressFilter : RegexFilter
     );
 
     /// <summary>The lenient form allows only word characters, dots and dashes in the local part.</summary>
-    private static readonly Analyzer LenientAnalyzer = new(
+    private static readonly Analyzer LenientAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
             .WithPattern(@"\b[\w.\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
             .WithInitialConfidence(0.90)

@@ -134,7 +134,7 @@ public class PhoneNumberFilterTests
     // other found numbers are 0.75 (longer than 14 chars) or 0.60.
     [Theory]
     [InlineData("Call 555-123-4567", 0.95)]
-    [InlineData("Phone: (555) 867-5309", 0.95)]
+    [InlineData("Call (555) 867-5309", 0.95)]
     [InlineData("+1 555 867 5309", 0.95)]
     [InlineData("Call +44 20 7946 0958 today", 0.75)]
     [InlineData("Office +49 30 901820 ext", 0.60)]

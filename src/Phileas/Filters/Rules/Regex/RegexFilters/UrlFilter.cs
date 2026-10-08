@@ -53,7 +53,10 @@ public class UrlFilter : RegexFilter
     /// </summary>
     private const string EndsOnUrlCharacter = @"(?<=[\w/#&=~+$*@%-])";
 
-    private static readonly Analyzer PrefixedAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "web", "webpage", "website", "url", "uri", "address" };
+
+    private static readonly Analyzer PrefixedAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.80).Build(),
         new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)
@@ -65,7 +68,7 @@ public class UrlFilter : RegexFilter
     ///     from ordinary prose containing a dot, so dropping the requirement costs precision: a lower
     ///     initial confidence reflects that.
     /// </summary>
-    private static readonly Analyzer UnprefixedAnalyzer = new(
+    private static readonly Analyzer UnprefixedAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b(?:https?|ftp)://[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.80).Build(),
         new FilterPattern.Builder().WithPattern(@"\bwww\.[^\s/$.?#].[^\s]*" + EndsOnUrlCharacter, RegexOptions.IgnoreCase)

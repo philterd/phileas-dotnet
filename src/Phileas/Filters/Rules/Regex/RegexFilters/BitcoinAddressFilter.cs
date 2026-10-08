@@ -24,7 +24,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class BitcoinAddressFilter : RegexFilter
 {
-    private static readonly Analyzer BitcoinAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "bitcoin", "wallet", "btc", "crypto" };
+
+    private static readonly Analyzer BitcoinAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b").WithInitialConfidence(0.90)
             .Build(),
         new FilterPattern.Builder().WithPattern(@"\bbc1[a-z0-9]{6,87}\b").WithInitialConfidence(0.90).Build()

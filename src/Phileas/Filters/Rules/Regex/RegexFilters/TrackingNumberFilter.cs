@@ -30,6 +30,9 @@ public class TrackingNumberFilter : RegexFilter
     ///     Analyzers are keyed by the carriers enabled and whether spaces are allowed, so each distinct
     ///     configuration compiles once per process rather than once per request.
     /// </summary>
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "tracking", "shipment", "shipping", "mailing", "sent", "delivered" };
+
     private static readonly ConcurrentDictionary<(bool Ups, bool Fedex, bool Usps, bool Spaces), Analyzer>
         Analyzers = new();
 
@@ -127,7 +130,7 @@ public class TrackingNumberFilter : RegexFilter
                 Add(Run("[0-9]", 26), 0.75, "usps");
             }
 
-            return new Analyzer(patterns.ToArray());
+            return new Analyzer(ContextualTerms, patterns.ToArray());
         });
     }
 

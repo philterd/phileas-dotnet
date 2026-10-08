@@ -35,7 +35,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class DateFilter : RegexFilter
 {
-    private static readonly Analyzer DateAnalyzer = new(BuildPatterns());
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "date", "day", "birthdate", "dob", "d.o.b." };
+
+    private static readonly Analyzer DateAnalyzer = new(ContextualTerms, BuildPatterns());
 
     private readonly bool _onlyValidDates;
     private readonly ISpanValidator _spanValidator;

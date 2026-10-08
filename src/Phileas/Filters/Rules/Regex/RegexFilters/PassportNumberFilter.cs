@@ -24,7 +24,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class PassportNumberFilter : RegexFilter
 {
-    private static readonly Analyzer PassportAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "passport" };
+
+    private static readonly Analyzer PassportAnalyzer = new(ContextualTerms,
         // 1-2 letter prefix + digits: most alphanumeric passports, plus the US passport card (C + 8 digits).
         new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).Build(),
         // All-numeric 9-digit US passport book number (no leading letter). Ambiguous with a bare SSN or

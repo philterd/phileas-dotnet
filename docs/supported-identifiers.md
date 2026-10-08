@@ -78,10 +78,49 @@ public abstract class AbstractPolicyFilter
 | `Ignored` | `ignored` | `null` | Exact values that should not be redacted. |
 | `IgnoredFiles` | `ignoredFiles` | `null` | Files whose lines provide additional ignored terms. |
 | `IgnoredPatterns` | `ignoredPatterns` | `null` | Regex patterns whose matches are not redacted. |
-| `WindowSize` | `windowSize` | `0` | Context words on each side of a match; `0` uses the default (5). |
+| `WindowSize` | `windowSize` | `0` | Context words on each side of a match, searched for [contextual terms](#contextual-terms) and used by span disambiguation; `0` uses the default (5). |
 | `Priority` | `priority` | `0` | Higher-priority filter spans win when spans overlap. |
 
 In addition, each identifier exposes a `Strategies` list that lets you override the default `REDACT` behaviour. See [Filter Strategies](filter-strategies.md) for all available strategies.
+
+### Contextual terms
+
+An identifier with contextual terms raises a match's confidence by 0.05, capped at 1.0, when one of its contextual terms appears within `windowSize` words before or after the match. The boost is applied once, however many terms appear, and the result is the confidence a strategy `condition` sees and that overlapping spans are compared on.
+
+- Words are split on any whitespace, including line breaks, and never include the match itself.
+- A word matches a term case-insensitively once punctuation at either end is trimmed from both, so `SSN:` and `(ssn)` match `ssn`. Punctuation inside a word is kept, so `social-security` is one word.
+- A term of several words, such as `american express`, matches those words in a row on one side of the match.
+- A word longer than 64 characters ends the search on its side of the match. The text between a match and the nearest whitespace counts as a word, so in a long run with no whitespace, such as a CSV row, only a match within 64 characters of the run's start or end can be boosted.
+
+The terms are fixed per identifier and cannot be configured:
+
+| Identifier | Contextual terms |
+|---|---|
+| `age` | age, years |
+| `bankRoutingNumber` | routing, bank |
+| `bitcoinAddress` | bitcoin, wallet, btc, crypto |
+| `canadaSin` | sin, social insurance, nas, assurance sociale |
+| `creditCard` | credit, card, american express, amex, discover, jcb, diners |
+| `currency` | dollars, amount, euros, pounds, yen, rupees, currency, price, cost, fee, balance |
+| `date` | date, day, birthdate, dob, d.o.b. |
+| `driversLicense` | license, drivers |
+| `ein` | ein, fein, employer, tax |
+| `emailAddress` | email, e-mail |
+| `ibanCode` | iban, bank |
+| `ipAddress` | ipv4, ipv6, ip, ip address |
+| `macAddress` | mac, network |
+| `passportNumber` | passport |
+| `phoneNumber` | phone, telephone, fax, cell, mobile |
+| `phoneNumberExtension` | phone, extension, ext |
+| `ssn` | ssn, tin, social, ssid |
+| `stateAbbreviation` | state |
+| `streetAddress` | address, location |
+| `trackingNumber` | tracking, shipment, shipping, mailing, sent, delivered |
+| `url` | web, webpage, website, url, uri, address |
+| `vin` | vin, car, truck, vehicle, automobile |
+| `zipCode` | zip, zipcode, postal |
+
+`itin`, the dictionary-backed identifiers, custom identifiers, sections, and PhEye have no contextual terms.
 
 ---
 
@@ -159,7 +198,7 @@ The nine-digit root of a business number also passes the Luhn check, so in the d
 
 #### Overlap with the SSN identifier
 
-A separated SIN (`NNN-NNN-NNN`) never matches the SSN identifier, whose groups are `NNN-NN-NNNN`. An unformatted nine-digit run can match both. When both filters are enabled, the two spans are resolved by the existing [span disambiguation](span-disambiguation.md) and overlap rules, with no SIN-specific rule: the spans have the same length and confidence, so without disambiguation the filter with the higher `priority` wins, and with equal priorities the run is reported as `ssn`. Give `canadaSin` a higher `priority` to report such runs as `canada-sin`.
+A separated SIN (`NNN-NNN-NNN`) never matches the SSN identifier, whose groups are `NNN-NN-NNNN`. An unformatted nine-digit run can match both. When both filters are enabled, the two spans are resolved by the existing [span disambiguation](span-disambiguation.md) and overlap rules, with no SIN-specific rule. Both start at the same confidence, so a [contextual term](#contextual-terms) decides: `SIN 271835464` is reported as `canada-sin` and `SSN 271835464` as `ssn`. With no term, or a term of each (`social insurance` also contains the SSN term `social`), the confidences tie and, without disambiguation, the filter with the higher `priority` wins; with equal priorities the run is reported as `ssn`.
 
 The JSON key for the filter strategies list is `canadaSinFilterStrategies`:
 

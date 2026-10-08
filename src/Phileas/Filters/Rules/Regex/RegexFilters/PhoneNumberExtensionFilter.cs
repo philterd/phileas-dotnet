@@ -25,7 +25,10 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class PhoneNumberExtensionFilter : RegexFilter
 {
-    private static readonly Analyzer PhoneExtAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "phone", "extension", "ext" };
+
+    private static readonly Analyzer PhoneExtAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b(?:ext|x|extension)\.?\s*[0-9]{1,6}\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.75).Build()
     );

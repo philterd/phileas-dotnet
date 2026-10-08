@@ -37,6 +37,9 @@ public class PhoneNumberFilter : RulesFilter
 {
     // A fully NANP-formatted number (optional country code, 3-3-4 grouping). A found number that matches is
     // scored highest; other found numbers are scored by length, mirroring the Java PhoneNumberRulesFilter.
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "phone", "telephone", "fax", "cell", "mobile" };
+
     private static readonly SysRegex NanpPattern =
         new(@"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$", RegexOptions.Compiled,
             RegexDefaults.MatchTimeout);
@@ -91,7 +94,8 @@ public class PhoneNumberFilter : RulesFilter
 
             // Confidence mirrors the Java filter: a cleanly NANP-formatted match scores highest; other found
             // numbers (e.g. international formats) score by length.
-            var confidence = NanpPattern.IsMatch(text) ? 0.95 : text.Length > 14 ? 0.75 : 0.60;
+            var confidence = ApplyContextualTerms(ContextualTerms,
+                NanpPattern.IsMatch(text) ? 0.95 : text.Length > 14 ? 0.75 : 0.60, input, start, end);
 
             var window = GetWindow(input, start, end);
             var replacement = GetReplacement(policy, context, text, window, confidence, Classification, null);

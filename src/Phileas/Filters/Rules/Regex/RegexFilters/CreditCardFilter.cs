@@ -56,6 +56,9 @@ public class CreditCardFilter : RegexFilter
     ///     The issuer prefixes, applied after the separators are stripped. Mastercard's 2-series
     ///     (2221-2720, opened in 2017) is included: omitting it is what let valid cards through.
     /// </summary>
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "credit", "card", "american express", "amex", "discover", "jcb", "diners" };
+
     private static readonly Rx BrandedNumber = new(
         @"^(?:4[0-9]{12}(?:[0-9]{3})?"                                        // Visa
         + @"|(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}" // Mastercard
@@ -145,10 +148,10 @@ public class CreditCardFilter : RegexFilter
             // of precision, so it carries a lower initial confidence. The lookahead form lets
             // overlapping candidates be found, matching the Java filter.
             return wordBoundaries
-                ? new Analyzer(new FilterPattern.Builder()
+                ? new Analyzer(ContextualTerms, new FilterPattern.Builder()
                     .WithPattern(@"\b" + CardShape + @"\b").WithInitialConfidence(0.90)
                     .WithConfidenceModifiers(ConfidenceModifiers(true)).Build())
-                : new Analyzer(new FilterPattern.Builder()
+                : new Analyzer(ContextualTerms, new FilterPattern.Builder()
                     .WithPattern("(?=(" + CardShape + "))").WithGroupNumber(1)
                     .WithInitialConfidence(0.70)
                     .WithConfidenceModifiers(ConfidenceModifiers(false)).Build());

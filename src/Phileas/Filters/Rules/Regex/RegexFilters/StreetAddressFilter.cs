@@ -55,7 +55,10 @@ public class StreetAddressFilter : RegexFilter
     // Post office box, e.g. "PO Box 1234", "P.O. Box 56", "Post Office Box 789".
     private const string PoBoxPattern = @"\b(?:P\.?\s?O\.?\s?Box|Post\s+Office\s+Box)\s+\d+\b";
 
-    private static readonly Analyzer StreetAddressAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "address", "location" };
+
+    private static readonly Analyzer StreetAddressAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(StreetAddressPattern, RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.85).Build(),
         new FilterPattern.Builder().WithPattern(PoBoxPattern, RegexOptions.IgnoreCase)

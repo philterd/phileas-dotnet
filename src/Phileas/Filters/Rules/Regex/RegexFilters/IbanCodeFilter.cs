@@ -37,13 +37,16 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class IbanCodeFilter : RegexFilter
 {
-    private static readonly Analyzer CompactAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "iban", "bank" };
+
+    private static readonly Analyzer CompactAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder().WithPattern(@"\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}\b")
             .WithInitialConfidence(0.90).Build()
     );
 
     /// <summary>Also matches a code written in the four-character groups banks print.</summary>
-    private static readonly Analyzer SpacedAnalyzer = new(
+    private static readonly Analyzer SpacedAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
             .WithPattern(@"\b[A-Z]{2}[0-9]{2}[\s]?[A-Z0-9]{4}[\s]?[A-Z0-9]{4}[\s]?[A-Z0-9]{4}[\s]?[A-Z0-9]{4}[\s]?[A-Z0-9]{0,2}\b",
                 RegexOptions.IgnoreCase)

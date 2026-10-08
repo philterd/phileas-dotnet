@@ -54,7 +54,10 @@ public class AgeFilter : RegexFilter
     /// </summary>
     private const string PlausibleAge = @"0{0,2}(?:1[01][0-9]|12[0-5]|[1-9][0-9]|[0-9])(?:\.[0-9]+)?";
 
-    private static readonly Analyzer AgeAnalyzer = new(
+    /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
+    private static readonly HashSet<string> ContextualTerms = new() { "age", "years" };
+
+    private static readonly Analyzer AgeAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
             .WithPattern(@"\b[0-9.]+[\s]*(year|years|yrs|yr|yo)(\.?)(\s)*(old)?\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
