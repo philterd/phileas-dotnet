@@ -14,30 +14,21 @@
  * limitations under the License.
  */
 
-using System.Text.RegularExpressions;
 using Phileas.Model.Metadata;
 using Phileas.Model;
 
 namespace Phileas.Filters.Conditions;
 
 /// <summary>
-///     Evaluates filter strategy conditions based on the grammar defined in FilterCondition.g4
-///     Supported conditions:
-///     - population COMPARATOR NUMBER
-///     - token COMPARATOR WORD
-///     - type COMPARATOR TYPE
-///     - confidence COMPARATOR NUMBER
-///     - context COMPARATOR WORD
-///     - Multiple conditions combined with AND
+///     Evaluates strategy conditions parsed by <see cref="ConditionParser" />: one or more <c>field op value</c>
+///     comparisons on population, token, type, confidence or context, joined with <c>and</c>. A condition that does
+///     not parse throws <see cref="InvalidConditionException" />; it is never treated as satisfied. Policies are
+///     checked when they are loaded, so a condition that does not parse is normally rejected before any text is
+///     filtered.
 /// </summary>
 public static class ConditionEvaluator
 {
     private static readonly ZipCodeMetadataService ZipCodeMetadata = new();
-
-    private static readonly Regex ConditionPattern = new(
-        @"^\s*(?<field>population|token|type|confidence|context)\s+(?<op>>|<|<=|>=|==|!=|startswith|is|is not)\s+(?<value>""[^""]*""|\d+(?:\.\d+)?)\s*(?<and>and\s+(?<rest>.+))?$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled, RegexDefaults.MatchTimeout
-    );
 
     /// <summary>
     ///     Evaluates the given condition string against the supplied runtime values.
@@ -50,6 +41,7 @@ public static class ConditionEvaluator
     /// <param name="confidence">The detection confidence score.</param>
     /// <param name="classification">Optional entity classification label.</param>
     /// <returns><see langword="true" /> if the condition passes; otherwise <see langword="false" />.</returns>
+    /// <exception cref="InvalidConditionException">The condition does not parse.</exception>
     public static bool Evaluate(
         string condition,
         string context,
@@ -60,138 +52,76 @@ public static class ConditionEvaluator
         if (string.IsNullOrWhiteSpace(condition))
             return true;
 
-        return EvaluateSingle(condition.Trim(), context, token, confidence, classification);
-    }
-
-    private static bool EvaluateSingle(
-        string condition,
-        string context,
-        string token,
-        double confidence,
-        string? classification)
-    {
-        var match = ConditionPattern.Match(condition);
-        if (!match.Success)
-            return true; // Invalid condition always evaluates to true
-
-        var field = match.Groups["field"].Value.ToLowerInvariant();
-        var op = match.Groups["op"].Value.ToLowerInvariant();
-        var valueStr = match.Groups["value"].Value;
-        var hasAnd = match.Groups["and"].Success;
-        var rest = hasAnd ? match.Groups["rest"].Value : null;
-
-        // Evaluate current condition
-        var result = field switch
+        foreach (var clause in ConditionParser.Parse(condition))
         {
-            "population" => EvaluatePopulation(op, valueStr, token),
-            "token" => EvaluateToken(op, valueStr, token),
-            "type" => EvaluateType(op, valueStr, classification),
-            "confidence" => EvaluateConfidence(op, valueStr, confidence),
-            "context" => EvaluateContext(op, valueStr, context),
-            _ => true
-        };
+            var satisfied = clause.Field switch
+            {
+                "population" => EvaluatePopulation(clause, token),
+                "token" => EvaluateText(clause, token),
+                "type" => EvaluateType(clause, classification),
+                "confidence" => EvaluateConfidence(clause, confidence),
+                "context" => EvaluateText(clause, context),
+                _ => throw Unreachable(clause)
+            };
+            if (!satisfied) return false;
+        }
 
-        // If there's an AND clause, evaluate it recursively
-        if (hasAnd && !string.IsNullOrWhiteSpace(rest))
-            return result && EvaluateSingle(rest, context, token, confidence, classification);
-
-        return result;
+        return true;
     }
 
-    private static bool EvaluatePopulation(string op, string valueStr, string token)
+    private static bool EvaluatePopulation(ConditionClause clause, string token)
     {
         // The population condition applies to zip-code tokens: look up the census population for the
         // token and compare against the configured value. A zip code not present in the census data
         // fails the condition (mirrors the Java ZipCodeFilterStrategy).
-        if (!int.TryParse(valueStr, out var value))
-            return false;
-
         var (population, exists) = ZipCodeMetadata.GetMetadata(token);
         if (!exists)
             return false;
 
-        return op switch
-        {
-            ">" => population > value,
-            "<" => population < value,
-            ">=" => population >= value,
-            "<=" => population <= value,
-            "==" or "is" => population == value,
-            "!=" or "is not" => population != value,
-            _ => false
-        };
+        return Compare(clause, ((double)population).CompareTo(clause.Number!.Value));
     }
 
-    private static bool EvaluateToken(string op, string valueStr, string token)
+    private static bool EvaluateConfidence(ConditionClause clause, double confidence)
     {
-        var value = UnquoteString(valueStr);
-
-        return op switch
-        {
-            "==" or "is" => token == value,
-            "!=" or "is not" => token != value,
-            "startswith" => token.StartsWith(value, StringComparison.OrdinalIgnoreCase),
-            ">" => string.Compare(token, value, StringComparison.Ordinal) > 0,
-            "<" => string.Compare(token, value, StringComparison.Ordinal) < 0,
-            ">=" => string.Compare(token, value, StringComparison.Ordinal) >= 0,
-            "<=" => string.Compare(token, value, StringComparison.Ordinal) <= 0,
-            _ => true
-        };
-    }
-
-    private static bool EvaluateType(string op, string valueStr, string? classification)
-    {
-        if (classification == null)
-            return op is "!=" or "is not";
-
-        var value = UnquoteString(valueStr);
-
-        return op switch
-        {
-            "==" or "is" => classification.Equals(value, StringComparison.OrdinalIgnoreCase),
-            "!=" or "is not" => !classification.Equals(value, StringComparison.OrdinalIgnoreCase),
-            _ => true
-        };
-    }
-
-    private static bool EvaluateConfidence(string op, string valueStr, double confidence)
-    {
-        if (!double.TryParse(valueStr, out var value))
-            return true;
-
-        return op switch
+        var value = clause.Number!.Value;
+        return clause.Operator switch
         {
             "==" or "is" => Math.Abs(confidence - value) < 0.0001,
             "!=" or "is not" => Math.Abs(confidence - value) >= 0.0001,
-            ">" => confidence > value,
-            "<" => confidence < value,
-            ">=" => confidence >= value,
-            "<=" => confidence <= value,
-            _ => true
+            _ => Compare(clause, confidence.CompareTo(value))
         };
     }
 
-    private static bool EvaluateContext(string op, string valueStr, string context)
+    // token and context: an exact comparison, a case-insensitive prefix, or an ordinal ordering.
+    private static bool EvaluateText(ConditionClause clause, string actual)
     {
-        var value = UnquoteString(valueStr);
+        return clause.Operator == "startswith"
+            ? actual.StartsWith(clause.Text, StringComparison.OrdinalIgnoreCase)
+            : Compare(clause, string.Compare(actual, clause.Text, StringComparison.Ordinal));
+    }
 
-        return op switch
+    private static bool EvaluateType(ConditionClause clause, string? classification)
+    {
+        var equal = classification != null && classification.Equals(clause.Text, StringComparison.OrdinalIgnoreCase);
+        return clause.Operator is "==" or "is" ? equal : !equal;
+    }
+
+    // Applies the clause's operator to the result of comparing the actual value with the clause's.
+    private static bool Compare(ConditionClause clause, int comparison)
+    {
+        return clause.Operator switch
         {
-            "==" or "is" => context == value,
-            "!=" or "is not" => context != value,
-            "startswith" => context.StartsWith(value, StringComparison.OrdinalIgnoreCase),
-            ">" => string.Compare(context, value, StringComparison.Ordinal) > 0,
-            "<" => string.Compare(context, value, StringComparison.Ordinal) < 0,
-            ">=" => string.Compare(context, value, StringComparison.Ordinal) >= 0,
-            "<=" => string.Compare(context, value, StringComparison.Ordinal) <= 0,
-            _ => true
+            "==" or "is" => comparison == 0,
+            "!=" or "is not" => comparison != 0,
+            ">" => comparison > 0,
+            "<" => comparison < 0,
+            ">=" => comparison >= 0,
+            "<=" => comparison <= 0,
+            _ => throw Unreachable(clause)
         };
     }
 
-    private static string UnquoteString(string quoted)
-    {
-        if (quoted.StartsWith('"') && quoted.EndsWith('"') && quoted.Length >= 2)
-            return quoted[1..^1];
-        return quoted;
-    }
+    // The parser accepts only the fields and operators handled above, so reaching here is a bug.
+    private static InvalidConditionException Unreachable(ConditionClause clause) =>
+        new($"has a comparison on '{clause.Field}' with '{clause.Operator}', which cannot be evaluated");
 }

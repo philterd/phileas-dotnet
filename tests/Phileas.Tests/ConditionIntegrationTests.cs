@@ -225,7 +225,7 @@ public class ConditionIntegrationTests
     }
 
     [Fact]
-    public void InvalidCondition_DefaultsToTrue_AppliesStrategy()
+    public void InvalidCondition_IsRejectedBeforeAnyTextIsFiltered()
     {
         var policy = new Policy.Policy
         {
@@ -246,8 +246,8 @@ public class ConditionIntegrationTests
             }
         };
 
-        // Invalid condition should default to true and apply the strategy
-        var result = new FilterService().Filter(policy, "ctx", 0, "Email: test@example.com");
-        Assert.Contains("REDACTED", result.FilteredText);
+        // An unparseable condition used to count as satisfied; now the policy is rejected (#143).
+        Assert.Throws<PolicyValidationException>(() =>
+            new FilterService().Filter(policy, "ctx", 0, "Email: test@example.com"));
     }
 }

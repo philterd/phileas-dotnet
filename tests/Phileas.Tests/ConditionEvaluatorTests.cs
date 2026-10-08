@@ -179,10 +179,10 @@ public class ConditionEvaluatorTests
     [InlineData("token")]
     [InlineData("== \"test\"")]
     [InlineData("token == ")]
-    public void InvalidCondition_ReturnsTrue(string condition)
+    public void InvalidCondition_Throws(string condition)
     {
-        // Invalid conditions should default to true
-        var result = ConditionEvaluator.Evaluate(condition, "ctx", "token", 0.9, null);
-        Assert.True(result);
+        // A condition that does not parse is never treated as satisfied (#143).
+        Assert.Throws<InvalidConditionException>(() =>
+            ConditionEvaluator.Evaluate(condition, "ctx", "token", 0.9, null));
     }
 }

@@ -295,6 +295,10 @@ public class FilterService : IFilterService
 
     private IList<AbstractFilter> BuildFilters(PhileasPolicy policy, IContextService contextService)
     {
+        // A policy built in code never passes through PolicySerializer, so its conditions are checked here,
+        // before any text is filtered. See #143.
+        PolicyConditions.Validate(policy);
+
         var filters = new List<AbstractFilter>();
         var identifiers = policy.Identifiers;
 

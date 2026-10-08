@@ -50,7 +50,7 @@ public static class PolicySerializer
     /// <returns>The deserialized <see cref="Policy" />.</returns>
     /// <exception cref="PolicyValidationException">
     ///     The policy does not match the schema and <paramref name="validate" /> is
-    ///     <see langword="true" />.
+    ///     <see langword="true" />, or a strategy condition does not parse, whatever <paramref name="validate" /> is.
     /// </exception>
     public static Policy DeserializeFromJson(string json, bool validate = true)
     {
@@ -66,8 +66,13 @@ public static class PolicySerializer
             if (errors.Count > 0) throw new PolicyValidationException(errors);
         }
 
-        return JsonSerializer.Deserialize<Policy>(json, JsonOptions)
-               ?? throw new ArgumentException("Unable to deserialize policy from JSON.", nameof(json));
+        var policy = JsonSerializer.Deserialize<Policy>(json, JsonOptions)
+                     ?? throw new ArgumentException("Unable to deserialize policy from JSON.", nameof(json));
+
+        // Checked whether or not validate is set: a condition that does not parse cannot be applied under any
+        // schema version, and rejecting it here is better than failing on the first document. See #143.
+        PolicyConditions.Validate(policy);
+        return policy;
     }
 
     /// <summary>

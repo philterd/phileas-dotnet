@@ -26,22 +26,30 @@ public class PolicyValidationException : Exception
     /// <summary>Creates the exception from the schema failures.</summary>
     /// <param name="errors">One entry per failure, as <c>location: reason</c>.</param>
     public PolicyValidationException(IReadOnlyList<string> errors)
-        : base(BuildMessage(errors))
+        : base(BuildMessage(errors, "The policy does not match the redaction policy schema ("
+                                    + PolicySchema.GetSupportedSchemaVersion() + ")"))
     {
         Errors = errors;
     }
 
-    /// <summary>Every schema failure, as <c>location: reason</c>.</summary>
+    /// <summary>Creates the exception from failures that are not schema failures, under <paramref name="summary" />.</summary>
+    /// <param name="errors">One entry per failure, as <c>location: reason</c>.</param>
+    /// <param name="summary">What is wrong with the policy, without a trailing colon.</param>
+    public PolicyValidationException(IReadOnlyList<string> errors, string summary)
+        : base(BuildMessage(errors, summary))
+    {
+        Errors = errors;
+    }
+
+    /// <summary>Every failure, as <c>location: reason</c>.</summary>
     public IReadOnlyList<string> Errors { get; }
 
-    private static string BuildMessage(IReadOnlyList<string> errors)
+    private static string BuildMessage(IReadOnlyList<string> errors, string summary)
     {
         // Enough to find the problem without printing an unbounded wall of text for a policy that is
         // wrong in many places at once.
         const int listed = 10;
-        var message = "The policy does not match the redaction policy schema ("
-                      + PolicySchema.GetSupportedSchemaVersion() + "): "
-                      + string.Join("; ", errors.Take(listed));
+        var message = summary + ": " + string.Join("; ", errors.Take(listed));
 
         return errors.Count > listed
             ? message + $"; and {errors.Count - listed} more"

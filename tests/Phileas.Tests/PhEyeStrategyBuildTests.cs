@@ -62,6 +62,8 @@ public class PhEyeStrategyBuildTests
     // shows up as a mismatch.
     private static object? ValueFor(Type type, string name) => type switch
     {
+        // A condition must parse, or the policy is rejected when it is built (#143).
+        _ when name == "Condition" => "confidence > 0.5",
         _ when type == typeof(string) => "value-" + name,
         _ when type == typeof(bool) || type == typeof(bool?) => true,
         _ when type == typeof(int) || type == typeof(int?) => 7,

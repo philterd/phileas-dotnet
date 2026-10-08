@@ -49,8 +49,8 @@ public static class PolicyEndpoints
             }
             catch (PolicyValidationException ex)
             {
-                // The policy is well-formed but does not match the schema. That is the caller's
-                // mistake, so it is a 400 naming what failed, not a 500.
+                // The policy is well-formed but does not match the schema, or has a condition that
+                // does not parse. That is the caller's mistake, so it is a 400 naming what failed, not a 500.
                 return Results.BadRequest($"Invalid policy: {ex.Message}");
             }
             catch (ArgumentException ex)

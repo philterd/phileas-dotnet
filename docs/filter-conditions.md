@@ -326,7 +326,33 @@ Conditions can also be specified in JSON policy files:
 
 4. **String Quoting**: String values must be enclosed in double quotes: `context == "medical"`.
 
-5. **Invalid Conditions**: If a condition cannot be parsed, it defaults to `true` and the strategy is applied.
+5. **Invalid Conditions**: A condition that does not parse is rejected when the policy is loaded. See [Rejected conditions](#rejected-conditions).
+
+6. **Numbers**: A number is written with a `.` as the decimal point in every culture: `confidence > 0.9`.
+
+## Rejected conditions
+
+Every strategy condition is checked when the policy is loaded, by `PolicySerializer.DeserializeFromJson` (with or without schema validation) and by `FilterService.Filter` for a policy built in code. A condition that does not parse throws `PolicyValidationException` before any text is filtered. A condition is never treated as satisfied unless it parses. `PUT /policies/{name}` returns `400` with the same detail.
+
+Each entry in `PolicyValidationException.Errors` names the strategy by its JSON path, then its `id` when it has one, and says why. A strategy given under a deprecated key is reported under the key it is read into: `person` as `pheyes`, `dictionary` as `dictionaries`, and `zipCodeFilterStrategy` as `zipCodeFilterStrategies`. The condition itself is never included, since it can hold a value from the data being redacted:
+
+```
+/identifiers/ssn/ssnFilterStrategies/0 (id "ssn-last4"): the condition joins comparisons with 'or', which is not supported; only 'and' is
+```
+
+These are rejected:
+
+| Condition | Why | Write instead |
+|---|---|---|
+| `confidence > 0.5 or confidence < 0.1` | `or` and `\|\|` are not supported | One strategy per alternative, in order |
+| `confidence > 0.9 && context == "medical"` | `&&` is not supported | `confidence > 0.9 and context == "medical"` |
+| `confidence = 0.9` | `=` is not an operator | `confidence == 0.9` |
+| `(confidence > 0.5)` | Parentheses are not supported | `confidence > 0.5` |
+| `token is birthdate` | Not supported yet | Remove the condition, or match the token another way |
+| `confidence > "high"`, `population == "many"` | `confidence` and `population` compare numbers | A number, unquoted |
+| `confidence startswith 5` | `startswith` applies to `token` and `context` | A comparison operator |
+| `type > "PER"` | `type` supports only `==`, `!=`, `is`, and `is not` | An equality operator |
+| `name == "x"` | `name` is not a field | `token`, `context`, `confidence`, `population`, or `type` |
 
 ## Common Patterns
 
@@ -399,8 +425,8 @@ var policy = new Policy
 
 ## Limitations
 
-- **OR Operator**: Only `and` is supported for combining conditions. Use multiple strategies for OR logic.
-- **Complex Expressions**: Parentheses and nested conditions are not supported.
+- **OR Operator**: Only `and` is supported for combining conditions; a condition using `or` is rejected. Use multiple strategies for OR logic.
+- **Complex Expressions**: Parentheses and nested conditions are not supported, and are rejected.
 - **Regular Expressions**: The `token` field supports `startswith` but not full regex matching.
 
 ## See Also
