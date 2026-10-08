@@ -131,6 +131,10 @@ public class Identifiers
     [JsonPropertyName("ipAddress")]
     public IpAddress? IpAddress { get; set; }
 
+    /// <summary>Gets or sets the Individual Taxpayer Identification Number (ITIN) filter configuration.</summary>
+    [JsonPropertyName("itin")]
+    public Itin? Itin { get; set; }
+
     /// <summary>Gets or sets the MAC address filter configuration.</summary>
     [JsonPropertyName("macAddress")]
     public MacAddress? MacAddress { get; set; }
@@ -253,6 +257,7 @@ public class Identifiers
             FilterType.EmailAddress => EmailAddress is { Enabled: true },
             FilterType.IbanCode => IbanCode is { Enabled: true },
             FilterType.IpAddress => IpAddress is { Enabled: true },
+            FilterType.Itin => Itin is { Enabled: true },
             FilterType.MacAddress => MacAddress is { Enabled: true },
             FilterType.PassportNumber => PassportNumber is { Enabled: true },
             FilterType.PhEye => PhEyes?.Any(entry => entry.Enabled) == true,

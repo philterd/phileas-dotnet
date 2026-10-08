@@ -232,6 +232,7 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `IbanCode` | `"iban-code"` |
 | `Identifier` | `"identifier"` |
 | `IpAddress` | `"ip-address"` |
+| `Itin` | `"itin"` |
 | `MacAddress` | `"mac-address"` |
 | `PassportNumber` | `"passport-number"` |
 | `PhEye` | `"ph-eye"` |

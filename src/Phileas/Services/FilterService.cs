@@ -321,6 +321,11 @@ public class FilterService : IFilterService
                 BuildRegexConfig<CanadaSinFilterStrategy>(identifiers.CanadaSin, policy, contextService);
             filters.Add(new CanadaSinFilter(canadaSinConfig, identifiers.CanadaSin.OnlyValidPrefixes));
         }
+        if (IsEnabled(identifiers.Itin))
+        {
+            var itinConfig = BuildRegexConfig<ItinFilterStrategy>(identifiers.Itin, policy, contextService);
+            filters.Add(new ItinFilter(itinConfig, identifiers.Itin.OnlyValidRanges));
+        }
         if (IsEnabled(identifiers.Ein))
         {
             var einConfig = BuildRegexConfig<EinFilterStrategy>(identifiers.Ein, policy, contextService);

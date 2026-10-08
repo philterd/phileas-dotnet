@@ -79,6 +79,9 @@ public enum FilterType
     /// <summary>IPv4 and IPv6 addresses.</summary>
     IpAddress,
 
+    /// <summary>US Individual Taxpayer Identification Numbers (ITIN).</summary>
+    Itin,
+
     /// <summary>MAC (hardware) addresses.</summary>
     MacAddress,
 
@@ -172,6 +175,7 @@ public static class FilterTypeExtensions
             FilterType.IbanCode => "iban-code",
             FilterType.Identifier => "identifier",
             FilterType.IpAddress => "ip-address",
+            FilterType.Itin => "itin",
             FilterType.MacAddress => "mac-address",
             FilterType.PassportNumber => "passport-number",
             FilterType.PhEye => "ph-eye",

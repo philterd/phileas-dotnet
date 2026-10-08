@@ -20,6 +20,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `EmailAddress` | `emailAddress` | Email addresses |
 | `IbanCode` | `ibanCode` | International Bank Account Numbers |
 | `IpAddress` | `ipAddress` | IPv4 and IPv6 addresses |
+| `Itin` | `itin` | US Individual Taxpayer Identification Numbers (`9XX-XX-XXXX`) |
 | `MacAddress` | `macAddress` | Network MAC addresses |
 | `PassportNumber` | `passportNumber` | Passport numbers |
 | `PhoneNumber` | `phoneNumber` | US and international phone numbers |
@@ -148,7 +149,7 @@ Every match must pass the mod-10 Luhn check, so `123 456 789` is not detected. T
 
 #### Separators and boundaries
 
-The separators, boundaries and exclusions are the [SSN](#ssn) identifier's, which lists them in full. Between groups a SIN accepts nothing, one hyphen or hyphen substitute (optionally followed by horizontal whitespace), one horizontal whitespace character, or a hyphen followed by a line break, so a SIN wrapped across two lines is detected. A match may not begin or end inside a run of ASCII letters, digits, or underscores, and non-ASCII digits are not accepted.
+The separators, boundaries, and intentional exclusions are the [SSN](#ssn) identifier's, which lists them in full. The SSN's range exclusions do not apply: a SIN may begin with any digit, and only the Luhn check rejects a value. Between groups a SIN accepts nothing, one hyphen or hyphen substitute (optionally followed by horizontal whitespace), one horizontal whitespace character, or a hyphen followed by a line break, so a SIN wrapped across two lines is detected. A match may not begin or end inside a run of ASCII letters, digits, or underscores, and non-ASCII digits are not accepted.
 
 #### Leading digits and business numbers
 
@@ -476,6 +477,41 @@ Identifiers = new Identifiers { IpAddress = new IpAddress() }
 
 ---
 
+### ITIN
+
+Detects US Individual Taxpayer Identification Numbers: SSN-shaped values that always begin with 9 (`9XX-XX-XXXX`). The same three forms the [SSN](#ssn) identifier accepts are matched: hyphenated (`912-70-1234`), separated by a single whitespace character (`912 70 1234`), and unformatted (`912701234`). Spans are reported as `itin`.
+
+```csharp
+Identifiers = new Identifiers { Itin = new Itin() }
+```
+
+The separators, line-wrap handling, boundaries, and intentional exclusions are the SSN identifier's, which lists them in full. The SSN's range exclusions do not apply: a `00` group or `0000` serial is detected.
+
+#### IRS ranges and ATINs
+
+By default any `9XX-XX-XXXX` value is detected. Set `onlyValidRanges` to `true` to keep only values whose fourth and fifth digits fall in the ranges the IRS issues for ITINs: 50 to 65, 70 to 88, 90 to 92, and 94 to 99 ([IRS Publication 4757](https://www.irs.gov/pub/irs-pdf/p4757.pdf); [IRM 3.21.263](https://www.irs.gov/irm/part3/irm_03-021-263r), which reserves 89 and 93 for other programs). It is off by default so that a range the IRS issues after this release is still detected.
+
+Adoption Taxpayer Identification Numbers (ATINs) also begin with 9, and their fourth and fifth digits are always 93 ([IRM 3.13.40](https://www.irs.gov/irm/part3/irm_03-013-040)). In the default mode an ATIN is reported as `itin`; with `onlyValidRanges` it is dropped.
+
+#### Overlap with other identifiers
+
+The SSN identifier never reports a value beginning with 9, so a value is reported as `itin` or `ssn`, never both. An unformatted value is a bare nine-digit run, which other enabled filters may also match. The existing overlap rules and [span disambiguation](span-disambiguation.md) decide between them. For example, `bankRoutingNumber` matches any nine-digit run at a higher confidence, so with both enabled, and without span disambiguation, an unformatted ITIN is reported as a bank routing number. An unformatted SSN behaves the same way.
+
+The JSON key for the filter strategies list is `itinFilterStrategies`:
+
+```json
+"itin": {
+  "onlyValidRanges": true,
+  "itinFilterStrategies": [
+    { "strategy": "LAST_4" }
+  ]
+}
+```
+
+`RANDOM_REPLACE` produces an ITIN in an IRS-issued range, written in the detected value's format.
+
+---
+
 ### MAC Address
 
 Detects network hardware MAC addresses in `XX:XX:XX:XX:XX:XX` or `XX-XX-XX-XX-XX-XX` format.
@@ -613,7 +649,7 @@ Identifiers = new Identifiers { PhoneNumberExtension = new PhoneNumberExtension(
 
 ### SSN
 
-Detects US Social Security Numbers in `NNN-NN-NNNN` format. The regex excludes invalid ranges (`000`, `666`, and `900` to `999` area codes; `00` group; `0000` serial).
+Detects US Social Security Numbers in `NNN-NN-NNNN` format. The regex excludes invalid ranges (`000`, `666`, and `900` to `999` area codes; `00` group; `0000` serial). A value beginning with 9 is never reported as an SSN; it is the [ITIN](#itin) identifier's.
 
 ```csharp
 Identifiers = new Identifiers { Ssn = new Ssn() }

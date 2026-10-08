@@ -44,6 +44,7 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 | `EmailAddress`         | Email addresses                                                                                 |
 | `IbanCode`             | IBAN bank account codes                                                                         |
 | `IpAddress`            | IPv4 / IPv6 addresses                                                                           |
+| `Itin`                 | US Individual Taxpayer Identification Numbers                                                   |
 | `MacAddress`           | MAC (hardware) addresses                                                                        |
 | `PassportNumber`       | Passport numbers                                                                                |
 | `PhEye`                | AI-powered NER via a remote [PhEye](https://github.com/philterd/pheye) service or a local GLiNER model |

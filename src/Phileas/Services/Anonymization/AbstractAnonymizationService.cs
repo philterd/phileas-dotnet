@@ -129,6 +129,22 @@ public abstract class AbstractAnonymizationService : IAnonymizationService
     /// </summary>
     protected string GenerateNumeric(int length) => new('0', length);
 
+    /// <summary>
+    ///     Writes the digits of <paramref name="generated" /> into <paramref name="token" />'s format: each ASCII
+    ///     digit of the token is replaced in order and everything else is kept, so a value detected unformatted or
+    ///     with its own separators is replaced the same way. Returns <paramref name="generated" /> unchanged when the
+    ///     two do not have the same number of digits.
+    /// </summary>
+    protected static string InTokenFormat(string token, string generated)
+    {
+        var digits = generated.Where(char.IsAsciiDigit).ToArray();
+        if (token.Count(char.IsAsciiDigit) != digits.Length)
+            return generated;
+
+        var next = 0;
+        return string.Concat(token.Select(c => char.IsAsciiDigit(c) ? digits[next++] : c));
+    }
+
     /// <summary>Returns a random alphanumeric string of the given length.</summary>
     protected string GenerateAlphanumeric(int length)
     {

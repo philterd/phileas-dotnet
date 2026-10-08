@@ -80,6 +80,9 @@ public static class AnonymizationServiceFactory
             FilterType.IpAddress => WithMethod(
                 (c, r, m) => new IpAddressAnonymizationService(c, r, m),
                 (c, r, l) => new IpAddressAnonymizationService(c, r, l)),
+            FilterType.Itin => WithMethod(
+                (c, r, m) => new ItinAnonymizationService(c, r, m),
+                (c, r, l) => new ItinAnonymizationService(c, r, l)),
             FilterType.MacAddress => WithMethod(
                 (c, r, m) => new MacAddressAnonymizationService(c, r, m),
                 (c, r, l) => new MacAddressAnonymizationService(c, r, l)),

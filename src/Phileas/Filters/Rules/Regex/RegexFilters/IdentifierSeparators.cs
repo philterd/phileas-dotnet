@@ -18,8 +18,8 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
 ///     Regular-expression fragments shared by the filters that detect hyphenated numeric
-///     identifiers, currently <see cref="SsnFilter" />, <see cref="EinFilter" /> and
-///     <see cref="CanadaSinFilter" />. They live in one place so they cannot drift apart over what
+///     identifiers, currently <see cref="SsnFilter" />, <see cref="EinFilter" />,
+///     <see cref="ItinFilter" /> and <see cref="CanadaSinFilter" />. They live in one place so they cannot drift apart over what
 ///     separates an identifier's digit groups: a value a reader would write the same way should be
 ///     detected the same way by each.
 /// </summary>

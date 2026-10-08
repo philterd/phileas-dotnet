@@ -17,23 +17,23 @@
 namespace Phileas.Services.Anonymization;
 
 /// <summary>
-///     Anonymizes CanadaSin tokens with a Luhn-valid SIN written in the token's own format: each digit of the token is
-///     replaced in order, and its separators are kept.
+///     Anonymizes Itin tokens with an ITIN in an IRS-issued range, written in the token's own format: each digit of
+///     the token is replaced in order, and its separators are kept.
 /// </summary>
-public class CanadaSinAnonymizationService : AbstractAnonymizationService
+public class ItinAnonymizationService : AbstractAnonymizationService
 {
-    public CanadaSinAnonymizationService(IContextService contextService) : base(contextService) { }
+    public ItinAnonymizationService(IContextService contextService) : base(contextService) { }
 
-    public CanadaSinAnonymizationService(IContextService contextService, Random random) : base(contextService, random) { }
+    public ItinAnonymizationService(IContextService contextService, Random random) : base(contextService, random) { }
 
-    public CanadaSinAnonymizationService(IContextService contextService, Random random, AnonymizationMethod method)
+    public ItinAnonymizationService(IContextService contextService, Random random, AnonymizationMethod method)
         : base(contextService, random, method) { }
 
-    public CanadaSinAnonymizationService(IContextService contextService, Random random, List<string> candidates)
+    public ItinAnonymizationService(IContextService contextService, Random random, List<string> candidates)
         : base(contextService, random, candidates) { }
 
     protected override string GenerateRealistic(string token)
     {
-        return InTokenFormat(token, DataGenerator.CanadaSin().Random());
+        return InTokenFormat(token, DataGenerator.Itin().Random());
     }
 }
