@@ -30,6 +30,7 @@ public class DefaultDataGenerator : AbstractGenerator<object?>, IDataGenerator
     private readonly IGenerator<string> _surnames;
     private readonly IGenerator<string> _fullNames;
     private readonly IGenerator<string> _ssn;
+    private readonly IGenerator<string> _canadaSin;
     private readonly IGenerator<string> _phoneNumbers;
     private readonly IGenerator<string> _emailAddresses;
     private readonly IGenerator<int> _age;
@@ -65,6 +66,7 @@ public class DefaultDataGenerator : AbstractGenerator<object?>, IDataGenerator
         _surnames = new SurnameGenerator(surnamesList, random);
         _fullNames = new FullNameGenerator(_firstNames, _surnames);
         _ssn = new SsnGenerator(random);
+        _canadaSin = new CanadaSinGenerator(random);
         _phoneNumbers = new PhoneNumberGenerator(random);
         _emailAddresses = new EmailAddressGenerator(_firstNames, _surnames, random);
         _age = new AgeGenerator(random);
@@ -92,6 +94,10 @@ public class DefaultDataGenerator : AbstractGenerator<object?>, IDataGenerator
     public IGenerator<string> Surnames() => _surnames;
     public IGenerator<string> FullNames() => _fullNames;
     public IGenerator<string> Ssn() => _ssn;
+
+    // Not on IDataGenerator, which a caller may implement: adding a member there would break them.
+    public IGenerator<string> CanadaSin() => _canadaSin;
+
     public IGenerator<string> PhoneNumbers() => _phoneNumbers;
     public IGenerator<string> EmailAddresses() => _emailAddresses;
     public IGenerator<int> Age() => _age;

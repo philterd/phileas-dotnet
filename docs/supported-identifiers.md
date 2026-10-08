@@ -11,6 +11,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types â
 | `Age` | `age` | Numeric age expressions (e.g. "42 years old") |
 | `BankRoutingNumber` | `bankRoutingNumber` | US ABA bank routing numbers |
 | `BitcoinAddress` | `bitcoinAddress` | Bitcoin wallet addresses |
+| `CanadaSin` | `canadaSin` | Canadian Social Insurance Numbers (`NNN-NNN-NNN`, Luhn-validated) |
 | `CreditCard` | `creditCard` | Credit and debit card numbers |
 | `Currency` | `currency` | Currency amounts (e.g. "$1,234.56") |
 | `Date` | `date` | Calendar dates in common formats |
@@ -132,6 +133,45 @@ Detects legacy (P2PKH/P2SH) and SegWit Bitcoin wallet addresses.
 ```csharp
 Identifiers = new Identifiers { BitcoinAddress = new BitcoinAddress() }
 ```
+
+---
+
+### Canada SIN
+
+Detects Canadian Social Insurance Numbers: nine digits, unformatted (`046454286`) or in three groups of three (`046 454 286`, `046-454-286`). Spans are reported as `canada-sin`.
+
+```csharp
+Identifiers = new Identifiers { CanadaSin = new CanadaSin() }
+```
+
+Every match must pass the mod-10 Luhn check, so `123 456 789` is not detected. The check digit is part of the number's definition, and the check cannot be turned off. SINs beginning with 9, which are issued to temporary residents, are detected like any other.
+
+#### Separators and boundaries
+
+The separators, boundaries and exclusions are the [SSN](#ssn) identifier's, which lists them in full. Between groups a SIN accepts nothing, one hyphen or hyphen substitute (optionally followed by horizontal whitespace), one horizontal whitespace character, or a hyphen followed by a line break, so a SIN wrapped across two lines is detected. A match may not begin or end inside a run of ASCII letters, digits, or underscores, and non-ASCII digits are not accepted.
+
+#### Leading digits and business numbers
+
+By default a Luhn-valid value with any leading digit is detected. Set `onlyValidPrefixes` to `true` to drop values beginning with 0 or 8: neither is issued as a personal SIN, and 8 is used for Canada Revenue Agency business numbers. This rule rests on secondary sources rather than an official Government of Canada statement, so it is opt-in.
+
+The nine-digit root of a business number also passes the Luhn check, so in the default mode business numbers are detected as SINs. `onlyValidPrefixes` removes those beginning with 8.
+
+#### Overlap with the SSN identifier
+
+A separated SIN (`NNN-NNN-NNN`) never matches the SSN identifier, whose groups are `NNN-NN-NNNN`. An unformatted nine-digit run can match both. When both filters are enabled, the two spans are resolved by the existing [span disambiguation](span-disambiguation.md) and overlap rules, with no SIN-specific rule: the spans have the same length and confidence, so without disambiguation the filter with the higher `priority` wins, and with equal priorities the run is reported as `ssn`. Give `canadaSin` a higher `priority` to report such runs as `canada-sin`.
+
+The JSON key for the filter strategies list is `canadaSinFilterStrategies`:
+
+```json
+"canadaSin": {
+  "onlyValidPrefixes": true,
+  "canadaSinFilterStrategies": [
+    { "strategy": "MASK" }
+  ]
+}
+```
+
+`RANDOM_REPLACE` produces a Luhn-valid SIN written in the detected value's format.
 
 ---
 

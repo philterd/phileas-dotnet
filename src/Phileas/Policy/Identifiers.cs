@@ -95,6 +95,10 @@ public class Identifiers
     [JsonPropertyName("bitcoinAddress")]
     public BitcoinAddress? BitcoinAddress { get; set; }
 
+    /// <summary>Gets or sets the Canadian Social Insurance Number (SIN) filter configuration.</summary>
+    [JsonPropertyName("canadaSin")]
+    public CanadaSin? CanadaSin { get; set; }
+
     /// <summary>Gets or sets the credit card number filter configuration.</summary>
     [JsonPropertyName("creditCard")]
     public CreditCard? CreditCard { get; set; }
@@ -240,6 +244,7 @@ public class Identifiers
             FilterType.Age => Age is { Enabled: true },
             FilterType.BankRoutingNumber => BankRoutingNumber is { Enabled: true },
             FilterType.BitcoinAddress => BitcoinAddress is { Enabled: true },
+            FilterType.CanadaSin => CanadaSin is { Enabled: true },
             FilterType.CreditCard => CreditCard is { Enabled: true },
             FilterType.Currency => Currency is { Enabled: true },
             FilterType.Date => Date is { Enabled: true },

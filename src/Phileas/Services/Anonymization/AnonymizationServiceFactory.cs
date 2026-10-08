@@ -54,6 +54,9 @@ public static class AnonymizationServiceFactory
             FilterType.LocationCounty => WithMethod(
                 (c, r, m) => new CountyAnonymizationService(c, r, m),
                 (c, r, l) => new CountyAnonymizationService(c, r, l)),
+            FilterType.CanadaSin => WithMethod(
+                (c, r, m) => new CanadaSinAnonymizationService(c, r, m),
+                (c, r, l) => new CanadaSinAnonymizationService(c, r, l)),
             FilterType.CreditCard => WithMethod(
                 (c, r, m) => new CreditCardAnonymizationService(c, r, m),
                 (c, r, l) => new CreditCardAnonymizationService(c, r, l)),

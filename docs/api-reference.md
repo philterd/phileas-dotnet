@@ -216,6 +216,7 @@ IList<Span> Span.DropOverlappingSpans(IList<Span> spans);
 | `Age` | `"age"` |
 | `BankRoutingNumber` | `"bank-routing-number"` |
 | `BitcoinAddress` | `"bitcoin-address"` |
+| `CanadaSin` | `"canada-sin"` |
 | `Currency` | `"currency"` |
 | `CreditCard` | `"credit-card"` |
 | `DriversLicenseNumber` | `"drivers-license-number"` |

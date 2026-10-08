@@ -31,6 +31,9 @@ public enum FilterType
     /// <summary>Bitcoin wallet addresses.</summary>
     BitcoinAddress,
 
+    /// <summary>Canadian Social Insurance Numbers (SIN).</summary>
+    CanadaSin,
+
     /// <summary>Currency amounts.</summary>
     Currency,
 
@@ -153,6 +156,7 @@ public static class FilterTypeExtensions
             FilterType.Age => "age",
             FilterType.BankRoutingNumber => "bank-routing-number",
             FilterType.BitcoinAddress => "bitcoin-address",
+            FilterType.CanadaSin => "canada-sin",
             FilterType.Currency => "currency",
             FilterType.CreditCard => "credit-card",
             FilterType.DriversLicenseNumber => "drivers-license-number",

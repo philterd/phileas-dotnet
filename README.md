@@ -34,6 +34,7 @@ Phileas requires no external dependencies (e.g. no ChatGPT/etc.) and is intended
 | `Age`                  | Ages (e.g. *42 years old*)                                                                      |
 | `BankRoutingNumber`    | US bank routing numbers                                                                         |
 | `BitcoinAddress`       | Bitcoin wallet addresses                                                                        |
+| `CanadaSin`            | Canadian Social Insurance Numbers                                                               |
 | `CreditCard`           | Credit / debit card numbers                                                                     |
 | `Currency`             | Currency amounts                                                                                |
 | `Date`                 | Dates in common formats                                                                         |

@@ -315,6 +315,12 @@ public class FilterService : IFilterService
         }
         if (IsEnabled(identifiers.Ssn))
             filters.Add(BuildFilter<SsnFilter, SsnFilterStrategy>(identifiers.Ssn, policy, contextService));
+        if (IsEnabled(identifiers.CanadaSin))
+        {
+            var canadaSinConfig =
+                BuildRegexConfig<CanadaSinFilterStrategy>(identifiers.CanadaSin, policy, contextService);
+            filters.Add(new CanadaSinFilter(canadaSinConfig, identifiers.CanadaSin.OnlyValidPrefixes));
+        }
         if (IsEnabled(identifiers.Ein))
         {
             var einConfig = BuildRegexConfig<EinFilterStrategy>(identifiers.Ein, policy, contextService);
