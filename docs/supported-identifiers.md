@@ -158,7 +158,7 @@ Identifiers = new Identifiers { Age = new Age() }
 
 ### Bank Routing Number
 
-Detects 9-digit ABA routing numbers.
+Detects 9-digit ABA routing numbers. A match must pass the ABA checksum: the digits weighted 3, 7, 1, 3, 7, 1, 3, 7, 1 must sum to a multiple of 10. One nine-digit number in ten passes.
 
 ```csharp
 Identifiers = new Identifiers { BankRoutingNumber = new BankRoutingNumber() }
@@ -534,7 +534,7 @@ Adoption Taxpayer Identification Numbers (ATINs) also begin with 9, and their fo
 
 #### Overlap with other identifiers
 
-The SSN identifier never reports a value beginning with 9, so a value is reported as `itin` or `ssn`, never both. An unformatted value is a bare nine-digit run, which other enabled filters may also match. The existing overlap rules and [span disambiguation](span-disambiguation.md) decide between them. For example, `bankRoutingNumber` matches any nine-digit run at a higher confidence, so with both enabled, and without span disambiguation, an unformatted ITIN is reported as a bank routing number. An unformatted SSN behaves the same way.
+The SSN identifier never reports a value beginning with 9, so a value is reported as `itin` or `ssn`, never both. An unformatted value is a bare nine-digit run, which other enabled filters may also match. The existing overlap rules and [span disambiguation](span-disambiguation.md) decide between them. For example, an unformatted value that also passes the ABA checksum, such as `912701206`, matches `bankRoutingNumber`, which starts at a higher confidence (0.95), so with both enabled, and without span disambiguation, it is reported as a bank routing number. An unformatted SSN behaves the same way.
 
 The JSON key for the filter strategies list is `itinFilterStrategies`:
 

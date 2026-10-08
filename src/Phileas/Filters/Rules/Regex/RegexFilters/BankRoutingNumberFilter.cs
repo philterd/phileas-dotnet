@@ -15,12 +15,14 @@
  */
 
 using Phileas.Model;
+using Phileas.Services.Validators;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Filters.Rules.Regex.RegexFilters;
 
 /// <summary>
-///     Regex-based filter that detects US bank routing (ABA) number entities in plain text.
+///     Regex-based filter that detects US bank routing (ABA) number entities in plain text: nine digits passing
+///     the ABA 3-7-1 checksum.
 /// </summary>
 public class BankRoutingNumberFilter : RegexFilter
 {
@@ -45,6 +47,10 @@ public class BankRoutingNumberFilter : RegexFilter
     {
         var spans = FindSpans(policy, BankRoutingAnalyzer, input, context, piece);
         spans = PostFilter(spans, input);
+
+        // Only a nine-digit run passing the ABA checksum is a routing number, as the Java port checks. Without
+        // it every nine-digit number was claimed at 0.95, ahead of an unformatted SSN, ITIN or SIN.
+        spans = spans.Where(span => AbaValidator.IsValid(span.Text)).ToList();
         spans = Span.DropOverlappingSpans(spans);
         return new Filtered(context, piece, spans);
     }

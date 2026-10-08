@@ -93,4 +93,33 @@ public class BankRoutingNumberFilterTests
         Assert.Contains("REDACTED", result.FilteredText);
         Assert.DoesNotContain("021000021", result.FilteredText);
     }
+
+    [Theory]
+    [InlineData("Routing: 021000022")] // a valid routing number with its last digit changed
+    [InlineData("Routing: 111000026")]
+    [InlineData("Number 123456789")]
+    public void Filter_DoesNotDetectANumberFailingTheAbaChecksum(string input)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    // An unformatted SSN, ITIN or SIN was claimed as a routing number at 0.95 when both filters were enabled.
+    [Theory]
+    [InlineData("\"ssn\": {}", "Number 123456789", FilterType.Ssn)]
+    [InlineData("\"itin\": {}", "Number 912701234", FilterType.Itin)]
+    [InlineData("\"canadaSin\": {}", "Number 271835464", FilterType.CanadaSin)]
+    [InlineData("\"ssn\": {}", "Number 123456706", FilterType.BankRoutingNumber)] // passes the checksum
+    [InlineData("\"itin\": {}", "Number 912701206", FilterType.BankRoutingNumber)] // passes the checksum
+    [InlineData("\"ssn\": {}", "SSN 123456706", FilterType.Ssn)] // boosted to 0.95, a tie that SSN wins on filter order
+    [InlineData("\"canadaSin\": {}", "Number 271800013", FilterType.BankRoutingNumber)] // passes Luhn and the checksum
+    [InlineData("\"canadaSin\": {}", "SIN 271800013", FilterType.CanadaSin)] // boosted to 0.95, a tie the SIN wins
+    [InlineData("\"ssn\": {}", "routing SSN 123456706", FilterType.BankRoutingNumber)] // 1.0 against 0.95
+    public void FilterService_ANineDigitRunGoesToRoutingOnlyWhenItPassesTheChecksum(string other, string input,
+        FilterType expected)
+    {
+        var policy = PolicySerializer.DeserializeFromJson(
+            "{\"identifiers\": {\"bankRoutingNumber\": {}, " + other + "}}");
+        var span = Assert.Single(new FilterService().Filter(policy, "test", 0, input).Spans);
+        Assert.Equal(expected, span.FilterType);
+    }
 }
