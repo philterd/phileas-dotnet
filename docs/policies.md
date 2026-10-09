@@ -18,7 +18,7 @@ public class Policy
 }
 ```
 
-> The canonical policy JSON has **no top-level `name`** — `Name` is an in-memory convenience label and is marked `[JsonIgnore]`. Use [`PolicySerializer`](#serializing-policies) to load and save policies; it applies the canonical options (null fields omitted) and resolves `${ENV_VAR}` / `env:NAME` placeholders.
+> The canonical policy JSON has **no top-level `name`** because `Name` is an in-memory convenience label marked `[JsonIgnore]`. Use [`PolicySerializer`](#serializing-policies) to load and save policies; it applies the canonical options (null fields omitted) and resolves `${ENV_VAR}` / `env:NAME` placeholders.
 
 ### Equivalent JSON
 
@@ -107,7 +107,7 @@ var policy = new Policy
 };
 ```
 
-See [Filter Strategies — CRYPTO_REPLACE](filter-strategies.md#crypto_replace) for usage.
+See [CRYPTO_REPLACE in Filter Strategies](filter-strategies.md#crypto_replace) for usage.
 
 ---
 
@@ -120,7 +120,7 @@ See [Filter Strategies — CRYPTO_REPLACE](filter-strategies.md#crypto_replace) 
 | `Key` | `string?` | `key` | **Hex-encoded** FF3-1 key, or an `env:NAME` reference. |
 | `Tweak` | `string?` | `tweak` | **Hex-encoded** tweak (required by FF3-1; 56- or 64-bit), or an `env:NAME` reference. |
 
-See [Filter Strategies — FPE_ENCRYPT_REPLACE](filter-strategies.md#fpe_encrypt_replace).
+See [FPE_ENCRYPT_REPLACE in Filter Strategies](filter-strategies.md#fpe_encrypt_replace).
 
 ---
 

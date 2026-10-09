@@ -104,7 +104,7 @@ var policy = new Policy
 
 ## Loading a Policy from JSON
 
-Policies can be serialised as JSON and deserialised at runtime. Use `PolicySerializer` rather than `System.Text.Json` directly — it applies the canonical serialization options (null omission) and resolves `${ENV_VAR}` placeholders against environment variables:
+Policies can be serialised as JSON and deserialised at runtime. Use `PolicySerializer` rather than `System.Text.Json` directly, because it applies the canonical serialization options (null omission) and resolves `${ENV_VAR}` placeholders against environment variables:
 
 ```csharp
 using Phileas.Policy;
@@ -124,7 +124,7 @@ var policy = PolicySerializer.DeserializeFromJson(json);
 string serialized = PolicySerializer.SerializeToJson(policy);
 ```
 
-> The canonical policy JSON has no top-level `name` field — the policy `Name` is an in-memory label only and is not serialized. Policies can also be authored in PhiSQL and compiled with `Policy.FromPhiSQL(phisql)`.
+> The canonical policy JSON has no top-level `name` field, because the policy `Name` is an in-memory label that is not serialized. Policies can also be authored in PhiSQL and compiled with `Policy.FromPhiSQL(phisql)`.
 
 ## Using Conditional Strategies
 
@@ -177,8 +177,8 @@ dotnet test tests/Phileas.Tests/Phileas.Tests.csproj
 
 ## Next Steps
 
-- [Policies](policies.md) — configure policy options such as window size and ignored values
-- [Supported Identifiers](supported-identifiers.md) — full list of built-in PII types
-- [Filter Strategies](filter-strategies.md) — choose how PII is replaced
-- [Filter Conditions](filter-conditions.md) — apply strategies conditionally
-- [Context Service](context-service.md) — keep random replacements consistent across calls
+- [Policies](policies.md) shows how to configure policy options such as window size and ignored values
+- [Supported Identifiers](supported-identifiers.md) lists every built-in PII type
+- [Filter Strategies](filter-strategies.md) covers choosing how PII is replaced
+- [Filter Conditions](filter-conditions.md) covers applying strategies conditionally
+- [Context Service](context-service.md) covers keeping random replacements consistent across calls

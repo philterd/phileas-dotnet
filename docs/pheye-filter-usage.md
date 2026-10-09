@@ -140,7 +140,7 @@ GLiNER has a fixed sub-token limit (`max_len` in `gliner_config.json`, `384` for
 path enforces it directly so long text is never silently truncated: before inference the words are split into
 **token-aware chunks** that each stay within `max_len`, every chunk is run, and detections are mapped back to
 absolute character offsets in the original document. This is independent of, and in addition to, any policy-level
-`Services/Split` character chunking — even a single un-split piece is kept safe.
+`Services/Split` character chunking, so even a single un-split piece is kept within `max_len`.
 
 - Consecutive chunks overlap by `max_width - 1` words (the widest span GLiNER can emit), so an entity that lands on
   a chunk boundary is still wholly contained in one chunk and detected; the duplicate a span picks up from the

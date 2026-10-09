@@ -4,7 +4,7 @@
 
 When the `RANDOM_REPLACE` filter strategy is used, Phileas replaces detected PII with a realistic, type-appropriate fake value. By default (`replacementScope = "DOCUMENT"`), each occurrence is anonymized independently, so the **same PII token appearing multiple times** can map to **different** fake values.
 
-When you need referential integrity — the same input value always mapping to the same fake value — set `replacementScope = "CONTEXT"` on the strategy. In that mode the **Context Service** maintains a mapping of PII tokens to their replacement values within a named *context*: if the same token is encountered again inside the same context, the previously-generated replacement is reused.
+When you need referential integrity, meaning the same input value always maps to the same fake value, set `replacementScope = "CONTEXT"` on the strategy. In that mode the **Context Service** maintains a mapping of PII tokens to their replacement values within a named *context*: if the same token is encountered again inside the same context, the previously-generated replacement is reused.
 
 > **In short:** the Context Service only affects `RANDOM_REPLACE` strategies whose `replacementScope` is `"CONTEXT"`. With the default `"DOCUMENT"` scope the context service is not consulted.
 
@@ -87,7 +87,7 @@ var result = new FilterService().Filter(
 ### Using RANDOM_REPLACE directly on a filter strategy
 
 This uses the **runtime** strategy types (in `Phileas.Filters.*`), which carry the `ContextService`. The
-policy-level strategy types (in `Phileas.Policy.Filters.Strategies`) do not — `FilterService` wires the
+policy-level strategy types (in `Phileas.Policy.Filters.Strategies`) do not carry it, so `FilterService` wires the
 context service onto the runtime strategies for you.
 
 ```csharp

@@ -4,21 +4,21 @@ phileas-dotnet can redact PII directly in **PDF documents**. It detects sensitiv
 policies and filters used for text, then produces a redacted document in which every page is rendered to an
 image with redaction rectangles burned in.
 
-> **No recoverable text.** Because each page is rasterized, the redacted output has **no text layer at all** —
-> none of the original text (PII or otherwise) can be extracted, copied, or searched from it. This is the core
+> **No recoverable text.** Because each page is rasterized, the redacted output has **no text layer at all**,
+> so none of the original text (PII or otherwise) can be extracted, copied, or searched from it. This is the core
 > security property of PDF redaction.
 
 ## How it works
 
-1. **Extract** — text is extracted line-by-line from the PDF, keeping the position (bounding box) of every
-   character. This step is **pluggable** (see [Custom text extraction](#custom-text-extraction-itextextractor)):
-   by default the PDF text layer is read, but any `ITextExtractor` — for example one backed by OCR for scanned
-   pages — can supply the lines.
-2. **Detect** — each line is run through the normal [filter pipeline](supported-identifiers.md), producing
+1. **Extract** reads the text line by line from the PDF, keeping the position (bounding box) of every
+   character. This step is **pluggable** (see [Custom text extraction](#custom-text-extraction-itextextractor)),
+   so although the PDF text layer is read by default, any `ITextExtractor`, such as one backed by OCR for
+   scanned pages, can supply the lines.
+2. **Detect** runs each line through the normal [filter pipeline](supported-identifiers.md), producing
    spans. Each detected span is tagged with its page number and bounding box.
-3. **Redact** — every page is rendered to a raster image at the configured DPI, a filled rectangle (and,
-   optionally, replacement text) is drawn over each detected span and each [graphical bounding
-   box](#graphical-bounding-boxes), and the pages are reassembled into the requested output format.
+3. **Redact** renders every page to a raster image at the configured DPI, draws a filled rectangle (and,
+   optionally, replacement text) over each detected span and each [graphical bounding
+   box](#graphical-bounding-boxes), and reassembles the pages into the requested output format.
 
 ## Quick start
 
@@ -84,7 +84,7 @@ public byte[] Apply(Policy policy, byte[] input, IList<Span> spans, MimeType out
 ```
 
 Redacts `input` using a pre-computed set of spans (which must already carry their page number and
-coordinates — for example, the spans returned by a prior `Filter` call). Returns the redacted bytes.
+coordinates, such as the spans returned by a prior `Filter` call). Returns the redacted bytes.
 
 ## Output formats
 
@@ -118,7 +118,7 @@ public class BinaryDocumentFilterResult
 
 By default `PdfFilterService` reads the PDF's **text layer** (via `PdfTextExtractor`, backed by PdfPig).
 The extraction step is pluggable: `PdfFilterService` accepts any `ITextExtractor`, so positioned lines can
-come from **any source** — most notably **OCR of scanned pages**, which have no text layer to read.
+come from **any source**, most notably **OCR of scanned pages**, which have no text layer to read.
 
 ```csharp
 public PdfFilterService(FilterService? filterService = null, ITextExtractor? textExtractor = null)
@@ -169,7 +169,7 @@ example, Philter Desktop uses the operating system's on-device OCR to read scann
 
 ## Configuration
 
-PDF rendering is controlled by `Config.Pdf` on the policy (see [Policies — Config](policies.md#config)).
+PDF rendering is controlled by `Config.Pdf` on the policy (see the [Config section of Policies](policies.md#config)).
 
 ```csharp
 var policy = new Policy
@@ -223,7 +223,7 @@ box extractable. The Java port behaves the same way.
 
 ## Graphical bounding boxes
 
-In addition to detected PII, you can redact **fixed rectangular regions** regardless of content — useful for
+In addition to detected PII, you can redact **fixed rectangular regions** regardless of content, which is useful for
 signatures, logos, or known sensitive areas. These are defined on `policy.Graphical.BoundingBoxes`:
 
 ```csharp
@@ -272,6 +272,6 @@ fixed region rather than matching text.
 
 ## See Also
 
-- [Supported Identifiers](supported-identifiers.md) — the PII types detected in the PDF text
-- [Filter Strategies](filter-strategies.md) — how detected PII is replaced
-- [Policies](policies.md) — the `Config.Pdf` and `Graphical` options
+- [Supported Identifiers](supported-identifiers.md) lists the PII types detected in the PDF text
+- [Filter Strategies](filter-strategies.md) explains how detected PII is replaced
+- [Policies](policies.md) covers the `Config.Pdf` and `Graphical` options

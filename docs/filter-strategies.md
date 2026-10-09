@@ -40,8 +40,8 @@ Every other filter type still falls back to `REDACT`.
 
 Replaces the token with a formatted label. The `redactionFormat` string may contain:
 
-- `%t` — replaced with the filter type name (e.g. `ssn`, `email-address`)
-- `%l` — replaced with the token's classification label (if any)
+- `%t` is replaced with the filter type name (e.g. `ssn`, `email-address`)
+- `%l` is replaced with the token's classification label, if any
 
 **Default format:** `{{{REDACTED-%t}}}`
 
@@ -70,7 +70,7 @@ new SsnFilterStrategy
 }
 ```
 
-**Replacement scope** — `replacementScope` controls whether a token's replacement is reused:
+The `replacementScope` property controls whether a token's replacement is reused:
 
 | `replacementScope` | Behaviour |
 |---|---|
@@ -85,7 +85,7 @@ new SsnFilterStrategy
 }
 ```
 
-**Choosing the fake values** — by default RANDOM_REPLACE generates realistic values. You can override this:
+By default RANDOM_REPLACE generates realistic values, and you can choose the fake values yourself with these properties:
 
 | Property | JSON key | Description |
 |---|---|---|

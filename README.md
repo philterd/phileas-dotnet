@@ -1,6 +1,6 @@
 # Phileas (.NET)
 
-A .NET port of [Phileas (Java)](https://github.com/philterd/phileas) — a library to deidentify and redact PII, PHI, and
+A .NET port of [Phileas (Java)](https://github.com/philterd/phileas), a library to deidentify and redact PII, PHI, and
 other sensitive information from text.
 
 > **Parity note:** This implementation is close to parity with the Java Phileas reference implementation, but it may
@@ -231,7 +231,7 @@ foreach (var span in result.Spans)
 ## Authoring Policies with PhiSQL
 
 Policies don't have to be written as C# objects or JSON. Phileas (.NET) is built on
-[**PhiSQL**](https://github.com/philterd/phisql) — a declarative, SQL-like language for PII redaction and
+[**PhiSQL**](https://github.com/philterd/phisql), a declarative, SQL-like language for PII redaction and
 discovery that compiles to the canonical Phileas JSON policy. PhiSQL is embedded directly in the library
 (the `Philterd.PhiSql` compiler and policy schema), so it is used in two ways:
 

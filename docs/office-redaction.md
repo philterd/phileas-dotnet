@@ -5,7 +5,7 @@ detects sensitive values using the same policies and filters used for text, then
 package in place so the redacted output keeps its structure and formatting.
 
 Redaction is performed with the open-source [Open XML SDK](https://github.com/dotnet/Open-XML-SDK)
-(`DocumentFormat.OpenXml`) — no commercial dependency or license key — and the services are cross-platform
+(`DocumentFormat.OpenXml`), which needs no commercial dependency or license key, and the services are cross-platform
 (they run on Linux, macOS, and Windows).
 
 > **Port-specific format support.** Word and Excel container-format redaction is available in the **.NET port
@@ -19,21 +19,21 @@ Redaction is performed with the open-source [Open XML SDK](https://github.com/do
 Unlike PDF redaction (which rasterizes each page to an image), Office redaction edits the document's XML in
 place, so the output remains a fully editable `.docx`/`.xlsx`:
 
-1. **Enumerate** — the document is walked in a stable, canonical order: for Word, each body paragraph (then
-   headers/footers, footnotes, endnotes, and comments); for Excel, each cell (workbook sheet order, then rows,
+1. **Enumerate** walks the document in a stable, canonical order, which for Word is each body paragraph (then
+   headers/footers, footnotes, endnotes, and comments) and for Excel is each cell (workbook sheet order, then rows,
    then cells). This order defines the paragraph/cell index used to re-apply spans.
-2. **Detect** — each unit of text is run through the normal [filter pipeline](supported-identifiers.md),
+2. **Detect** runs each unit of text through the normal [filter pipeline](supported-identifiers.md),
    producing spans.
-3. **Rewrite** — when a paragraph or cell changed, it is rebuilt from the filtered text (Word preserves the
+3. **Rewrite** rebuilds each changed paragraph or cell from the filtered text (Word preserves the
    surrounding run/drawing structure; Excel writes the cell back as an inline string). Additional passes cover
    text that is not a body paragraph/cell (see [What gets redacted](#what-gets-redacted)).
 
 Because the filter is supplied as a delegate, detection uses whatever policy, context, and identifiers you
-configure — identical to text and PDF filtering.
+configure, exactly as text and PDF filtering do.
 
 ## Quick start
 
-The redactors take a **filter delegate** — `Func<string, TextFilterResult>` — that you build from a
+The redactors take a `Func<string, TextFilterResult>` **filter delegate** that you build from a
 [`FilterService`](getting-started.md) and your policy. The same delegate shape works for Word and Excel.
 
 ### Word (`.docx`)
@@ -91,7 +91,7 @@ byte[] input = /* the uploaded .docx bytes */;
 (byte[] redacted, List<OfficeRedactionSpan> spans) = XlsxRedactor.Redact(xlsxBytes, filter);
 ```
 
-The file-path overloads simply read the input, call the `byte[]` core, and write the result — so both paths
+The file-path overloads simply read the input, call the `byte[]` core, and write the result, so both paths
 produce identical output.
 
 ## `WordDocumentRedactor`
@@ -133,7 +133,7 @@ output document.
 | `ReadColumns(inputPath, sheetName = null)` | The columns of a worksheet (letter + header) for a "redact entire column" picker. Returns `SpreadsheetColumn`. |
 
 **Redact-entire-column.** Pass 1-based column indices in `fullyRedactedColumns` to clear every data cell in
-those columns outright (the header row is preserved), regardless of whether a detector matches — useful for a
+those columns outright (the header row is preserved), regardless of whether a detector matches, which is useful for a
 column of names the model may not flag in isolation. Cleared cells are replaced with
 `XlsxRedactor.ColumnReplacement` and classified `XlsxRedactor.ColumnClassification`.
 
@@ -142,7 +142,7 @@ redact the whole workbook.
 
 ## `OfficeRedactionSpan`
 
-Both redactors return, and `ApplySpans` consumes, a list of `OfficeRedactionSpan` — a persistence-free record
+Both redactors return, and `ApplySpans` consumes, a list of `OfficeRedactionSpan`, a persistence-free record
 of each redaction (the Office analog of `Span` on the PDF path). A consuming application maps it to its own
 storage type; the library never persists it.
 
@@ -164,7 +164,7 @@ public sealed class OfficeRedactionSpan
 }
 ```
 
-A `ParagraphIndex` of `-1` marks content that is **not** a body paragraph or cell — a drawing/chart label, a
+A `ParagraphIndex` of `-1` marks content that is **not** a body paragraph or cell, such as a drawing/chart label, a
 comment, a header/footer, a hyperlink target, a field instruction, a tracked deletion, a pivot-cache value, or
 an embedded object. Such spans are reported (so they appear in a redaction report) but are re-applied by the
 policy filter rather than by position.
@@ -180,31 +180,31 @@ does not survive in a part the eye never sees.
 - Headers and footers *(toggle: `redactHeadersFooters`)*
 - Footnotes, endnotes, and comments (including modern threaded comments)
 - Shape, text-box, and SmartArt text (DrawingML)
-- Charts — title/axis/label text and cached series/category values *(toggle: `redactCharts`)*
+- Chart titles, axis and label text, and cached series/category values *(toggle: `redactCharts`)*
 - Hyperlink URL **targets** (the address behind a link, not just its visible text). A redacted target is
   replaced with `https://redacted.invalid/`, which is not reported again when the output is detected or redacted.
 - Field instructions (`HYPERLINK`, `INCLUDETEXT`, mail-merge sources)
-- Tracked **deletions** (`w:delText`) — text recoverable via "Reject Changes"
+- Tracked **deletions** (`w:delText`), whose text is recoverable via "Reject Changes"
 - Embedded Word/Excel objects (redacted in place); opaque OLE objects are removed or kept-and-flagged *(toggle: `removeEmbeddedObjects`)*
 
 **Excel (`.xlsx`):**
 
 - Text and number/date cells (a bare number can be an SSN, phone, or account number)
-- The shared-string table — orphaned entries left by redacted cells are blanked so the original can't be
+- The shared-string table, whose orphaned entries left by redacted cells are blanked so the original can't be
   recovered from `xl/sharedStrings.xml`
 - Print headers/footers *(toggle: `redactHeadersFooters`)*
 - Cell comments (legacy and threaded) and threaded-comment author names
 - Worksheet shapes and text boxes
-- Charts — label text and cached plotted values, plus each chart's embedded source workbook *(toggle: `redactCharts`)*
+- Chart label text and cached plotted values, plus each chart's embedded source workbook *(toggle: `redactCharts`)*
 - Cached formula results, which can duplicate a now-redacted value; the caches are cleared and the workbook is
   set to recalculate on open *(toggle: `redactFormulaValues`)*
-- Pivot caches — a denormalized copy of the source data *(toggle: `redactPivotCaches`)*
+- Pivot caches, which hold a denormalized copy of the source data *(toggle: `redactPivotCaches`)*
 - Embedded objects *(toggle: `removeUninspectableEmbeddedObjects`)*
 
 ## Notes and limitations
 
-- **Editable output.** Unlike PDF redaction, the output stays a real, editable `.docx`/`.xlsx` — the redacted
-  text is replaced in the XML, not painted over. There is no image rasterization step.
+- **Editable output.** Unlike PDF redaction, the output stays a real, editable `.docx`/`.xlsx` because the redacted
+  text is replaced in the XML rather than painted over. There is no image rasterization step.
 - **Changed paragraphs are flattened.** When a Word paragraph is rewritten, its inline run formatting is
   flattened (and hyperlinks/fields in it collapse to plain text), since the visible text is what is redacted.
   Line breaks, page and column breaks, carriage returns and tabs are kept, with their type; one inside a
@@ -218,12 +218,12 @@ does not survive in a part the eye never sees.
 - **Opaque embedded objects.** An embedded object that isn't a Word/Excel document (for example a legacy OLE
   object) can't be inspected. With the removal option on it is deleted; otherwise it is kept and flagged so the
   caller can warn that its content was not redacted.
-- **Formats.** These services handle the Open XML formats (`.docx`, `.xlsx`) only — not the legacy binary
+- **Formats.** These services handle the Open XML formats (`.docx`, `.xlsx`), not the legacy binary
   `.doc`/`.xls` formats.
 
 ## Cross-port parity
 
-Phileas maintains strict parity across its Java, Python, and .NET ports for **redaction semantics** — the set
+Phileas maintains strict parity across its Java, Python, and .NET ports for **redaction semantics**, meaning the set
 of identifiers, how confidence and disambiguation work, and how each strategy replaces a detected value.
 **Container-format support** is deliberately a separate axis:
 
@@ -239,7 +239,7 @@ to those ports (via Apache POI / openpyxl) is a separate decision.
 
 ## See Also
 
-- [Supported Identifiers](supported-identifiers.md) — the PII types detected in the document text
-- [Filter Strategies](filter-strategies.md) — how detected PII is replaced
-- [Policies](policies.md) — configuring what to detect
-- [PDF Redaction](pdf-redaction.md) — redacting PII in PDF documents
+- [Supported Identifiers](supported-identifiers.md) lists the PII types detected in the document text
+- [Filter Strategies](filter-strategies.md) explains how detected PII is replaced
+- [Policies](policies.md) covers configuring what to detect
+- [PDF Redaction](pdf-redaction.md) covers redacting PII in PDF documents

@@ -1,6 +1,6 @@
 # Supported Identifiers
 
-phileas-dotnet ships with a comprehensive set of built-in PII identifier types — pattern-based detectors, dictionary-backed name/location detectors, configurable custom dictionaries, custom regex identifiers, section detectors, and an AI-powered **PhEye** filter. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
+phileas-dotnet ships with a comprehensive set of built-in PII identifier types, including pattern-based detectors, dictionary-backed name/location detectors, configurable custom dictionaries, custom regex identifiers, section detectors, and an AI-powered **PhEye** filter. Each type is enabled by setting the corresponding property on the `Identifiers` object inside a `Policy`.
 
 ## Quick Reference
 

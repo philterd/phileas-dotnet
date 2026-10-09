@@ -1,8 +1,8 @@
 # REST Service
 
 `Phileas.Rest` is a cross-platform REST service that wraps the phileas-dotnet library so PII detection and
-redaction can be consumed over HTTP. It is a lean, redaction-only service — a "lite Philter" with no UI or
-ledger — that redacts **plain text, Word (`.docx`), Excel (`.xlsx`), and PDF** documents, with policy and
+redaction can be consumed over HTTP. It is a lean, redaction-only service (a "lite Philter" with no UI or
+ledger) that redacts **plain text, Word (`.docx`), Excel (`.xlsx`), and PDF** documents, with policy and
 context management backed by MongoDB and a Valkey cache.
 
 It is a single detection engine: every document type is redacted in-process by phileas-dotnet, so referential
@@ -124,7 +124,7 @@ Policies are stored in MongoDB as canonical Phileas policy JSON, keyed by name. 
 | ------------- | ------- |
 | `GET /policies` | List policy names |
 | `GET /policies/{name}` | Get a policy's JSON |
-| `PUT /policies/{name}` | Create or replace a policy (body: `{"json": "<policy json>"}`) — the body is validated |
+| `PUT /policies/{name}` | Create or replace a policy from a validated `{"json": "<policy json>"}` body |
 | `DELETE /policies/{name}` | Delete a policy |
 
 ```bash
@@ -152,7 +152,7 @@ mapping is persisted in MongoDB and cached in Valkey. See [Context Service](cont
 ## Excel header context
 
 For `.xlsx` files, each cell is normally detected in isolation. Enabling **header context** prepends a
-column's header (first-row) text to each data cell before detection — so, for example, an `SSN` column header
+column's header (first-row) text to each data cell before detection, so an `SSN` column header, for example,
 helps the detector flag a bare number in the cells below it. The detected spans are mapped back onto the
 cell's own text, so only the cell (never the header) is redacted.
 
@@ -166,7 +166,7 @@ redacted. Set `Ocr:Mode` to enable Tesseract OCR:
 
 | `Ocr:Mode` | Behavior |
 | ---------- | -------- |
-| `Off` | No OCR — text layer only (default in code) |
+| `Off` | Reads the text layer only, without OCR (default in code) |
 | `Fallback` | Text layer, and OCR only the pages that have no extractable text (recommended) |
 | `Always` | OCR every page, ignoring any text layer |
 
@@ -183,7 +183,7 @@ Settings are bound from the `Phileas` configuration section (`appsettings.json`)
 | `MongoDatabase` | `Phileas__MongoDatabase` | `phileas` |
 | `ValkeyConnectionString` | `Phileas__ValkeyConnectionString` | `localhost:6379` (empty ⇒ cache-less) |
 | `ContextCacheTtlSeconds` | `Phileas__ContextCacheTtlSeconds` | `3600` |
-| `PhEyeModelPath` | `Phileas__PhEyeModelPath` | *(empty)* — path to the local GLiNER model directory |
+| `PhEyeModelPath` | `Phileas__PhEyeModelPath` | Path to the local GLiNER model directory (empty by default) |
 | `Ocr:Mode` | `Phileas__Ocr__Mode` | `Off` (`Off` \| `Fallback` \| `Always`) |
 | `Ocr:Language` | `Phileas__Ocr__Language` | `eng` |
 | `Ocr:TessDataPath` | `Phileas__Ocr__TessDataPath` | `/usr/share/tesseract-ocr/5/tessdata` |
@@ -195,9 +195,9 @@ authored policies stay portable. The GLiNER model is loaded once at startup and 
 
 ## Philter compatibility
 
-The service also exposes a Philter-compatible API so it can be used as a redaction engine by Philter clients —
-notably [philter-router](https://github.com/philterd/philter-router) via
-[philter-sdk-java](https://github.com/philterd/philter-sdk-java) — without changes:
+The service also exposes a Philter-compatible API so it can be used as a redaction engine by Philter clients, such as
+[philter-router](https://github.com/philterd/philter-router) via
+[philter-sdk-java](https://github.com/philterd/philter-sdk-java), without changes:
 
 | Method & path | Purpose |
 | ------------- | ------- |
@@ -205,7 +205,7 @@ notably [philter-router](https://github.com/philterd/philter-router) via
 | `GET /api/health` | Philter `StatusResponse` for liveness checks. Returns `"status": "UP"` with `200`, or `"DOWN"` with `503`. |
 
 The SDK sends the raw document as the request body and always sets `Content-Type: application/pdf` for files,
-conveying the real type through the `filename` query parameter — so `/api/filter` determines the document type
+conveying the real type through the `filename` query parameter, so `/api/filter` determines the document type
 from the **filename extension** (`.txt`, `.docx`, `.xlsx`, `.pdf`), and treats a request with no `filename` as
 plain text. The redacted document is returned in the body with the assigned id in the `x-document-id` header.
 `async` is accepted for wire compatibility but the service always filters synchronously.
@@ -225,19 +225,19 @@ engines:
 
 | Method & path | Purpose |
 | ------------- | ------- |
-| `GET /health` | Liveness/readiness — pings MongoDB and Valkey; `503` if either is unreachable |
+| `GET /health` | Liveness/readiness check that pings MongoDB and Valkey and returns `503` if either is unreachable |
 | `GET /api/health` | Philter-compatible liveness (see [Philter compatibility](#philter-compatibility)) |
 | `GET /swagger` | OpenAPI UI |
 
 ## Security
 
-The service ships with **no authentication** by design. Run it network-isolated — on a private network or
-behind an authenticating gateway — and do not expose it directly to untrusted networks.
+The service ships with **no authentication** by design. Run it network-isolated (on a private network or
+behind an authenticating gateway), and do not expose it directly to untrusted networks.
 
 ## Next Steps
 
-- [Policies](policies.md) — the policy format used by `PUT /policies`
-- [Supported Identifiers](supported-identifiers.md) — the PII types a policy can detect
-- [PhEye Filter Usage](pheye-filter-usage.md) — AI entity detection (local GLiNER or remote PhEye)
-- [Context Service](context-service.md) — how referential integrity works
-- [PDF Redaction](pdf-redaction.md) and [Word & Excel Redaction](office-redaction.md) — the document redactors behind the API
+- [Policies](policies.md) describes the policy format used by `PUT /policies`
+- [Supported Identifiers](supported-identifiers.md) lists the PII types a policy can detect
+- [PhEye Filter Usage](pheye-filter-usage.md) covers AI entity detection (local GLiNER or remote PhEye)
+- [Context Service](context-service.md) explains how referential integrity works
+- [PDF Redaction](pdf-redaction.md) and [Word & Excel Redaction](office-redaction.md) cover the document redactors behind the API

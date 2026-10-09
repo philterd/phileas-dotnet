@@ -8,8 +8,8 @@ Span disambiguation is **disabled by default**.
 
 ## How It Works
 
-1. **Training** — when only one filter claims a span (it is unambiguous), the words in its context window are hashed (MurmurHash3) into a vector accumulated under that filter type, within the span's context.
-2. **Resolution** — when several filters claim the same location, the ambiguous span's context window is hashed and compared, by cosine similarity, against each candidate type's accumulated vector. The highest-scoring type wins; ties and cold starts fall back to the first candidate deterministically.
+1. During **training**, when only one filter claims a span (it is unambiguous), the words in its context window are hashed (MurmurHash3) into a vector accumulated under that filter type, within the span's context.
+2. During **resolution**, when several filters claim the same location, the ambiguous span's context window is hashed and compared, by cosine similarity, against each candidate type's accumulated vector. The highest-scoring type wins; ties and cold starts fall back to the first candidate deterministically.
 
 Disambiguation runs inside the pipeline **before** overlapping spans are dropped, so the winning type survives overlap resolution.
 
@@ -67,7 +67,7 @@ neither consult the store nor add to it.
 | Property | Default | Description |
 |---|---|---|
 | `Enabled` | `false` | Master switch. When `false`, the factory returns a no-op service that leaves spans untouched. |
-| `VectorSize` | `512` | Size of the hash table backing each vector. **Immutable for a trained store** — it factors into the hash, so changing it invalidates persisted vectors. |
+| `VectorSize` | `512` | Size of the hash table backing each vector, which is **immutable for a trained store** because changing it changes the hash and invalidates persisted vectors. |
 | `IgnoreStopWords` | `true` | Exclude common words from the context vectors. |
 | `HashAlgorithm` | `"murmur3"` | Token hashing algorithm. `"murmur3"` (recommended) hashes UTF-8 bytes deterministically; any other value uses a deterministic string-hash fallback. |
 | `StopWords` | (≈545 English words) | Comma-separated stop-word list used when `IgnoreStopWords` is `true`. |
@@ -91,5 +91,5 @@ The file records the vector size and hash algorithm it was built with. A store l
 
 ## See Also
 
-- [Supported Identifiers](supported-identifiers.md) — the filters whose detections can compete
-- [API Reference](api-reference.md) — `FilterService` constructors
+- [Supported Identifiers](supported-identifiers.md) lists the filters whose detections can compete
+- [API Reference](api-reference.md) documents the `FilterService` constructors

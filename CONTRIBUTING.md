@@ -16,13 +16,13 @@ We take contributions as GitHub pull requests:
 1. Create a fork of [philterd/phileas-dotnet](https://www.github.com/philterd/phileas-dotnet).
 2. Create a feature branch.
 3. Build and test your local changes (see below).
-4. Commit your changes (include the Apache 2.0 license header on any new source files — see existing files).
+4. Commit your changes, including the Apache 2.0 license header (copied from an existing file) on any new source files.
 5. Open a pull request and participate in code review.
 
 ## Prerequisites
 
 * The **.NET 10 SDK** (the repo targets `net10.0`; see `global.json`).
-* The **`phisql` repository checked out as a sibling directory** (see below) — this is required to build.
+* The **`phisql` repository checked out as a sibling directory** (see below), which is required to build.
 * *(Optional)* **Docker**, if you would rather build without installing the .NET SDK.
 
 ### The `phisql` sibling repository
@@ -42,7 +42,7 @@ git clone https://github.com/philterd/phisql
 #   └── phisql/        <- sibling, so the ProjectReference resolves
 ```
 
-The CI workflow (`.github/workflows/build.yml`) does the same thing — it checks out `philterd/phisql` as a
+The CI workflow (`.github/workflows/build.yml`) does the same thing by checking out `philterd/phisql` as a
 sibling before building.
 
 ## Building and Testing
@@ -71,7 +71,7 @@ It mounts the parent directory of both repos so the `phisql` sibling reference r
 PDF redaction rasterizes pages using PDFium (via PDFtoImage) and SkiaSharp, which include native binaries. On
 Linux you may need the appropriate `SkiaSharp.NativeAssets.Linux*` package for your environment; the test
 project already references it. The PDFium native library is **not** thread-safe, so the PDF tests run in a
-non-parallel xUnit collection — keep new PDF tests in that `[Collection("Pdf")]` collection.
+non-parallel xUnit collection, and new PDF tests belong in that `[Collection("Pdf")]` collection.
 
 ## Coding Guidelines
 
