@@ -10,6 +10,7 @@ other sensitive information from text.
 
 * Check out the [documentation](https://philterd.github.io/phileas-dotnet/) or details and code examples.
 * Built by [Philterd](https://www.philterd.ai).
+* Users and developers are welcome to [join the Philterd Slack workspace](https://philterd.ai/slack/) to ask questions and share feedback.
 * Commercial support and consulting is available - [contact us](https://www.philterd.ai).
 
 ## Overview
