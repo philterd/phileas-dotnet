@@ -77,6 +77,7 @@ public class SchemaValidationTests
     [InlineData("26-filter-options.json")]
     [InlineData("27-strategy-params.json")]
     [InlineData("28-nested-options.json")]
+    [InlineData("phone-leniency.json")]
     public void TheSpecExamplesStillValidateAfterARoundTrip(string file)
     {
         // Vendored copies of the PhiSQL specification's own examples. They validate as written; the

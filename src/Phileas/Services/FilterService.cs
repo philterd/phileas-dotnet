@@ -315,7 +315,8 @@ public class FilterService : IFilterService
         {
             var phoneConfig =
                 BuildRegexConfig<PhoneNumberFilterStrategy>(identifiers.PhoneNumber, policy, contextService);
-            filters.Add(new PhoneNumberFilter(phoneConfig, identifiers.PhoneNumber.GetRegionOrDefault()));
+            filters.Add(new PhoneNumberFilter(phoneConfig, identifiers.PhoneNumber.GetRegionOrDefault(),
+                identifiers.PhoneNumber.GetLeniencyOrDefault()));
         }
         if (IsEnabled(identifiers.Ssn))
             filters.Add(BuildFilter<SsnFilter, SsnFilterStrategy>(identifiers.Ssn, policy, contextService));

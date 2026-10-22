@@ -22,6 +22,7 @@ using Phileas.Policy;
 using Phileas.Policy.Filters;
 using Phileas.Services;
 using Xunit;
+using Leniency = PhoneNumbers.PhoneNumberUtil.Leniency;
 using PhileasPolicy = Phileas.Policy.Policy;
 
 namespace Phileas.Tests;
@@ -307,5 +308,58 @@ public class PhoneNumberFilterTests
 
         Assert.Equal("020 7946 0958", Assert.Single(withRegion.Spans).Text);
         Assert.Equal("020 7946", Assert.Single(withDefault.Spans).Text);
+    }
+
+    // #180: the leniency each scan uses. A row lists the input and whether each of POSSIBLE, VALID,
+    // STRICT_GROUPING and EXACT_GROUPING finds it, so every step between levels is covered.
+    [Theory]
+    [InlineData("Call 202 555 0182 now", true, true, true, true)]
+    [InlineData("Call 202-5550182 now", true, true, true, false)]
+    [InlineData("Call 202 55 50182 now", true, true, false, false)]
+    [InlineData("Call 112-997-5633 now", true, false, false, false)] // no area code begins with 1
+    public void Filter_MatchesAtTheConfiguredLeniency(string input, params bool[] foundAt)
+    {
+        var leniencies = new[]
+        {
+            Leniency.POSSIBLE, Leniency.VALID,
+            Leniency.STRICT_GROUPING, Leniency.EXACT_GROUPING
+        };
+
+        for (var i = 0; i < leniencies.Length; i++)
+        {
+            var filter = new PhoneNumberFilter(CreateConfiguration(), null, leniencies[i]);
+            var result = filter.Filter(CreatePolicy(), "test", 0, input);
+            Assert.True(foundAt[i] == (result.Spans.Count == 1), $"{leniencies[i]} on \"{input}\"");
+        }
+    }
+
+    [Fact]
+    public void FilterService_UsesTheLeniencyFromThePolicy()
+    {
+        // The example from #180: under GB and DE, "2026" is a possible number, and VALID drops it.
+        const string input = "Calendar: Oct 9, 2026. Call +1 202-555-0182.";
+        var policy = CreatePolicy("US", "GB", "DE");
+
+        var possible = new FilterService().Filter(policy, "ctx", 0, input);
+        policy.Identifiers.PhoneNumber!.Leniency = "VALID";
+        var valid = new FilterService().Filter(policy, "ctx", 0, input);
+
+        Assert.Equal(new[] { "2026", "+1 202-555-0182" }, possible.Spans.Select(span => span.Text));
+        Assert.Equal("+1 202-555-0182", Assert.Single(valid.Spans).Text);
+    }
+
+    [Theory]
+    [InlineData("valid")]
+    [InlineData("1")]
+    [InlineData("LENIENT")]
+    public void FilterService_RejectsAnUnknownLeniency(string leniency)
+    {
+        // Reached only by a policy built in code or loaded with validate: false; schema validation rejects it first.
+        var policy = CreatePolicy();
+        policy.Identifiers.PhoneNumber!.Leniency = leniency;
+
+        var e = Assert.Throws<PolicyValidationException>(() =>
+            new FilterService().Filter(policy, "ctx", 0, "Call 202-555-0182"));
+        Assert.Contains("/identifiers/phoneNumber/leniency", e.Message);
     }
 }

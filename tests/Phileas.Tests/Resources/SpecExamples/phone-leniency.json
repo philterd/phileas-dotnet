@@ -1,0 +1,17 @@
+{
+  "identifiers": {
+    "phoneNumber": {
+      "phoneNumberFilterStrategies": [
+        {
+          "strategy": "REDACT"
+        }
+      ],
+      "region": [
+        "US",
+        "GB",
+        "DE"
+      ],
+      "leniency": "VALID"
+    }
+  }
+}

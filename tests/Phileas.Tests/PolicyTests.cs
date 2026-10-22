@@ -20,6 +20,7 @@ using Phileas.Policy;
 using Phileas.Policy.Filters;
 using Phileas.Policy.Filters.Strategies;
 using Xunit;
+using Leniency = PhoneNumbers.PhoneNumberUtil.Leniency;
 using PhileasPolicy = Phileas.Policy.Policy;
 using PolicySchema = Phileas.Policy.PolicySchema;
 using Serializer = Phileas.Policy.PolicySerializer;
@@ -147,6 +148,60 @@ public class PolicyTests
 
         policy.Identifiers.PhoneNumber!.Region = null;
         Assert.DoesNotContain("region", Serializer.SerializeToJson(policy));
+    }
+
+    [Theory]
+    [InlineData("POSSIBLE")]
+    [InlineData("VALID")]
+    [InlineData("STRICT_GROUPING")]
+    [InlineData("EXACT_GROUPING")]
+    public void PhoneNumber_RoundTripsLeniency(string leniency)
+    {
+        var json = $$"""
+                     {
+                         "identifiers": {
+                             "phoneNumber": {
+                                 "leniency": "{{leniency}}",
+                                 "phoneNumberFilterStrategies": []
+                             }
+                         }
+                     }
+                     """;
+
+        var policy = Serializer.DeserializeFromJson(json);
+
+        Assert.Equal(Enum.Parse<Leniency>(leniency), policy.Identifiers.PhoneNumber!.GetLeniencyOrDefault());
+        Assert.Contains($"\"leniency\":\"{leniency}\"", Serializer.SerializeToJson(policy));
+    }
+
+    [Fact]
+    public void PhoneNumber_DefaultsLeniencyToPossible()
+    {
+        // A policy with no leniency emits none, so a round trip does not bake the default into the document.
+        var policy = Serializer.DeserializeFromJson("""{"identifiers":{"phoneNumber":{}}}""");
+
+        Assert.Null(policy.Identifiers.PhoneNumber!.Leniency);
+        Assert.Equal(Leniency.POSSIBLE, policy.Identifiers.PhoneNumber.GetLeniencyOrDefault());
+        Assert.DoesNotContain("leniency", Serializer.SerializeToJson(policy));
+    }
+
+    [Theory]
+    [InlineData("valid")]
+    [InlineData("BOGUS")]
+    public void PhoneNumber_RejectsAnUnknownLeniencyWhenLoaded(string leniency)
+    {
+        var json = $$"""
+                     {
+                         "identifiers": {
+                             "phoneNumber": {
+                                 "leniency": "{{leniency}}"
+                             }
+                         }
+                     }
+                     """;
+
+        var e = Assert.Throws<PolicyValidationException>(() => Serializer.DeserializeFromJson(json));
+        Assert.Contains("/identifiers/phoneNumber/leniency", e.Message);
     }
 
     [Fact]

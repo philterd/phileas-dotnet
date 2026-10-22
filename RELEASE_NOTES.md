@@ -6,9 +6,13 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 _Unreleased._
 
+### Added
+
+- **`leniency` on the `phoneNumber` filter** ([#180](https://github.com/philterd/phileas-dotnet/issues/180)), as specified in PhiSQL 1.5.0 and implemented in the Java port by philterd/phileas#423. It selects the libphonenumber leniency every scan uses: `POSSIBLE` (the default and the previous behavior), `VALID`, `STRICT_GROUPING` or `EXACT_GROUPING`. `VALID` drops candidates that are only possible for a region, such as a year read as a British or German number. Names are matched case-sensitively; any other value is rejected when the policy is loaded, or, with `validate: false`, when it is used. Confidence scoring is unchanged. See [Supported Identifiers → Phone Number](docs/supported-identifiers.md#phone-number).
+
 ### Changed
 
-- **Upgraded to Philterd.PhiSql 1.5.0**, from 1.4.0. The bundled redaction policy schema stays at 1.3.0 and gains an optional `leniency` on the `phoneNumber` filter (`POSSIBLE`, `VALID`, `STRICT_GROUPING` or `EXACT_GROUPING`) in place. A policy that sets it now passes schema validation, but this port does not implement it yet: the value is dropped and phone numbers are matched with `POSSIBLE` regardless ([#180](https://github.com/philterd/phileas-dotnet/issues/180)). A value outside the four is rejected when the policy is loaded.
+- **Upgraded to Philterd.PhiSql 1.5.0**, from 1.4.0. The bundled redaction policy schema stays at 1.3.0 and gains the optional `phoneNumber.leniency` in place.
 
 ## 1.7.0 - 2026-10-08
 

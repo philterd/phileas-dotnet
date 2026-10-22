@@ -256,6 +256,7 @@ public class FilterOptionTests
     [Theory]
     [InlineData("26-filter-options.json")]
     [InlineData("28-nested-options.json")]
+    [InlineData("phone-leniency.json")]
     public void SpecExample_RoundTripsWithNoFieldLost(string file)
     {
         // Copies of the PhiSQL spec examples, vendored so the test does not depend on a sibling clone.

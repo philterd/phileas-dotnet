@@ -28,8 +28,9 @@ namespace Phileas.Filters.Rules;
 /// <summary>
 ///     Detects phone numbers with Google's libphonenumber (the maintained <c>libphonenumber-csharp</c> port),
 ///     scanning text with <see cref="PhoneNumberUtil.FindNumbers(string, string, PhoneNumberUtil.Leniency, long)" />.
-///     Text is scanned once per configured region (the policy's <c>region</c> property, <c>US</c> by default) with
-///     <see cref="PhoneNumberUtil.Leniency.POSSIBLE" />, and the results are merged and de-duplicated. A
+///     Text is scanned once per configured region (the policy's <c>region</c> property, <c>US</c> by default) at the
+///     configured leniency (the policy's <c>leniency</c> property, <see cref="PhoneNumberUtil.Leniency.POSSIBLE" /> by
+///     default), and the results are merged and de-duplicated. A
 ///     <c>+</c>-prefixed international number is found regardless of region, matching the Java Phileas phone filter.
 ///     This is a scanner, not a regex filter: it extends <see cref="RulesFilter" /> directly.
 /// </summary>
@@ -45,6 +46,8 @@ public class PhoneNumberFilter : RulesFilter
             RegexDefaults.MatchTimeout);
 
     private static readonly PhoneNumberUtil PhoneUtil = PhoneNumberUtil.GetInstance();
+
+    private readonly PhoneNumberUtil.Leniency _leniency;
 
     private readonly List<string> _regions;
 
@@ -64,8 +67,24 @@ public class PhoneNumberFilter : RulesFilter
     ///     <see langword="null" /> or empty falls back to <see cref="PolicyPhoneNumber.DefaultRegion" />.
     /// </param>
     public PhoneNumberFilter(FilterConfiguration configuration, IEnumerable<string>? regions)
+        : this(configuration, regions, PhoneNumberUtil.Leniency.POSSIBLE)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new <see cref="PhoneNumberFilter" /> with the given configuration, regions and leniency.
+    /// </summary>
+    /// <param name="configuration">Runtime filter configuration.</param>
+    /// <param name="regions">
+    ///     The ISO 3166-1 alpha-2 region(s) used to interpret numbers written without a <c>+</c> country code.
+    ///     <see langword="null" /> or empty falls back to <see cref="PolicyPhoneNumber.DefaultRegion" />.
+    /// </param>
+    /// <param name="leniency">The libphonenumber leniency every scan uses.</param>
+    public PhoneNumberFilter(FilterConfiguration configuration, IEnumerable<string>? regions,
+        PhoneNumberUtil.Leniency leniency)
         : base(FilterType.PhoneNumber, configuration)
     {
+        _leniency = leniency;
         var configured = regions?.Where(region => !string.IsNullOrWhiteSpace(region)).ToList();
         _regions = configured is { Count: > 0 }
             ? configured
@@ -84,7 +103,7 @@ public class PhoneNumberFilter : RulesFilter
         // region and a bare national-format number may match in several, so overlapping matches are de-duplicated.
         var matches = new List<PhoneNumberMatch>();
         foreach (var region in _regions)
-            matches.AddRange(PhoneUtil.FindNumbers(input, region, PhoneNumberUtil.Leniency.POSSIBLE, long.MaxValue));
+            matches.AddRange(PhoneUtil.FindNumbers(input, region, _leniency, long.MaxValue));
 
         foreach (var match in Dedupe(matches))
         {

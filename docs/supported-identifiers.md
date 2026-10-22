@@ -647,6 +647,7 @@ Identifiers = new Identifiers { PhoneNumber = new PhoneNumber() }
 | Property | JSON key | Default | Description |
 |---|---|---|---|
 | `Region` | `region` | `US` | The region(s), ISO 3166-1 alpha-2, used to interpret numbers written without an international `+` country code. Numbers with a `+` prefix are detected regardless of this value. |
+| `Leniency` | `leniency` | `POSSIBLE` | How strictly a candidate must form a phone number to be detected: `POSSIBLE`, `VALID`, `STRICT_GROUPING` or `EXACT_GROUPING`. See [Leniency](#leniency). |
 
 To detect national-format numbers from other countries, set one region or several. Each configured region is scanned and the results are merged, with overlapping matches de-duplicated:
 
@@ -673,6 +674,35 @@ In a JSON policy, `region` takes either a single string or an array of strings:
 Region codes are matched exactly, so use the uppercase ISO 3166-1 alpha-2 form (`GB`, not `gb`). An unrecognized code leaves national-format numbers undetected; only `+`-prefixed numbers are found.
 
 > The `region` property requires redaction policy schema 1.2.0.
+
+#### Leniency
+
+`leniency` sets the [libphonenumber leniency](https://github.com/google/libphonenumber) every scan uses. Each level detects a subset of what the one before it detects:
+
+| Value | Detects |
+|---|---|
+| `POSSIBLE` | Numbers whose length is possible for the region. The default. |
+| `VALID` | Numbers that are valid for the region, such as a US number whose area code exists. |
+| `STRICT_GROUPING` | Valid numbers whose digits are grouped as the region groups them, or not grouped at all. `202 55 50182` is not detected. |
+| `EXACT_GROUPING` | Valid numbers grouped exactly as the region formats them, or not grouped at all. `202-5550182` is not detected. |
+
+`POSSIBLE` can report short numeric values as phone numbers, particularly when several regions are configured. With `region` set to `["US", "GB", "DE"]`, the year in `Oct 9, 2026` is reported under `POSSIBLE` and not under `VALID`:
+
+```json
+{
+   "identifiers": {
+      "phoneNumber": {
+         "region": ["US", "GB", "DE"],
+         "leniency": "VALID",
+         "phoneNumberFilterStrategies": [{"strategy": "REDACT"}]
+      }
+   }
+}
+```
+
+A stricter leniency reduces false positives and can also miss real numbers in a range newer than the bundled libphonenumber metadata, or written in an unusual format, so validate the setting against your own data. Values are case-sensitive; any other value is rejected when the policy is loaded. Confidence scores do not depend on the leniency.
+
+> The `leniency` property requires Philterd.PhiSql 1.5.0 (redaction policy schema 1.3.0).
 
 ---
 

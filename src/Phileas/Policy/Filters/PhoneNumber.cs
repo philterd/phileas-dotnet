@@ -16,6 +16,7 @@
 
 using System.Text.Json.Serialization;
 using Phileas.Policy.Filters.Strategies;
+using PhoneNumbers;
 
 namespace Phileas.Policy.Filters;
 
@@ -48,5 +49,33 @@ public class PhoneNumber : AbstractPolicyFilter
     public List<string> GetRegionOrDefault()
     {
         return Region is { Count: > 0 } ? Region : new List<string> { DefaultRegion };
+    }
+
+    /// <summary>
+    ///     Gets or sets the libphonenumber leniency the filter matches with: <c>POSSIBLE</c> (the default),
+    ///     <c>VALID</c>, <c>STRICT_GROUPING</c> or <c>EXACT_GROUPING</c>. <c>VALID</c> drops candidates that are only
+    ///     possible for a region, such as short numeric identifiers or years. Requires PhiSQL 1.5.0's schema 1.3.0.
+    /// </summary>
+    [JsonPropertyName("leniency")]
+    public string? Leniency { get; set; }
+
+    /// <summary>
+    ///     Gets the configured leniency, or <see cref="PhoneNumberUtil.Leniency.POSSIBLE" /> when the policy set none.
+    /// </summary>
+    /// <returns>The leniency to scan with.</returns>
+    /// <exception cref="PolicyValidationException">
+    ///     <see cref="Leniency" /> is not one of the four names, compared case-sensitively.
+    /// </exception>
+    public PhoneNumberUtil.Leniency GetLeniencyOrDefault()
+    {
+        if (Leniency == null) return PhoneNumberUtil.Leniency.POSSIBLE;
+
+        // Enum.TryParse would also accept a number or a differently cased name, which the schema does not.
+        if (Enum.GetNames<PhoneNumberUtil.Leniency>().Contains(Leniency, StringComparer.Ordinal))
+            return Enum.Parse<PhoneNumberUtil.Leniency>(Leniency);
+
+        throw new PolicyValidationException(
+            new[] { $"/identifiers/phoneNumber/leniency: \"{Leniency}\" is not one of POSSIBLE, VALID, STRICT_GROUPING, EXACT_GROUPING" },
+            "The policy has an unsupported phone number leniency");
     }
 }
