@@ -270,14 +270,20 @@ Detects dates in common written and numeric forms.
 | Written form | Example |
 |---|---|
 | Month name first | `January 15, 1990`, `January 15 1990`, `Jan 15, 1990`, `Jan. 15, 1990` |
-| Day first, month name | `15 January 1990`, `15 Jan 1990`, `15-Jan-1990`, `15/Jan/1990`, `15-January-1990` |
+| Day first, month name | `15 January 1990`, `15 Jan 1990`, `15 Jan. 1990`, `15-Jan-1990`, `15/Jan/1990`, `15.Jan.1990`, `15-January-1990` |
+| Day first, month name, comma | `27 March, 1965`, `3 Mar, 2020`, `27 Mar., 1965` |
+| Day first with an ordinal | `27th March 1965`, `1st May, 2020`, `22nd Dec, 2099`, `31st-Oct-2025` |
 | Month first, numeric | `01/15/1990`, `01-15-1990`, `01.15.1990`, and the same with a two-digit year |
 | Day first, numeric | `15/01/1990`, `15-01-1990`, `15.01.1990`, and the same with a two-digit year |
 | Year first, numeric | `1990-01-15`, `1990/01/15`, `1990.01.15` |
 | ISO 8601 timestamp | `2024-06-01T09:30:00Z` (the date part is the span; the time is left alone) |
 
 A day and a month name may be separated by a space, `-`, `/` or `.`, and both separators in the date
-must be the same character. A year-first date takes a zero-padded month and day, as ISO 8601 requires,
+must be the same character, except that after a space the year may follow `, ` (a comma and one
+space). The day is from 1 to 31, with or without an ordinal suffix (`st`, `nd`, `rd`, `th`), and the
+year has four digits. So `15-January 1990`, `27 March,1965`, and `27-March, 1965` are not detected.
+`SHIFT` writes a shifted day-first date the way it was read, recomputing an ordinal for the new day:
+`1st May 2020` shifted ten days is `11th May 2020`. A year-first date takes a zero-padded month and day, as ISO 8601 requires,
 so a version string such as `2020.1.5` is not read as a date. A date run together with a word, such as
 `1990-01-15x`, is not detected either; the only text allowed against the end of a date is the time of
 an ISO 8601 timestamp.

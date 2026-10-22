@@ -141,7 +141,21 @@ public class DateFilterStrategy : StandardFilterStrategy
             return true;
 
         format = null;
-        return DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+        if (DateTime.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+            return true;
+
+        // The invariant culture does not read an ordinal day, as in 27th March, 1965 (#178).
+        var withoutOrdinal = Regex.Replace(token, @"^(\d{1,2})(?:st|nd|rd|th)\b", "$1", RegexOptions.IgnoreCase,
+            RegexDefaults.MatchTimeout);
+        return withoutOrdinal != token
+               && DateTime.TryParse(withoutOrdinal, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+    }
+
+    /// <summary>The English ordinal suffix for a day of the month: 1st, 2nd, 3rd, 4th, 11th, 21st.</summary>
+    private static string OrdinalSuffix(int day)
+    {
+        if (day is >= 11 and <= 13) return "th";
+        return (day % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" };
     }
 
     /// <summary>Replaces a parsed date with its year; an unparseable token falls back to redaction.</summary>
@@ -285,11 +299,12 @@ public class DateFilterStrategy : StandardFilterStrategy
             return $"{date.ToString("MMMM", CultureInfo.InvariantCulture)} {date.Day}{comma} {date.Year}";
         }
 
-        // Day, month name, year: "15 January 1990", "15 Jan 1990", "15-Jan-1990", "15/Jan/1990".
+        // Day, month name, year: "15 January 1990", "15 Jan 1990", "15-Jan-1990", "15/Jan/1990", and with an
+        // ordinal day or a comma before the year, "27th March, 1965" (#178).
         var dayFirstNamedMatch = Regex.Match(token,
-            @"^(?<day>\d{1,2})(?<sep>\s*[\-\/.]\s*|\s+)"
+            @"^(?<day>\d{1,2})(?<ordinal>st|nd|rd|th)?(?<sep>\s*[\-\/.]\s*|\s+)"
             + @"(?<month>January|February|March|April|May|June|July|August|September|October|November|December"
-            + @"|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?<dot>\.?)\k<sep>\d{4}$",
+            + @"|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?<dot>\.?)(?<beforeYear>\k<sep>|, )\d{4}$",
             RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout);
         if (dayFirstNamedMatch.Success)
         {
@@ -300,7 +315,18 @@ public class DateFilterStrategy : StandardFilterStrategy
             var dayText = dayFirstNamedMatch.Groups["day"].Value.Length == 2
                 ? date.Day.ToString("D2", CultureInfo.InvariantCulture)
                 : date.Day.ToString(CultureInfo.InvariantCulture);
-            return $"{dayText}{sep}{monthName}{dayFirstNamedMatch.Groups["dot"].Value}{sep}{date.Year}";
+            // An ordinal is recomputed for the new day, so 1st shifted ten days reads 11th, not 11st, and an
+            // ordinal day is never zero-padded: 27th shifted ten days reads 6th, not 06th.
+            var ordinal = dayFirstNamedMatch.Groups["ordinal"].Value;
+            if (ordinal.Length > 0)
+            {
+                var suffix = OrdinalSuffix(date.Day);
+                dayText = date.Day.ToString(CultureInfo.InvariantCulture)
+                          + (char.IsUpper(ordinal[0]) ? suffix.ToUpperInvariant() : suffix);
+            }
+
+            return $"{dayText}{sep}{monthName}{dayFirstNamedMatch.Groups["dot"].Value}"
+                   + $"{dayFirstNamedMatch.Groups["beforeYear"].Value}{date.Year}";
         }
 
         // Abbreviated month, day, year: "Jan. 5, 2023" or "Jan 5, 2023"

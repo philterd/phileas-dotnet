@@ -349,11 +349,14 @@ The strategy is named `SHIFT` in the redaction policy schema and by the PhiSQL c
 | `Jan 15, 1990` | Abbreviated month name |
 | `15 January 1990` | Day first, full month name |
 | `15-Jan-1990` | Day first, abbreviated month name, also with `/`, `.` and a space |
+| `27 March, 1965` | Day first, month name, comma before the year |
+| `27th March 1965` | Day first with an ordinal, in any of the day-first forms above |
 
 Every form the date filter detects can be shifted; see
 [Supported Identifiers](supported-identifiers.md#date) for the full detection table. A shifted date
 is written back in the form it was read in, so the ordering, the separator and a two-digit year are
-all preserved.
+all preserved. An ordinal is recomputed for the new day: `1st May 2020` shifted ten days is
+`11th May 2020`.
 
 If a detected token cannot be parsed as a date, which a numeric date that is not a real calendar date
 will not be, `SHIFT` falls back to `REDACT` rather than returning the token. A detected date is never

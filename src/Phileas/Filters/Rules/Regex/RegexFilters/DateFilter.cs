@@ -96,6 +96,9 @@ public class DateFilter : RegexFilter
         // rather than assembling a date out of "15-January 1990".
         const string nameSeparator = @"(?<sep>\s*[\-\/.]\s*|\s+)";
 
+        // An optional ordinal suffix on a day written before a month name, as in 27th March 1965.
+        const string ordinal = "(?:st|nd|rd|th)?";
+
         var patterns = new List<FilterPattern>();
 
         // Numeric dates with a delimiter. Each delimiter and year-length combination is its own pattern so
@@ -148,11 +151,19 @@ public class DateFilter : RegexFilter
             .WithPattern($@"\b({monthNames})\s+\d{{1,2}},?\s+\d{{4}}\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.75).WithAlwaysValid(true).Build());
 
-        // Day-first month-name dates: 15 January 1990, 15 Jan 1990, 15-Jan-1990, 15/Jan/1990. An
-        // abbreviation may carry a trailing period, which the backreferenced separator would
+        // Day-first month-name dates: 15 January 1990, 15 Jan 1990, 15-Jan-1990, 15/Jan/1990, 15th Jan
+        // 1990. An abbreviation may carry a trailing period, which the backreferenced separator would
         // otherwise reject.
         patterns.Add(new FilterPattern.Builder()
-            .WithPattern($@"\b{day}{nameSeparator}(?:{monthNames}|{monthAbbreviations})\.?\k<sep>\d{{4}}\b",
+            .WithPattern(
+                $@"\b{day}{ordinal}{nameSeparator}(?:{monthNames}|{monthAbbreviations})\.?\k<sep>\d{{4}}\b",
+                RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.75).WithAlwaysValid(true).Build());
+
+        // The same with a comma before the year, which the backreference rules out: 27 March, 1965, 3rd
+        // Mar, 2020. One space and ", ", as in the Java filter (#178, philterd/phileas#462).
+        patterns.Add(new FilterPattern.Builder()
+            .WithPattern($@"\b{day}{ordinal} (?:{monthNames}|{monthAbbreviations})\.?, \d{{4}}\b",
                 RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.75).WithAlwaysValid(true).Build());
 

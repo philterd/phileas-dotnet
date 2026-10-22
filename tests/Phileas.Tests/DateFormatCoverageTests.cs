@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using Phileas.Filters.Strategies.Rules;
 using Phileas.Policy;
 using Phileas.Services;
 using Xunit;
@@ -218,7 +219,8 @@ public class DateFormatCoverageTests
         "01/15/1990", "12-31-2000", "03/04/1981",
         "1990-01-15", "1990/01/15", "1990.01.15", "2024-06-01T09:30:00Z",
         "15 January 1990", "15 Jan 1990", "15-Jan-1990", "15/Jan/1990", "15-January-1990",
-        "January 15, 1990", "January 15 1990", "Jan 15, 1990", "Jan. 5, 2023"
+        "January 15, 1990", "January 15 1990", "Jan 15, 1990", "Jan. 5, 2023",
+        "27 March, 1965", "3 Mar, 2020", "27 Mar., 1965", "27th March, 1965", "2nd June 1950"
     };
 
     [Theory]
@@ -319,5 +321,102 @@ public class DateFormatCoverageTests
         // A date range written without spaces. Each date is its own span rather than one running
         // across the pair, which is what the Java filter produces too.
         Assert.Equal("2024-06-01|2024-06-30", Detected("2024-06-01-2024-06-30"));
+    }
+
+    // ---------------- day-first month-name dates with a comma or an ordinal (#178) ----------------
+
+    /// <summary>
+    ///     Each form with a one- and a two-digit day (and a zero-padded one), in years before and after 1970.
+    /// </summary>
+    public static TheoryData<string> DayFirstCommaAndOrdinalForms()
+    {
+        var data = new TheoryData<string>();
+        foreach (var (day, ordinal) in new[] { ("3", "3rd"), ("09", "9th"), ("27", "27th") })
+        foreach (var year in new[] { 1900, 1965, 1969, 1970, 2020, 2099 })
+        {
+            data.Add($"{day} March, {year}");
+            data.Add($"{day} Mar, {year}");
+            data.Add($"{ordinal} March, {year}");
+            data.Add($"{ordinal} March {year}");
+            data.Add($"{ordinal} Mar {year}");
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(DayFirstCommaAndOrdinalForms))]
+    [InlineData("1st May, 2020")]
+    [InlineData("2nd June, 1950")]
+    [InlineData("22nd Dec, 2099")]
+    [InlineData("27 Mar., 1965")]
+    [InlineData("1st May 2020")]
+    [InlineData("31st-Oct-2025")]
+    // Detected before #178, and still.
+    [InlineData("27 March 1965")]
+    [InlineData("27 Mar 1965")]
+    public void ADayFirstDateWithACommaOrAnOrdinalIsDetectedWhole(string date)
+    {
+        Assert.Equal(date, Detected(date));
+    }
+
+    [Theory]
+    [InlineData("27 March,1965")] // no space after the comma
+    [InlineData("27 March , 1965")] // a space before the comma
+    [InlineData("27  March, 1965")] // two spaces after the day
+    [InlineData("32 March, 1965")] // a day out of range
+    [InlineData("27-March, 1965")] // a hyphen, then a comma
+    public void ADayFirstDateWithAMalformedCommaIsNotDetected(string text)
+    {
+        Assert.Equal(string.Empty, Detected(text));
+    }
+
+    [Theory]
+    [InlineData("27 March, 1965", "26 April, 1965")]
+    [InlineData("3 Mar, 2020", "2 Apr, 2020")]
+    [InlineData("09 January, 1968", "08 February, 1968")] // a zero-padded day stays zero-padded
+    [InlineData("27 Mar., 1965", "26 Apr., 1965")]
+    [InlineData("27th March, 1965", "26th April, 1965")]
+    [InlineData("1st May 2020", "31st May 2020")]
+    [InlineData("22nd Dec, 2099", "21st Jan, 2100")]
+    public void ShiftPreservesTheFormOfADayFirstDateWithACommaOrAnOrdinal(string date, string shifted)
+    {
+        Assert.Equal(shifted, Strategy(date, "SHIFT", ",\"shiftDays\": 30"));
+    }
+
+    [Theory]
+    [InlineData("1st May 2020", 10, "11th May 2020")] // not 11st
+    [InlineData("21st May 2020", 1, "22nd May 2020")]
+    [InlineData("2nd May 2020", 1, "3rd May 2020")]
+    [InlineData("27th March 1965", 10, "6th April 1965")] // an ordinal day is not zero-padded
+    [InlineData("1ST May 2020", 10, "11TH May 2020")] // the suffix keeps its case
+    public void ShiftWritesTheOrdinalForTheNewDay(string date, int days, string shifted)
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT", ShiftDays = days };
+
+        Assert.Equal(shifted, strategy.GetReplacement("ctx", date, [], 0.9, null, null, null, null).Value);
+    }
+
+    [Theory]
+    [InlineData("27 March, 1965", "1965")]
+    [InlineData("3 Mar, 2020", "2020")]
+    [InlineData("27th March, 1965", "1965")]
+    [InlineData("1st May 2020", "2020")]
+    public void TruncateToYearActsOnADayFirstDateWithACommaOrAnOrdinal(string date, string year)
+    {
+        Assert.Equal(year, Strategy(date, "TRUNCATE_TO_YEAR"));
+    }
+
+    [Theory]
+    [InlineData("27 March, 1965")]
+    [InlineData("3 Mar, 2020")]
+    [InlineData("27th March, 1965")]
+    [InlineData("1st May 2020")]
+    public void RelativeActsOnADayFirstDateWithACommaOrAnOrdinal(string date)
+    {
+        var replaced = Strategy(date, "RELATIVE");
+
+        Assert.EndsWith(" ago", replaced);
+        Assert.DoesNotContain("REDACTED", replaced);
     }
 }
