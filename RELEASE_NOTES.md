@@ -12,6 +12,7 @@ _Unreleased._
 
 ### Changed
 
+- **An SSN's, ITIN's, and Canadian SIN's two separators must be the same kind** ([#177](https://github.com/philterd/phileas-dotnet/issues/177)), as in the Java port (philterd/phileas#460): both hyphens or hyphen substitutes (wrapped or not), both single horizontal whitespace characters, or both absent. Each separator was chosen on its own, so a ZIP+4 code such as `52168-1208` matched as an SSN (`521`, nothing, `68`, a hyphen, `1208`), and one beginning with 9, such as `90210-1234`, as an ITIN. With the ZIP code filter also enabled, these were redacted as `ssn` or `itin` rather than `zip-code`, so a policy treating the two differently applied the SSN's strategy to the ZIP code. **Behavior change:** values with mismatched separators, such as `123-456789`, `123 45-6789` or `046454-286`, are no longer detected by these filters. `123-45-6789`, `123 45 6789`, `123456789`, wrapped forms, and two different hyphen characters are detected as before. See [Supported Identifiers → SSN](docs/supported-identifiers.md#ssn).
 - **Upgraded to Philterd.PhiSql 1.5.0**, from 1.4.0. The bundled redaction policy schema stays at 1.3.0 and gains the optional `phoneNumber.leniency` in place.
 
 ## 1.7.0 - 2026-10-08

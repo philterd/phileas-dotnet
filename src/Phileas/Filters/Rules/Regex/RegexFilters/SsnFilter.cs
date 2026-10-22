@@ -24,13 +24,6 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class SsnFilter : RegexFilter
 {
-    /// <summary>
-    ///     The separator between the groups of an SSN is optional: a hyphen (wrapped across a line
-    ///     break or not), one horizontal space, or nothing at all. The fragments are shared with
-    ///     <see cref="EinFilter" /> through <see cref="IdentifierSeparators" />.
-    /// </summary>
-    private const string Separator = IdentifierSeparators.OptionalSeparator;
-
     private const string Digit = IdentifierSeparators.Digit;
 
     /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
@@ -38,10 +31,12 @@ public class SsnFilter : RegexFilter
 
     private static readonly Analyzer SsnAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
+            // Both separators are hyphens (wrapped across a line break or not), both one horizontal
+            // space, or both absent. The fragments are shared with EinFilter, ItinFilter and
+            // CanadaSinFilter through IdentifierSeparators.
             .WithPattern(IdentifierSeparators.NotWordBefore
-                         + "(?!000|666|9" + Digit + "{2})" + Digit + "{3}" + Separator
-                         + "(?!00)" + Digit + "{2}" + Separator
-                         + "(?!0000)" + Digit + "{4}"
+                         + IdentifierSeparators.Join("(?!000|666|9" + Digit + "{2})" + Digit + "{3}",
+                             "(?!00)" + Digit + "{2}", "(?!0000)" + Digit + "{4}")
                          + IdentifierSeparators.NotWordAfter)
             .WithInitialConfidence(0.90).Build()
     );

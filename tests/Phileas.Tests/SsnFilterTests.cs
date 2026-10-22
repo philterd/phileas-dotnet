@@ -234,4 +234,43 @@ public class SsnFilterTests
         AssertRedacted("\u60A3\u8005\u306ESSN\u306F078\u201105\u20111120\u3067\u3059\u3002",
             "078\u201105\u20111120");
     }
+
+    // -------------------------------------------------------------------------
+    // Both separators must be the same kind, so a ZIP+4 is not an SSN. See #177.
+    // -------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("123-45-6789")]
+    [InlineData("123 45 6789")]
+    [InlineData("123456789")]
+    [InlineData("123\u201145\u20116789")] // two non-breaking hyphens
+    [InlineData("123-45\u20116789")] // two different hyphen characters
+    [InlineData("123-45-\n6789")] // wrapped after the second hyphen
+    [InlineData("123-\n45-6789")] // wrapped after the first hyphen
+    public void Filter_DetectsMatchingSeparators(string ssn)
+    {
+        AssertRedacted($"the ssn is {ssn}.", ssn);
+    }
+
+    [Theory]
+    [InlineData("123-456789")]
+    [InlineData("12345-6789")]
+    [InlineData("123 456789")]
+    [InlineData("12345 6789")]
+    [InlineData("123-45 6789")]
+    [InlineData("123 45-6789")]
+    [InlineData("123-\n456789")] // a wrapped hyphen and nothing
+    public void Filter_DoesNotDetectMismatchedSeparators(string value)
+    {
+        AssertNotDetected($"the value is {value}.");
+    }
+
+    [Theory]
+    [InlineData("52168-1208")]
+    [InlineData("02965-1837")]
+    [InlineData("12345-6789")]
+    public void Filter_DoesNotDetectZipPlus4(string zip)
+    {
+        AssertNotDetected($"ships to {zip} today.");
+    }
 }

@@ -32,14 +32,12 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// </summary>
 public class ItinFilter : RegexFilter
 {
-    private const string Separator = IdentifierSeparators.OptionalSeparator;
-
     private const string Digit = IdentifierSeparators.Digit;
 
     private static readonly Analyzer ItinAnalyzer = new(
         new FilterPattern.Builder()
             .WithPattern(IdentifierSeparators.NotWordBefore
-                         + "9" + Digit + "{2}" + Separator + Digit + "{2}" + Separator + Digit + "{4}"
+                         + IdentifierSeparators.Join("9" + Digit + "{2}", Digit + "{2}", Digit + "{4}")
                          + IdentifierSeparators.NotWordAfter)
             .WithInitialConfidence(0.90).Build()
     );

@@ -307,4 +307,36 @@ public class ItinFilterTests
     {
         Assert.Equal(44_000_000L, new ItinGenerator(new Random()).PoolSize());
     }
+
+    // Both separators must be the same kind, so a ZIP+4 beginning with 9 is not an ITIN. See #177.
+    [Theory]
+    [InlineData("912-70-1234")]
+    [InlineData("912 70 1234")]
+    [InlineData("912701234")]
+    [InlineData("912-70\u20111234")] // two different hyphen characters
+    public void Filter_DetectsMatchingSeparators(string itin)
+    {
+        var span = Assert.Single(Filter($"the itin is {itin}.").Spans);
+        Assert.Equal(itin, span.Text);
+    }
+
+    [Theory]
+    [InlineData("912-701234")]
+    [InlineData("91270-1234")]
+    [InlineData("912 70-1234")]
+    [InlineData("912-70 1234")]
+    [InlineData("91270 1234")]
+    public void Filter_DoesNotDetectMismatchedSeparators(string value)
+    {
+        Assert.Empty(Filter($"the value is {value}.").Spans);
+    }
+
+    [Theory]
+    [InlineData("90210-1234")]
+    [InlineData("97070-1234")]
+    [InlineData("99501 2345")]
+    public void Filter_DoesNotDetectZipPlus4(string zip)
+    {
+        Assert.Empty(Filter($"the address ends {zip} here.").Spans);
+    }
 }

@@ -188,7 +188,7 @@ Every match must pass the mod-10 Luhn check, so `123 456 789` is not detected. T
 
 #### Separators and boundaries
 
-The separators, boundaries, and intentional exclusions are the [SSN](#ssn) identifier's, which lists them in full. The SSN's range exclusions do not apply: a SIN may begin with any digit, and only the Luhn check rejects a value. Between groups a SIN accepts nothing, one hyphen or hyphen substitute (optionally followed by horizontal whitespace), one horizontal whitespace character, or a hyphen followed by a line break, so a SIN wrapped across two lines is detected. A match may not begin or end inside a run of ASCII letters, digits, or underscores, and non-ASCII digits are not accepted.
+The separators, boundaries, and intentional exclusions are the [SSN](#ssn) identifier's, which lists them in full. The SSN's range exclusions do not apply: a SIN may begin with any digit, and only the Luhn check rejects a value. Between groups a SIN accepts nothing, one hyphen or hyphen substitute (optionally followed by horizontal whitespace), one horizontal whitespace character, or a hyphen followed by a line break, so a SIN wrapped across two lines is detected. Both separators must be the same kind, so `046454-286` and `046-454 286` are not detected. A match may not begin or end inside a run of ASCII letters, digits, or underscores, and non-ASCII digits are not accepted.
 
 #### Leading digits and business numbers
 
@@ -524,7 +524,7 @@ Detects US Individual Taxpayer Identification Numbers: SSN-shaped values that al
 Identifiers = new Identifiers { Itin = new Itin() }
 ```
 
-The separators, line-wrap handling, boundaries, and intentional exclusions are the SSN identifier's, which lists them in full. The SSN's range exclusions do not apply: a `00` group or `0000` serial is detected.
+The separators, line-wrap handling, boundaries, and intentional exclusions are the SSN identifier's, which lists them in full. Both separators must be the same kind, so a ZIP+4 code beginning with 9, such as `90210-1234`, is not an ITIN, and neither is `912-701234` or `912 70-1234`. The SSN's range exclusions do not apply: a `00` group or `0000` serial is detected.
 
 #### IRS ranges and ATINs
 
@@ -746,6 +746,13 @@ The three groups of an identifier may be separated by any of the following:
   Both `\n` and `\r\n` count as the break, and horizontal whitespace may sit on either side of it,
   so an indented continuation line works.
 
+Both separators must be the same kind: both hyphens (wrapped or not), both single horizontal
+whitespace characters, or both absent. So `123-45-6789`, `123 45 6789`, and `123456789` are
+detected, but `123-456789`, `12345-6789`, and `123 45-6789` are not. This keeps a ZIP+4 code such as
+`52168-1208` from being reported as an SSN. The two hyphens may be different hyphen characters, such
+as an ASCII hyphen and a non-breaking hyphen. The [ITIN](#itin) and [Canada SIN](#canada-sin)
+identifiers follow the same rule.
+
 The input is not normalized, so span offsets index into the original text and a span covers the
 complete identifier, line break included.
 
@@ -764,6 +771,8 @@ These forms produce no span, each by design:
 - More than one whitespace character between two groups that no hyphen separates. Whitespace
   following a hyphen is not limited, so `078-  05-  1120` is detected.
 - Whitespace before the hyphen, as in `078 - 05 - 1120`.
+- Two separators of different kinds, as in `123-456789`, `12345-6789` (a ZIP+4 shape), or
+  `123 45-6789`.
 
 The JSON key for the filter strategies list is `ssnFilterStrategies`:
 

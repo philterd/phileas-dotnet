@@ -289,4 +289,26 @@ public class CanadaSinFilterTests
     {
         Assert.Equal(80_000_000L, new CanadaSinGenerator(new Random()).PoolSize());
     }
+
+    // Both separators must be the same kind; the two hyphens may be different characters. See #177.
+    [Theory]
+    [InlineData("046-454\u2011286")]
+    [InlineData("046-454-\n286")]
+    public void Filter_DetectsMatchingSeparators(string sin)
+    {
+        var span = Assert.Single(Filter($"the sin is {sin}.").Spans);
+        Assert.Equal(sin, span.Text);
+    }
+
+    // 046454286 passes the Luhn check, so these are refused only for their separators.
+    [Theory]
+    [InlineData("046454-286")]
+    [InlineData("046-454286")]
+    [InlineData("046 454-286")]
+    [InlineData("046-454 286")]
+    [InlineData("046454 286")]
+    public void Filter_DoesNotDetectMismatchedSeparators(string value)
+    {
+        Assert.Empty(Filter($"the value is {value}.").Spans);
+    }
 }

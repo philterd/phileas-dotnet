@@ -37,15 +37,13 @@ public class CanadaSinFilter : RegexFilter
     /// <summary>Words near a match that raise its confidence, in English and French (philterd/phisql#61).</summary>
     private static readonly HashSet<string> ContextualTerms = new() { "sin", "social insurance", "nas", "assurance sociale" };
 
-    private const string Separator = IdentifierSeparators.OptionalSeparator;
-
     private const string Digit = IdentifierSeparators.Digit;
 
     private static readonly Analyzer CanadaSinAnalyzer = new(
         ContextualTerms,
         new FilterPattern.Builder()
             .WithPattern(IdentifierSeparators.NotWordBefore
-                         + Digit + "{3}" + Separator + Digit + "{3}" + Separator + Digit + "{3}"
+                         + IdentifierSeparators.Join(Digit + "{3}", Digit + "{3}", Digit + "{3}")
                          + IdentifierSeparators.NotWordAfter)
             .WithInitialConfidence(0.90).Build()
     );

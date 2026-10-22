@@ -52,10 +52,16 @@ internal static class IdentifierSeparators
                                + "(?>(?:" + LineBreak + "(?>" + HorizontalSpace + "*))?)";
 
     /// <summary>
-    ///     A hyphen, wrapped or not, or one horizontal space, or nothing. Used where a separator is
-    ///     optional, as between the groups of an SSN.
+    ///     Joins an identifier's three digit groups. Both separators are the same kind: a hyphen,
+    ///     wrapped or not, one horizontal space, or nothing. Allowing each to be chosen on its own let
+    ///     a ZIP+4 such as <c>52168-1208</c> match as an SSN, with nothing after the first group and a
+    ///     hyphen after the second (#177, as philterd/phileas#460).
     /// </summary>
-    public const string OptionalSeparator = "(?:" + Wrap + "|" + HorizontalSpace + ")?";
+    public static string Join(string first, string second, string third)
+    {
+        return first + "(?:" + Wrap + second + Wrap + "|" + HorizontalSpace + second + HorizontalSpace + "|" + second
+               + ")" + third;
+    }
 
     /// <summary>
     ///     Digits are ASCII only, matching the Java filters. .NET's <c>\d</c> spans every Unicode
