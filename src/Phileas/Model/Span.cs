@@ -230,8 +230,9 @@ public class Span
     public static IList<Span> DropOverlappingSpans(IList<Span> spans)
     {
         // Rank by length (longest first), then confidence, then priority, then start position, and
-        // greedily keep each span that does not overlap an already-kept span. The overlap check treats
-        // the character range as inclusive at both ends, mirroring the Java reference.
+        // greedily keep each span that does not overlap an already-kept span. The end is exclusive, so
+        // two spans that abut share no character and are both kept, as in the Java port
+        // (philterd/phileas#343); dropping one left its text unredacted.
         var ranked = spans
             .OrderByDescending(s => s.CharacterEnd - s.CharacterStart)
             .ThenByDescending(s => s.Confidence)
@@ -244,8 +245,8 @@ public class Span
         foreach (var span in ranked)
         {
             var overlaps = result.Any(existing =>
-                span.CharacterStart <= existing.CharacterEnd &&
-                existing.CharacterStart <= span.CharacterEnd);
+                span.CharacterStart < existing.CharacterEnd &&
+                existing.CharacterStart < span.CharacterEnd);
 
             if (!overlaps)
                 result.Add(span);

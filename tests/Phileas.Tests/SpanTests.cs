@@ -15,6 +15,8 @@
  */
 
 using Phileas.Model;
+using Phileas.Policy;
+using Phileas.Services;
 using Xunit;
 
 namespace Phileas.Tests;
@@ -338,5 +340,40 @@ public class SpanTests
         var span1 = S(7, 11);
         var span2 = S(15, 16);
         Assert.False(Span.AreSpansAdjacent(span2, span1, "asdfbf test    qwer asdf"));
+    }
+
+    [Fact]
+    public void AbuttingSpansAreNotOverlapping()
+    {
+        // The end of a span is exclusive, so two spans that abut share no character and are both kept. They were
+        // compared as inclusive ranges, so the second was dropped and its text left unredacted (philterd/phileas#343).
+        var result = Span.DropOverlappingSpans(new List<Span> { S(0, 11), S(11, 22) });
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal((0, 11), (result[0].CharacterStart, result[0].CharacterEnd));
+        Assert.Equal((11, 22), (result[1].CharacterStart, result[1].CharacterEnd));
+    }
+
+    [Fact]
+    public void FilterService_RedactsBothOfTwoAbuttingSpans()
+    {
+        // Two custom identifiers matching back to back: the second was dropped and left in the clear.
+        var policy = PolicySerializer.DeserializeFromJson("""
+            {"identifiers": {"identifiers": [
+              {"pattern": "AB12", "classification": "first", "identifierFilterStrategies": [{"strategy": "REDACT"}]},
+              {"pattern": "CD34", "classification": "second", "identifierFilterStrategies": [{"strategy": "REDACT"}]}
+            ]}}
+            """);
+
+        var result = new FilterService().Filter(policy, "ctx", 0, "xx AB12CD34 yy");
+
+        Assert.Equal(2, result.Spans.Count);
+        Assert.Equal("xx {{{REDACTED-identifier}}}{{{REDACTED-identifier}}} yy", result.FilteredText);
+    }
+
+    [Fact]
+    public void SpansSharingOneCharacterOverlap()
+    {
+        Assert.Single(Span.DropOverlappingSpans(new List<Span> { S(0, 11), S(10, 22) }));
     }
 }

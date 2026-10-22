@@ -760,6 +760,14 @@ A match may not begin or end partway through a run of ASCII letters, digits, or 
 characters, including non-ASCII letters and digits, do not block a match, so an identifier embedded
 in non-Latin text is still detected.
 
+#### SSNs with nothing between them
+
+Up to eight SSNs written with nothing between them, such as `123-45-6789123-45-6789`, are detected
+as one span covering the run, since there is no boundary to split on. Each SSN in the run follows
+the separator rule on its own, so `123-45-6789123456789` is also a run. SSNs with anything between
+them, such as `123-45-6789 123-45-6789` or `123-45-6789, 123-45-6789`, produce one span each. A digit
+run that does not divide evenly into SSNs, such as a 20-digit account number, produces no span.
+
 #### Intentional exclusions
 
 These forms produce no span, each by design:
@@ -773,6 +781,8 @@ These forms produce no span, each by design:
 - Whitespace before the hyphen, as in `078 - 05 - 1120`.
 - Two separators of different kinds, as in `123-456789`, `12345-6789` (a ZIP+4 shape), or
   `123 45-6789`.
+- More than eight SSNs with nothing between them. The repetition is bounded, as in the Java port,
+  so the whole run is left undetected.
 
 The JSON key for the filter strategies list is `ssnFilterStrategies`:
 

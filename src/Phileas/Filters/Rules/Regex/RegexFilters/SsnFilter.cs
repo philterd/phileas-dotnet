@@ -34,9 +34,14 @@ public class SsnFilter : RegexFilter
             // Both separators are hyphens (wrapped across a line break or not), both one horizontal
             // space, or both absent. The fragments are shared with EinFilter, ItinFilter and
             // CanadaSinFilter through IdentifierSeparators.
+            //
+            // A match may not begin or end partway through a longer run of digits. Repeating the SSN
+            // between the boundaries keeps SSNs written with nothing between them redacted, as one
+            // span covering the run, while a run that does not divide evenly into SSNs (an account
+            // number, say) still matches nothing. Bounded as in the Java port (philterd/phileas#343).
             .WithPattern(IdentifierSeparators.NotWordBefore
-                         + IdentifierSeparators.Join("(?!000|666|9" + Digit + "{2})" + Digit + "{3}",
-                             "(?!00)" + Digit + "{2}", "(?!0000)" + Digit + "{4}")
+                         + "(?:" + IdentifierSeparators.Join("(?!000|666|9" + Digit + "{2})" + Digit + "{3}",
+                             "(?!00)" + Digit + "{2}", "(?!0000)" + Digit + "{4}") + "){1,8}"
                          + IdentifierSeparators.NotWordAfter)
             .WithInitialConfidence(0.90).Build()
     );

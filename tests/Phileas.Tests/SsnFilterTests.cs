@@ -273,4 +273,47 @@ public class SsnFilterTests
     {
         AssertNotDetected($"ships to {zip} today.");
     }
+
+    // -------------------------------------------------------------------------
+    // SSNs written with nothing between them, as in the Java port (philterd/phileas#343).
+    // -------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("123-45-6789123-45-6789")]
+    [InlineData("123-45-6789123456789")] // each SSN's separators match; the two SSNs' need not
+    [InlineData("123456789123456789")]
+    [InlineData("123-45-6789123-45-6789123-45-6789123-45-6789123-45-6789123-45-6789123-45-6789123-45-6789")] // eight
+    public void Filter_DetectsARunOfSsnsAsOneSpan(string run)
+    {
+        AssertRedacted($"the ssns are {run}.", run);
+    }
+
+    [Theory]
+    [InlineData("123-45-6789 123-45-6789", 11, 12)]
+    [InlineData("123-45-6789, 123-45-6789", 11, 13)]
+    public void Filter_DetectsSeparatedSsnsAsTwoSpans(string input, int firstEnd, int secondStart)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+
+        Assert.Equal(2, result.Spans.Count);
+        Assert.Equal((0, firstEnd), (result.Spans[0].CharacterStart, result.Spans[0].CharacterEnd));
+        Assert.Equal((secondStart, input.Length), (result.Spans[1].CharacterStart, result.Spans[1].CharacterEnd));
+    }
+
+    [Theory]
+    [InlineData("the account is 1234567891.")]
+    [InlineData("the account is 12345678901234567890.")]
+    [InlineData("the account is 123456789012345678901234567890123456789012345678.")]
+    [InlineData("the value is 123-45-6789123-45.")] // a run that does not end on a whole SSN
+    public void Filter_DoesNotDetectPartOfALongerDigitRun(string input)
+    {
+        AssertNotDetected(input);
+    }
+
+    [Fact]
+    public void Filter_DoesNotDetectARunOfMoreThanEightSsns()
+    {
+        // The repetition is bounded, as in the Java port, so a ninth SSN leaves the whole run undetected.
+        AssertNotDetected("the ssns are " + string.Concat(Enumerable.Repeat("123-45-6789", 9)) + ".");
+    }
 }
