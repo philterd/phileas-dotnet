@@ -45,9 +45,18 @@ public class PhoneNumberFilter : RulesFilter
         new(@"^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$", RegexOptions.Compiled,
             RegexDefaults.MatchTimeout);
 
+    // A bare "1" country code followed by a phone-formatted number punctuated with the same separator throughout,
+    // such as "1-112-997-5633". Without a "+", libphonenumber strips the "1" as the country code and then an area
+    // code's leading "1" as a national prefix, leaving too few digits for a possible number, so the match is
+    // dropped (#176). A number punctuated differently from the "1", as in "Item 1 112-997-5633", is not rewritten.
+    private const string BareCountryCode = @"(?<![0-9+])1([-. ])(?=\(?[0-9]{3}\)?\1[0-9]{3}\1[0-9]{4})";
+
     private static readonly PhoneNumberUtil PhoneUtil = PhoneNumberUtil.GetInstance();
 
     private readonly PhoneNumberUtil.Leniency _leniency;
+
+    // The first configured region that uses country code 1, or null when none does.
+    private readonly string? _northAmericanRegion;
 
     private readonly List<string> _regions;
 
@@ -89,6 +98,7 @@ public class PhoneNumberFilter : RulesFilter
         _regions = configured is { Count: > 0 }
             ? configured
             : new List<string> { PolicyPhoneNumber.DefaultRegion };
+        _northAmericanRegion = _regions.FirstOrDefault(region => PhoneUtil.GetCountryCodeForRegion(region) == 1);
     }
 
     /// <inheritdoc />
@@ -105,9 +115,18 @@ public class PhoneNumberFilter : RulesFilter
         foreach (var region in _regions)
             matches.AddRange(PhoneUtil.FindNumbers(input, region, _leniency, long.MaxValue));
 
+        // Also scan, once, a copy in which a bare "1" country code becomes "+1", so "1-112-997-5633" is found as
+        // "+1 112-997-5633" is. "1-" and "+1" are the same length, so offsets in the copy are offsets in the input.
+        // Only when a configured region uses country code 1, so a policy for another region does not read these as
+        // North American numbers. Java keeps a copy's match only where the input had none, but this libphonenumber
+        // port finds "112 997 5633" in "1 112 997 5633", which Java does not, so here the copy's match replaces it.
+        if (_northAmericanRegion != null)
+            AddBareCountryCodeMatches(input, matches);
+
         foreach (var match in Dedupe(matches))
         {
-            var text = match.RawString;
+            // From the input rather than RawString, which is the rewritten text for a match found in the copy.
+            var text = input.Substring(match.Start, match.Length);
             var start = match.Start;
             var end = match.Start + match.Length;
 
@@ -128,6 +147,50 @@ public class PhoneNumberFilter : RulesFilter
         var filtered = PostFilter(spans, input);
         filtered = Span.DropOverlappingSpans(filtered);
         return new Filtered(context, piece, filtered);
+    }
+
+    /// <summary>
+    ///     Scans a copy of <paramref name="input" /> in which each bare <c>1</c> country code is written <c>+1</c>,
+    ///     and adds the numbers found there that include a rewritten <c>1</c>. Matches elsewhere in the copy are the
+    ///     input's own and are left alone. A timeout is recorded rather than thrown, so a number this scan would have
+    ///     found is reported as unsearched instead of silently missed.
+    /// </summary>
+    private void AddBareCountryCodeMatches(string input, List<PhoneNumberMatch> matches)
+    {
+        List<int> rewrites;
+        try
+        {
+            rewrites = SysRegex.Matches(input, BareCountryCode, RegexOptions.None, RegexTimeout)
+                .Select(match => match.Index).ToList();
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            RecordRegexTimeout($"{FilterType} pattern '{BareCountryCode}'");
+            return;
+        }
+
+        if (rewrites.Count == 0) return;
+
+        var copy = input.ToCharArray();
+        foreach (var index in rewrites)
+        {
+            copy[index] = '+';
+            copy[index + 1] = '1';
+        }
+
+        foreach (var match in PhoneUtil.FindNumbers(new string(copy), _northAmericanRegion, _leniency, long.MaxValue))
+        {
+            var end = match.Start + match.Length;
+            if (!rewrites.Any(index => match.Start <= index && index < end)) continue;
+
+            // Replace the input's matches inside this one, so the "1" joins the span where the input found only the
+            // rest ("112 997 5633" in "1 112 997 5633"); drop this one where it only partly overlaps a match.
+            var overlapping = matches.Where(m => match.Start < m.Start + m.Length && m.Start < end).ToList();
+            if (overlapping.Any(m => m.Start < match.Start || m.Start + m.Length > end)) continue;
+
+            matches.RemoveAll(overlapping.Contains);
+            matches.Add(match);
+        }
     }
 
     /// <summary>

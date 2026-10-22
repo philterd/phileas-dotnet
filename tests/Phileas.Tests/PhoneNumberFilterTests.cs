@@ -362,4 +362,83 @@ public class PhoneNumberFilterTests
             new FilterService().Filter(policy, "ctx", 0, "Call 202-555-0182"));
         Assert.Contains("/identifiers/phoneNumber/leniency", e.Message);
     }
+
+    // -------------------------------------------------------------------------
+    // A bare "1" country code before an area code beginning with 1 (#176, as philterd/phileas#458).
+    // North American area codes cannot begin with 1, so none of these is a valid number.
+    // -------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("1-112-997-5633")]
+    [InlineData("1 112 997 5633")]
+    [InlineData("1.112.997.5633")]
+    [InlineData("1-109-299-5128 x512")]
+    public void Filter_FindsABareCountryCodeBeforeAnAreaCodeBeginningWith1(string number)
+    {
+        var input = $"call {number} now";
+
+        var span = Assert.Single(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+
+        // The text comes from the input, not the "+1" copy the number was found in.
+        Assert.Equal(number, span.Text);
+        Assert.Equal((5, 5 + number.Length), (span.CharacterStart, span.CharacterEnd));
+    }
+
+    [Fact]
+    public void Filter_FindsEachBareCountryCodeNumberInOneText()
+    {
+        var spans = CreateFilter().Filter(CreatePolicy(), "test", 0, "call 1-112-997-5633 or 1.109.299.5128 now").Spans;
+
+        Assert.Equal(new[] { "1-112-997-5633", "1.109.299.5128" }, spans.Select(span => span.Text));
+    }
+
+    [Fact]
+    public void Filter_DoesNotRewriteABareCountryCodeWithoutACountryCode1Region()
+    {
+        Assert.Empty(CreateFilter("GB").Filter(CreatePolicy("GB"), "test", 0, "call 1-112-997-5633 now").Spans);
+    }
+
+    [Theory]
+    [InlineData("Item 1 112-997-5633", "112-997-5633")]
+    [InlineData("call 1 (112) 997-5633", "(112) 997-5633")]
+    public void Filter_KeepsANumberFoundWithoutTheRewrite(string input, string expected)
+    {
+        // The "1" is punctuated differently from the number, so it is not read as a country code.
+        var span = Assert.Single(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+
+        Assert.Equal(expected, span.Text);
+        Assert.Equal(0.95, span.Confidence, 3);
+    }
+
+    // Pinned so a libphonenumber upgrade that changes them is noticed.
+    [Theory]
+    [InlineData("+1 112-997-5633", true)]
+    [InlineData("1-212-997-5633", true)]
+    [InlineData("11129975633", false)] // unseparated: rewriting it would shift the offsets
+    public void Filter_PinsLibphonenumberBehaviorAroundTheRewrite(string number, bool found)
+    {
+        var spans = CreateFilter().Filter(CreatePolicy(), "test", 0, $"call {number} now").Spans;
+
+        if (found)
+            Assert.Equal(number, Assert.Single(spans).Text);
+        else
+            Assert.Empty(spans);
+    }
+
+    [Fact]
+    public void Filter_ScansTheRewrittenCopyAtTheConfiguredLeniency()
+    {
+        // 112 is not an area code, so VALID drops the number from the copy as well.
+        var filter = new PhoneNumberFilter(CreateConfiguration(), null, Leniency.VALID);
+
+        Assert.Empty(filter.Filter(CreatePolicy(), "test", 0, "call 1-112-997-5633 now").Spans);
+    }
+
+    [Fact]
+    public void FilterService_RedactsABareCountryCodeNumber()
+    {
+        var result = new FilterService().Filter(CreatePolicy(), "ctx", 0, "call 1-112-997-5633 now");
+
+        Assert.Equal("call {{{REDACTED-phone-number}}} now", result.FilteredText);
+    }
 }

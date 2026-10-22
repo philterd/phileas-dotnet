@@ -673,6 +673,12 @@ In a JSON policy, `region` takes either a single string or an array of strings:
 
 Region codes are matched exactly, so use the uppercase ISO 3166-1 alpha-2 form (`GB`, not `gb`). An unrecognized code leaves national-format numbers undetected; only `+`-prefixed numbers are found.
 
+#### A bare `1` country code
+
+By default a candidate is detected when libphonenumber's possible-number check accepts it: its length must be possible for the region (see [Leniency](#leniency) for stricter checks). Without a `+`, libphonenumber reads a leading `1` as the country code and then strips an area code's leading `1` as a national prefix, which leaves too few digits. So when a configured region uses country code 1 (`US`, `CA`, and the other North American Numbering Plan regions), a bare `1` followed by a number punctuated with the same separator throughout is also read as `+1`. `1-112-997-5633`, `1 112 997 5633`, `1.112.997.5633`, and `1-109-299-5128 x512` are each detected as one span covering the whole number, as `+1 112-997-5633` is. Area codes cannot begin with 0 or 1, so none of these is a valid number, and none is detected with `leniency` set to `VALID` or stricter.
+
+A `1` punctuated differently from the number is not read as a country code, so `Item 1 112-997-5633` and `1 (112) 997-5633` produce `112-997-5633` and `(112) 997-5633`. A number with no separators, such as `11129975633`, is not detected. With no country code 1 region configured, no `1` is read this way.
+
 > The `region` property requires redaction policy schema 1.2.0.
 
 #### Leniency

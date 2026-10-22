@@ -17,6 +17,10 @@ _Unreleased._
 - **Two spans that abut are no longer treated as overlapping** ([#177](https://github.com/philterd/phileas-dotnet/issues/177)), as in the Java port (philterd/phileas#343). `Span.DropOverlappingSpans` compared the exclusive end as inclusive, so of two spans where one ends at the character the other starts on, one was dropped and its text left unredacted. Both are now kept. This applies to every filter.
 - **Upgraded to Philterd.PhiSql 1.5.0**, from 1.4.0. The bundled redaction policy schema stays at 1.3.0 and gains the optional `phoneNumber.leniency` in place.
 
+### Fixed
+
+- **A phone number with a bare `1` country code and an area code beginning with 1 is detected** ([#176](https://github.com/philterd/phileas-dotnet/issues/176)), as in the Java port (philterd/phileas#458). Without a `+`, libphonenumber strips the `1` and then the area code's leading `1`, leaving too few digits, so `1-112-997-5633`, `1.112.997.5633` and `1-109-299-5128 x512` were not detected and `1 112 997 5633` was detected without its `1`. When a configured region uses country code 1, a bare `1` followed by a number punctuated with the same separator throughout is now also read as `+1`, and the whole number is one span. A `1` punctuated differently, as in `Item 1 112-997-5633`, is left out of the span as before. Unlike Java, a span found this way replaces one inside it, since this libphonenumber port finds `112 997 5633` in `1 112 997 5633` and Java does not. **Behavior change:** `1 112 997 5633` is reported at confidence 0.60 rather than 0.95 for the shorter span, the confidence `1-212-997-5633` already had, so a strategy `condition` on `confidence` can choose a different strategy for it. See [Supported Identifiers → A bare `1` country code](docs/supported-identifiers.md#a-bare-1-country-code).
+
 ## 1.7.0 - 2026-10-08
 
 ### Added
