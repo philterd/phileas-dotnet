@@ -91,7 +91,7 @@ _Unreleased._
 
 ### Added
 
-- **PDF graphical bounding boxes support open-ended page ranges.** A box's `page` may now be `0` (covers **every** page) or a negative value `-N` (covers page N through the **last** page, e.g. `-2` is "all but the first page"), in addition to an exact 1-based page number. This lets a single box span a document — a logo, watermark, or footer — without knowing the page count. See [PDF Redaction → Graphical bounding boxes](docs/pdf-redaction.md#graphical-bounding-boxes).
+- **PDF graphical bounding boxes support open-ended page ranges.** A box's `page` may now be `0` (covers **every** page) or a negative value `-N` (covers page N through the **last** page, e.g. `-2` is "all but the first page"), in addition to an exact 1-based page number. This lets a single box span a document (a logo, watermark, or footer) without knowing the page count. See [PDF Redaction → Graphical bounding boxes](docs/pdf-redaction.md#graphical-bounding-boxes).
 - **Word (`.docx`) and Excel (`.xlsx`) redaction** via the new `WordDocumentRedactor` and `XlsxRedactor` services in `Phileas.Services.Office`. They redact document text in place with the open-source Open XML SDK (no license key) and remain cross-platform (`net8.0;net10.0`, no Windows dependency). Each has file-path and `byte[]` (in-memory) overloads for `Redact`/`Detect`/`ApplySpans`, returning `OfficeRedactionSpan` records. This is .NET-port-specific container-format support (the Java and Python ports remain PDF-only for documents). See [Word & Excel Redaction](docs/office-redaction.md).
 - **EIN (Employer Identification Number) detection** via the new `ein` identifier filter. It detects the canonical `NN-NNNNNNN` format at word boundaries; the hyphen position keeps it distinct from an SSN (`NNN-NN-NNNN`), and a bare nine-digit run is left to the SSN filter and span disambiguation rather than claimed as an EIN. An optional `onlyValidPrefixes` (default `false`) restricts matches to the two-digit prefixes the IRS currently issues. Requires redaction-policy schema 1.2.0 (Philterd.PhiSql 1.2.0). See [Supported Identifiers → EIN](docs/supported-identifiers.md#ein).
 - **`MAP_REPLACE` filter strategy**, which replaces a detected value from a lookup table built from inline `mappings` and/or tab-separated `mappingFiles` (inline entries win; `caseSensitive` defaults to `false`). A token absent from the table can be sent to a named `generator` from the new top-level `generators` block (an `ollama` type calling a local `/api/generate` endpoint inside your boundary, with a required `timeoutMs`); a generator failure, timeout, blank output, a value equal to the original token, or a generated value that re-scans as containing PII all fall back to `fallbackStrategy` (default `REDACT`), so a detected value is never left in the clear and a generator cannot reintroduce PII. Generated values reuse the same context-scoped cache as `RANDOM_REPLACE`, so a repeated token in a `CONTEXT` scope is not regenerated. See [Filter Strategies → MAP_REPLACE](docs/filter-strategies.md#map_replace).
@@ -137,12 +137,12 @@ _Unreleased._
   full detection pipeline on every extracted text line, so a page incurred one detector pass per line. It now
   concatenates a page's lines into a single detection pass and maps each detected span back to its line for the
   bounding box. This is a large speedup for the on-device name model (GLiNER), whose fixed per-call cost
-  dominated — e.g. redacting a dense 2-page PDF with name detection enabled dropped from ~72&#160;s to ~3&#160;s
+  dominated: redacting a dense 2-page PDF with name detection enabled dropped from ~72&#160;s to ~3&#160;s
   (about 25×). The model still chunks each page's text internally to stay within its `max_len`, so dense pages
   are handled without exceeding the model context.
 
   Because detection now sees the whole page, an entity that wraps across a line break (e.g. a name split
-  over two lines) is detected and redacted — it is split into one redaction box per line it covers. This is
+  over two lines) is detected and redacted; it is split into one redaction box per line it covers. This is
   an improvement over the previous per-line behavior, which could not detect a wrapped entity at all.
   Structured (regex) detection is unaffected: no built-in filter uses line anchors or multiline mode.
 
@@ -184,8 +184,8 @@ Built on PhiSQL 1.1.0.
 ### Fixed
 
 - **PhEye identifier block now reads the canonical `identifiers.pheyes` key.** The policy model bound the singular
-  `pheye`, so a schema-conformant PhEye policy — including a PhiSQL-compiled local GLiNER `MODEL` policy, which emits
-  `identifiers.pheyes` — was silently ignored and no detection ran. It now binds `pheyes`, matching the Phileas policy
+  `pheye`, so a schema-conformant PhEye policy (including a PhiSQL-compiled local GLiNER `MODEL` policy, which emits
+  `identifiers.pheyes`) was silently ignored and no detection ran. It now binds `pheyes`, matching the Phileas policy
   schema, the Java reference, and PhiSQL output, so local on-device (ONNX) and remote PhEye policies take effect.
 
 ## 1.1.0
