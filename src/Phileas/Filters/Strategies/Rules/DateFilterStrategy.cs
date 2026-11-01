@@ -147,8 +147,19 @@ public class DateFilterStrategy : StandardFilterStrategy
         // The invariant culture does not read an ordinal day, as in 27th March, 1965 (#178).
         var withoutOrdinal = Regex.Replace(token, @"^(\d{1,2})(?:st|nd|rd|th)\b", "$1", RegexOptions.IgnoreCase,
             RegexDefaults.MatchTimeout);
-        return withoutOrdinal != token
-               && DateTime.TryParse(withoutOrdinal, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+        if (DateTime.TryParse(withoutOrdinal, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+            return true;
+
+        // Create a custom culture based on the InvariantCulture, then change the September month abbreviation from Sep to Sept (#184)
+        var septCulture = CultureInfo.CreateSpecificCulture("");
+        var abbvMonths = (string[])septCulture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+        abbvMonths[8] = "Sept";
+        septCulture.DateTimeFormat.AbbreviatedMonthNames = abbvMonths;
+        septCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames = abbvMonths;
+        if (DateTime.TryParse(withoutOrdinal, septCulture, DateTimeStyles.None, out date))
+            return true;
+
+        return false;
     }
 
     /// <summary>The English ordinal suffix for a day of the month: 1st, 2nd, 3rd, 4th, 11th, 21st.</summary>
@@ -304,7 +315,7 @@ public class DateFilterStrategy : StandardFilterStrategy
         var dayFirstNamedMatch = Regex.Match(token,
             @"^(?<day>\d{1,2})(?<ordinal>st|nd|rd|th)?(?<sep>\s*[\-\/.]\s*|\s+)"
             + @"(?<month>January|February|March|April|May|June|July|August|September|October|November|December"
-            + @"|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?<dot>\.?)(?<beforeYear>\k<sep>|, )\d{4}$",
+            + @"|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)(?<dot>\.?)(?<beforeYear>\k<sep>|, )\d{4}$",
             RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout);
         if (dayFirstNamedMatch.Success)
         {
@@ -337,6 +348,22 @@ public class DateFilterStrategy : StandardFilterStrategy
             var dotAfterMonth = Regex.IsMatch(token, @"^[A-Za-z]{3}\.", RegexOptions.None, RegexDefaults.MatchTimeout);
             var comma = token.Contains(',') ? "," : "";
             var monthAbbr = date.ToString("MMM", CultureInfo.InvariantCulture);
+            return $"{monthAbbr}{(dotAfterMonth ? ". " : " ")}{date.Day}{comma} {date.Year}";
+        }
+
+        // Abbreviated month using Sept for September
+        if (Regex.IsMatch(token,
+                @"^(Sept)[.\s]\s*\d{1,2},?\s*\d{4}$",
+                RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout))
+        {
+            var dotAfterMonth = Regex.IsMatch(token, @"^[A-Za-z]{4}\.", RegexOptions.None, RegexDefaults.MatchTimeout);
+            var comma = token.Contains(',') ? "," : "";
+            var septCulture = CultureInfo.CreateSpecificCulture("");
+            var abbvMonths = (string[])septCulture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+            abbvMonths[8] = "Sept";
+            septCulture.DateTimeFormat.AbbreviatedMonthNames = abbvMonths;
+            septCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames = abbvMonths;
+            var monthAbbr = date.ToString("MMM", septCulture);
             return $"{monthAbbr}{(dotAfterMonth ? ". " : " ")}{date.Day}{comma} {date.Year}";
         }
 

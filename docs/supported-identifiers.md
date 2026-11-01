@@ -288,6 +288,11 @@ so a version string such as `2020.1.5` is not read as a date. A date run togethe
 `1990-01-15x`, is not detected either; the only text allowed against the end of a date is the time of
 an ISO 8601 timestamp.
 
+A month name may be spelled out or abbreviated to its first three letters, in any case and with or
+without a period after it: `Jan`, `Feb`, `Mar`, `Apr`, `May`, `Jun`, `Jul`, `Aug`, `Sep`, `Oct`, `Nov`, and `Dec`.
+September may also be abbreviated `Sept`, as in `Sept 3, 2020` or `3 Sept. 2020`. A word that only begins
+with a month's abbreviation, such as `Septic`, is not read as a month.
+
 ```csharp
 Identifiers = new Identifiers { Date = new Date() }
 ```

@@ -97,6 +97,33 @@ public class DateFilterTests
         Assert.Empty(result.Spans);
     }
 
+    [Theory]
+    [InlineData("Sept 5, 2020")]
+    [InlineData("Sept. 5, 2020")]
+    [InlineData("SEPT 5, 2020")]
+    [InlineData("5 Sept 2020")]
+    [InlineData("5-Sept-2020")]
+    public void Filter_DetectsSeptAbbreviatedMonthDate(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.Date, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("The Septic 2020 tank.")]
+    [InlineData("Septuagint 2020 edition.")]
+    [InlineData("Septa 2020 forms.")]
+    public void Filter_WordBeginningWithSeptNotDetected(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
     [Fact]
     public void Filter_EmptyInput_ReturnsNoSpans()
     {
@@ -227,11 +254,29 @@ public class DateFilterTests
     }
 
     [Fact]
+    public void FilterStrategy_ShiftDate_AbbreviatedSeptMonthStaysAsSept()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", ShiftYears = 1 };
+        var result = strategy.GetReplacement("ctx", "Sept. 5, 2023", [], 0.9, null, null, null, null);
+        Assert.Equal("Sept. 5, 2024", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
     public void FilterStrategy_ShiftDate_AbbreviatedMonthNoComma_ShiftsByMonths()
     {
         var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", ShiftMonths = 1 };
         var result = strategy.GetReplacement("ctx", "Feb 28 2022", [], 0.9, null, null, null, null);
         Assert.Equal("Mar 28 2022", result.Value);
+        Assert.True(result.Applied);
+    }
+
+    [Fact]
+    public void FilterStrategy_ShiftDate_AbbreviatedSeptMonthShiftsToThreeLetters()
+    {
+        var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", ShiftMonths = 1 };
+        var result = strategy.GetReplacement("ctx", "Sept 28 2022", [], 0.9, null, null, null, null);
+        Assert.Equal("Oct 28 2022", result.Value);
         Assert.True(result.Applied);
     }
 
