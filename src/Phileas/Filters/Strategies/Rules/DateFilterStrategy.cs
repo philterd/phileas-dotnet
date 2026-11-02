@@ -323,6 +323,18 @@ public class DateFilterStrategy : StandardFilterStrategy
             // "May" is both the full name and the abbreviation, so either branch prints the same text.
             var abbreviated = dayFirstNamedMatch.Groups["month"].Value.Length <= 3;
             var monthName = date.ToString(abbreviated ? "MMM" : "MMMM", CultureInfo.InvariantCulture);
+
+            // Use a custom CultureInfo if September has been abbreviated as Sept
+            if (dayFirstNamedMatch.Groups["month"].Value.ToLower() == "sept")
+            {
+                var septCulture = CultureInfo.CreateSpecificCulture("");
+                var abbvMonths = (string[])septCulture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+                abbvMonths[8] = "Sept";
+                septCulture.DateTimeFormat.AbbreviatedMonthNames = abbvMonths;
+                septCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames = abbvMonths;
+                monthName = date.ToString("MMM", septCulture);
+            }
+
             var dayText = dayFirstNamedMatch.Groups["day"].Value.Length == 2
                 ? date.Day.ToString("D2", CultureInfo.InvariantCulture)
                 : date.Day.ToString(CultureInfo.InvariantCulture);
@@ -351,7 +363,7 @@ public class DateFilterStrategy : StandardFilterStrategy
             return $"{monthAbbr}{(dotAfterMonth ? ". " : " ")}{date.Day}{comma} {date.Year}";
         }
 
-        // Abbreviated month using Sept for September
+        // Abbreviated month, day, year where September is abbreviated to Sept
         if (Regex.IsMatch(token,
                 @"^(Sept)[.\s]\s*\d{1,2},?\s*\d{4}$",
                 RegexOptions.IgnoreCase, RegexDefaults.MatchTimeout))
