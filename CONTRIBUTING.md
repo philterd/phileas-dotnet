@@ -3,6 +3,10 @@
 Thanks for your interest in contributing to **phileas-dotnet**, the .NET port of
 [Phileas](https://github.com/philterd/phileas).
 
+## Licensing and sign-off
+
+This project is licensed under [Apache 2.0](LICENSE), and contributions are accepted under the same license. Sign off every commit with `git commit -s` to certify the [Developer Certificate of Origin](https://developercertificate.org/); a required check enforces it. See the [Philterd contributing guide](https://github.com/philterd/.github/blob/main/CONTRIBUTING.md#licensing-and-sign-off) for how to sign off commits you have already made.
+
 ## Code of Conduct
 
 In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to
