@@ -77,7 +77,7 @@ public class DateFilter : RegexFilter
         const string day = @"(0?[1-9]|[12][0-9]|3[01])";
         const string monthNames =
             "January|February|March|April|May|June|July|August|September|October|November|December";
-        const string monthAbbreviations = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec";
+        const string monthAbbreviations = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec";
 
         // Year-first dates take a zero-padded month and day, as ISO 8601 requires and as the Java
         // filter does. Accepting a single digit there would make a version string such as 2020.1.5 a

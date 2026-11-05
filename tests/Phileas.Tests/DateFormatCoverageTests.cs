@@ -408,6 +408,17 @@ public class DateFormatCoverageTests
     }
 
     [Theory]
+    [InlineData("Sept 5, 2021", "2021")]
+    [InlineData("Sept. 5, 2020", "2020")]
+    [InlineData("SEPT 5, 1965", "1965")]
+    [InlineData("5 Sept 2025", "2025")]
+    [InlineData("5-Sept-1999", "1999")]
+    public void TruncateToYearActsOnADayFirstDateWithSeptAbbreviation(string date, string year)
+    {
+        Assert.Equal(year, Strategy(date, "TRUNCATE_TO_YEAR"));
+    }
+
+    [Theory]
     [InlineData("27 March, 1965")]
     [InlineData("3 Mar, 2020")]
     [InlineData("27th March, 1965")]
@@ -419,4 +430,20 @@ public class DateFormatCoverageTests
         Assert.EndsWith(" ago", replaced);
         Assert.DoesNotContain("REDACTED", replaced);
     }
+
+    [Theory]
+    [InlineData("Sept 5, 1965")]
+    [InlineData("Sept. 5, 2020")]
+    [InlineData("5th SEPT, 1965")]
+    [InlineData("5 Sept 2020")]
+    [InlineData("5-Sept-2025")]
+    public void RelativeActsOnADayFirstDateSeptAbbreviation(string date)
+    {
+        var replaced = Strategy(date, "RELATIVE");
+
+        Assert.EndsWith(" ago", replaced);
+        Assert.DoesNotContain("REDACTED", replaced);
+    }
+
+
 }
