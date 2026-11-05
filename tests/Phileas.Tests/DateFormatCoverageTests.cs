@@ -445,5 +445,17 @@ public class DateFormatCoverageTests
         Assert.DoesNotContain("REDACTED", replaced);
     }
 
+    [Theory]
+    [InlineData("Sept 5, 2020")]
+    [InlineData("Sept. 5, 2020")]
+    [InlineData("SEPT 5, 2020")]
+    [InlineData("5 Sept 2020")]
+    [InlineData("5-Sept-2020")]
+    public void RandomReplaceActsOnASeptAbbreviation(string date)
+    {
+        var replaced = Strategy(date, "RANDOM_REPLACE");
 
+        Assert.NotEqual(date, replaced);
+        Assert.DoesNotContain("REDACTED", replaced);
+    }
 }

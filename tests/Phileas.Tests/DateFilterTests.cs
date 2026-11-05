@@ -103,6 +103,7 @@ public class DateFilterTests
     [InlineData("SEPT 5, 2020")]
     [InlineData("5 Sept 2020")]
     [InlineData("5-Sept-2020")]
+    [InlineData("3 Sept. 2020")]
     public void Filter_DetectsSeptAbbreviatedMonthDate(string input)
     {
         var filter = CreateFilter();
@@ -261,6 +262,11 @@ public class DateFilterTests
     [InlineData("5th Sept, 2020", "15th Sept, 2020")]
     [InlineData("25 Sept 2020", "05 Oct 2020")]
     [InlineData("Sept 25 2020", "Oct 5 2020")]
+    [InlineData("Sept 3, 2020", "Sept 13, 2020")]
+    [InlineData("Sept 25, 2020", "Oct 5, 2020")]
+    [InlineData("Sept. 5, 2020", "Sept. 15, 2020")]
+    [InlineData("SEPT 5, 2020", "Sept 15, 2020")]
+    [InlineData("3 Sept. 2020", "13 Sept. 2020")]
     public void FilterStrategy_ShiftDate_AbbreviatedSeptMonthKeepsMonthAbbreviated(string date, string shifted)
     {
         var strategy = new DateFilterStrategy { Strategy = "SHIFT_DATE", ShiftDays = 10 };

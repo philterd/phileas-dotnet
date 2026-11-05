@@ -30,6 +30,9 @@ public class DateFilterStrategy : StandardFilterStrategy
 {
     private static readonly Random Random = new();
 
+    /// <summary>The invariant culture with September abbreviated <c>Sept</c> rather than <c>Sep</c> (#184).</summary>
+    private static readonly CultureInfo SeptCulture = CreateSeptCulture();
+
     /// <summary>Gets or sets the number of days to add, or subtract if negative, when shifting.</summary>
     public int ShiftDays { get; set; } = 0;
 
@@ -150,16 +153,18 @@ public class DateFilterStrategy : StandardFilterStrategy
         if (DateTime.TryParse(withoutOrdinal, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
             return true;
 
-        // Create a custom culture based on the InvariantCulture, then change the September month abbreviation from Sep to Sept (#184)
-        var septCulture = CultureInfo.CreateSpecificCulture("");
-        var abbvMonths = (string[])septCulture.DateTimeFormat.AbbreviatedMonthNames.Clone();
-        abbvMonths[8] = "Sept";
-        septCulture.DateTimeFormat.AbbreviatedMonthNames = abbvMonths;
-        septCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames = abbvMonths;
-        if (DateTime.TryParse(withoutOrdinal, septCulture, DateTimeStyles.None, out date))
-            return true;
+        // The invariant culture does not read Sept either (#184).
+        return DateTime.TryParse(withoutOrdinal, SeptCulture, DateTimeStyles.None, out date);
+    }
 
-        return false;
+    private static CultureInfo CreateSeptCulture()
+    {
+        var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+        var abbreviatedMonths = (string[])culture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+        abbreviatedMonths[8] = "Sept";
+        culture.DateTimeFormat.AbbreviatedMonthNames = abbreviatedMonths;
+        culture.DateTimeFormat.AbbreviatedMonthGenitiveNames = abbreviatedMonths;
+        return CultureInfo.ReadOnly(culture);
     }
 
     /// <summary>The English ordinal suffix for a day of the month: 1st, 2nd, 3rd, 4th, 11th, 21st.</summary>
@@ -327,12 +332,7 @@ public class DateFilterStrategy : StandardFilterStrategy
             // Use a custom CultureInfo if September has been abbreviated as Sept
             if (dayFirstNamedMatch.Groups["month"].Value.ToLower() == "sept")
             {
-                var septCulture = CultureInfo.CreateSpecificCulture("");
-                var abbvMonths = (string[])septCulture.DateTimeFormat.AbbreviatedMonthNames.Clone();
-                abbvMonths[8] = "Sept";
-                septCulture.DateTimeFormat.AbbreviatedMonthNames = abbvMonths;
-                septCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames = abbvMonths;
-                monthName = date.ToString("MMM", septCulture);
+                monthName = date.ToString("MMM", SeptCulture);
             }
 
             var dayText = dayFirstNamedMatch.Groups["day"].Value.Length == 2
@@ -370,12 +370,7 @@ public class DateFilterStrategy : StandardFilterStrategy
         {
             var dotAfterMonth = Regex.IsMatch(token, @"^[A-Za-z]{4}\.", RegexOptions.None, RegexDefaults.MatchTimeout);
             var comma = token.Contains(',') ? "," : "";
-            var septCulture = CultureInfo.CreateSpecificCulture("");
-            var abbvMonths = (string[])septCulture.DateTimeFormat.AbbreviatedMonthNames.Clone();
-            abbvMonths[8] = "Sept";
-            septCulture.DateTimeFormat.AbbreviatedMonthNames = abbvMonths;
-            septCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames = abbvMonths;
-            var monthAbbr = date.ToString("MMM", septCulture);
+            var monthAbbr = date.ToString("MMM", SeptCulture);
             return $"{monthAbbr}{(dotAfterMonth ? ". " : " ")}{date.Day}{comma} {date.Year}";
         }
 
