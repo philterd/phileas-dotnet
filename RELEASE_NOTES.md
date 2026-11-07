@@ -9,6 +9,7 @@ _Unreleased._
 ### Fixed
 
 - **Dates with the `Sept` abbreviation are detected** ([#184](https://github.com/philterd/phileas-dotnet/issues/184)), as in the Java port (philterd/phileas#466). `Sep` was the only accepted abbreviation of September, so `Sept 5, 2020`, `Sept. 5, 2020`, `SEPT 5, 2020`, `5 Sept 2020` and `5-Sept-2020` were left in the output. `Sept` and `Sept.` are now accepted wherever `Sep` is, in any case, and a word that only begins with them, such as `Septic`, is not read as a month. `SHIFT` keeps a month that does not change as written, so `Sept 3, 2020` shifted ten days reads `Sept 13, 2020`, and abbreviates a changed month to three letters, so `Sept 25, 2020` reads `Oct 5, 2020`. `TRUNCATE_TO_YEAR`, `RELATIVE` and `RANDOM_REPLACE` act on these dates as they do on `Sep`. See [Supported Identifiers → Date](docs/supported-identifiers.md#date).
+- **`Age of` and plural ages are detected** ([#191](https://github.com/philterd/phileas-dotnet/issues/191)). Ages were not detected when the keyword was followed by `of` or when multiple ages where written in plural, so `Age of 25`, `Aged 23 to 30`, `Ages 31, 32, and 33` were left in the output. `Age of` and ages written in plural are now accepted. Words that end with `age`, `aged`, or `ages` are not accepted, such as `images 1 to 20` or `average of 30`. See [Supported Identifiers → Age](docs/supported-identifiers.md#age).
 
 ## 1.8.0 - 2026-10-23
 
