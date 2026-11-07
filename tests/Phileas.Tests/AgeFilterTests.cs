@@ -71,8 +71,43 @@ public class AgeFilterTests
     }
 
     [Theory]
+    [InlineData("She died at the age of 39")]
+    [InlineData("He left at the age of 20")]
+    [InlineData("Age of 39")]
+    public void Filter_DetectsAgeOf(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+    }
+
+    [Theory]
+    [InlineData("They were between the ages of 39 and 41.", "ages of 39 and 41")]
+    [InlineData("the ages of 39, 41, and 44", "ages of 39, 41, and 44")]
+    [InlineData("Patients ages 39 to 41 enrolled.", "ages 39 to 41")]
+    [InlineData("ages 39-41", "ages 39-41")]
+    [InlineData("Ages: 39, 41", "Ages: 39, 41")]
+    [InlineData("They were aged between 39 and 41", "aged between 39 and 41")]
+    [InlineData("The sisters, aged 39 and 41, left.", "aged 39 and 41")]
+    [InlineData("The brothers were aged 39 to 41", "aged 39 to 41")]
+    [InlineData("The brothers were aged from 39 to 41", "aged from 39 to 41")]
+    public void Filter_DetectsPluralAges(string input, string spanText)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.True(result.Spans[0].Text == spanText);
+    }
+
+    [Theory]
     [InlineData("No age mentioned here.")]
     [InlineData("The year is 2024.")]
+    [InlineData("average of 39")]
+    [InlineData("coverage of 39")]
+    [InlineData("the age of steam")]
+    [InlineData("images of 39")]
     public void Filter_DoesNotDetectNonAge(string input)
     {
         var filter = CreateFilter();

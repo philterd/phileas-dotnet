@@ -52,7 +52,7 @@ public class AgeFilter : RegexFilter
     ///         plausibility check.
     ///     </para>
     /// </summary>
-    private const string PlausibleAge = @"0{0,2}(?:1[01][0-9]|12[0-5]|[1-9][0-9]|[0-9])(?:\.[0-9]+)?";
+    private const string PlausibleAge = @"(?:0{0,2}(?:1[01][0-9]|12[0-5]|[1-9][0-9]|[0-9])(?:\.[0-9]+)?)";
 
     /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
     private static readonly HashSet<string> ContextualTerms = new() { "age", "years" };
@@ -62,7 +62,7 @@ public class AgeFilter : RegexFilter
             .WithPattern(@"\b[0-9.]+[\s]*(year|years|yrs|yr|yo)(\.?)(\s)*(old)?\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder()
-            .WithPattern($@"\b(age)(d)?{KeywordSeparator}{PlausibleAge}\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\b(age)s?(d|\s+of)?(\s*(between|from))?{KeywordSeparator}{PlausibleAge}(?:,?\s*(,|and|to|-)+\s*{PlausibleAge})*\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder()
             .WithPattern(@"\b[0-9.]+[-]*(year|years|yrs|yr|yo)(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase)
