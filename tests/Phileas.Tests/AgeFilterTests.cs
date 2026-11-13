@@ -71,15 +71,14 @@ public class AgeFilterTests
     }
 
     [Theory]
-    [InlineData("She died at the age of 39")]
-    [InlineData("He left at the age of 20")]
-    [InlineData("Age of 39")]
-    public void Filter_DetectsAgeOf(string input)
+    [InlineData("She died at the age of 39", "age of 39")]
+    [InlineData("He left at the age of 20", "age of 20")]
+    [InlineData("Age of 39", "Age of 39")]
+    [InlineData("at the age of 39.5", "age of 39.5")]
+    public void Filter_DetectsAgeOf(string input, string spanText)
     {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, input);
-        Assert.NotEmpty(result.Spans);
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Equal(spanText, Assert.Single(result.Spans).Text);
     }
 
     [Theory]
@@ -92,13 +91,53 @@ public class AgeFilterTests
     [InlineData("The sisters, aged 39 and 41, left.", "aged 39 and 41")]
     [InlineData("The brothers were aged 39 to 41", "aged 39 to 41")]
     [InlineData("The brothers were aged from 39 to 41", "aged from 39 to 41")]
-    public void Filter_DetectsPluralAges(string input, string spanText)
+    [InlineData("They were ages between 39 and 41", "ages between 39 and 41")]
+    [InlineData("Eligible at age between 18 and 65.", "age between 18 and 65")]
+    [InlineData("The sisters, aged 39-41, left.", "aged 39-41")]
+    [InlineData("ages 39 - 41", "ages 39 - 41")]
+    [InlineData("ages 39, 41 and 44", "ages 39, 41 and 44")]
+    [InlineData("ages 39 and 41 and 44", "ages 39 and 41 and 44")]
+    [InlineData("ages 39 and 41, and 44", "ages 39 and 41, and 44")]
+    [InlineData("ages 5 or 6", "ages 5 or 6")]
+    [InlineData("The siblings, aged 3, 5 and 7, left.", "aged 3, 5 and 7")]
+    [InlineData("aged 39 or 41", "aged 39 or 41")]
+    [InlineData("aged 39 and 41 and 44", "aged 39 and 41 and 44")]
+    [InlineData("aged 39-41 and 44", "aged 39-41 and 44")]
+    [InlineData("Age: between 18 and 65", "Age: between 18 and 65")]
+    [InlineData("Ages - from 18 to 65", "Ages - from 18 to 65")]
+    [InlineData("the ages of between 18 and 65", "ages of between 18 and 65")]
+    [InlineData("Eligible age 18-65.", "age 18-65")]
+    [InlineData("at age 39 to 41", "age 39 to 41")]
+    [InlineData("Ages: 39, 2", "Ages: 39, 2")] // after the plural, a bare comma joins
+    public void Filter_DetectsEveryAgeInARangeOrList(string input, string spanText)
     {
-        var filter = CreateFilter();
-        var policy = CreatePolicy();
-        var result = filter.Filter(policy, "test", 0, input);
-        Assert.NotEmpty(result.Spans);
-        Assert.True(result.Spans[0].Text == spanText);
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Equal(spanText, Assert.Single(result.Spans).Text);
+    }
+
+    [Theory]
+    [InlineData("Patient age 45, 3 visits", "age 45")]
+    [InlineData("Age: 5, 10, 15 mg", "Age: 5")]
+    [InlineData("age of 39, 2 children", "age of 39")]
+    [InlineData("age 39 and 2 children", "age 39")]
+    [InlineData("aged 65 and over", "aged 65")]
+    [InlineData("aged 39, 2 children", "aged 39")]
+    [InlineData("ages 20,,,21", "ages 20")]
+    public void ANumberThatDoesNotContinueTheAgesIsNotRedacted(string input, string spanText)
+    {
+        // After "age" or "aged", a bare comma usually starts unrelated text, so it ends the match; a
+        // malformed separator ends it after any keyword. Reading past either redacted the number that
+        // followed.
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Equal(spanText, Assert.Single(result.Spans).Text);
+    }
+
+    [Fact]
+    public void AnAgeWrittenWithBothAKeywordAndAUnitIsOneSpan()
+    {
+        // "age of 39" and "39 years" overlap; the longer span is kept, which covers the value.
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, "She retired at the age of 39 years.");
+        Assert.Equal("age of 39", Assert.Single(result.Spans).Text);
     }
 
     [Theory]
@@ -108,6 +147,9 @@ public class AgeFilterTests
     [InlineData("coverage of 39")]
     [InlineData("the age of steam")]
     [InlineData("images of 39")]
+    [InlineData("agebetween 39")]
+    [InlineData("agesd 39")]
+    [InlineData("ages 20andand21")]
     public void Filter_DoesNotDetectNonAge(string input)
     {
         var filter = CreateFilter();
@@ -255,17 +297,25 @@ public class AgeFilterTests
         Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
     }
 
-    [Fact]
-    public void AKeywordFollowedByAWhitespaceRunDoesNotBacktrackQuadratically()
+    [Theory]
+    [InlineData("age", " ")]
+    [InlineData("ages 1", ", ")]
+    [InlineData("ages 1", " , and")]
+    [InlineData("ages 1", ", 1")]
+    [InlineData("aged 1", ", 1")]
+    [InlineData("aged 1", " and 1, 1")]
+    [InlineData("Age: between 1", ", 1")]
+    public void AKeywordFollowedByARepeatedRunDoesNotBacktrackQuadratically(string keyword, string unit)
     {
         // The separator keeps its whitespace inside the optional group so a run of it has only one
-        // possible match. Written the ambiguous way, \s*[:=-]?\s*, this input takes time quadratic in
-        // the length of the run. Doubling the run must not quadruple the work.
+        // possible match. Written the ambiguous way, \s*[:=-]?\s*, a whitespace run takes time
+        // quadratic in its length. The comma list after "ages" is checked the same way.
         var filter = CreateFilter();
         var policy = CreatePolicy();
+        string Input(int n) => keyword + string.Concat(Enumerable.Repeat(unit, n)) + "x";
 
-        var shortRun = Time(() => filter.Filter(policy, "test", 0, "age" + new string(' ', 4_000) + "x"));
-        var longRun = Time(() => filter.Filter(policy, "test", 0, "age" + new string(' ', 16_000) + "x"));
+        var shortRun = Time(() => filter.Filter(policy, "test", 0, Input(4_000)));
+        var longRun = Time(() => filter.Filter(policy, "test", 0, Input(16_000)));
 
         // Four times the input; a quadratic pattern would be about sixteen times the work. The bar is
         // loose enough not to be flaky on a shared runner and still fails a quadratic regression.

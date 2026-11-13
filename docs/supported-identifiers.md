@@ -133,16 +133,31 @@ Detects age expressions in the forms below.
 | Written form | Example |
 |---|---|
 | A number with its unit | `42 years old`, `42-year-old`, `30 yo`, `3.5 yrs`, `22 y/o` |
-| An `age`, `aged` or `ages` keyword | `age 25`, `aged 65`, `Age: 47`, `Age = 47`, `Age - 47`, `Age:47`, `ages 20 and 30` |
+| An `age`, `aged` or `ages` keyword | `age 25`, `aged 65`, `Age: 47`, `Age = 47`, `Age - 47`, `Age:47`, `at the age of 39` |
+| Two or more ages after a keyword | `aged 39 and 41`, `ages 39-41`, `the ages of 39, 41, and 44`, `age between 18 and 65` |
 
 A keyword may be separated from its value by `:`, `=` or `-`, with or without surrounding
 whitespace, or by whitespace alone, and that whitespace may include a line break, so a label on one
-line with its value on the next is detected. A word merely ending in "age", such as `coverage: 47`,
-is not a keyword. A keyword may also be separated from its value by the words `of`, `between`, and `from`, however
-these words require surrounding whitespace.
+line with its value on the next is detected. `age` and `ages` may also be followed by `of`, as in
+`at the age of 39`. A word merely ending in "age" or "ages", such as `coverage: 47` or `images of
+39`, is not a keyword.
 
-Multiple ages written in plural are also detected when separated by `,`, `to`, `and` or `-`. A `,` placed
-between a value and a plural separator is also detected, such as `ages 20, 21, and 22`.
+How many ages a keyword takes depends on the keyword:
+
+| Keyword | Values | Example |
+|---|---|---|
+| `age`, `age of` | One, or a range joined by `-` or `to` | `age 18-65` |
+| `aged` | Any number, joined by `and`, `or`, `to` or `-`, with commas inside a list one of those closes | `aged 3, 5 and 7` |
+| `ages`, `ages of` | Any number, joined by `,`, `-`, `and`, `or` or `to` | `Ages: 39, 41` |
+| `age`, `aged` or `ages`, then `between` or `from` | As for `aged` | `Age: between 18 and 65` |
+
+`between` and `from` may follow `of` or a separator, as in `the ages of between 18 and 65`.
+
+After `age` or `aged`, a comma alone does not join another age, so `age 45, 3 visits` detects
+`age 45` and `aged 39, 2 children` detects `aged 39`. A number joined by a word or `-` is read as
+another age, so `aged 30 and 2 children` detects `aged 30 and 2` and `Age 47 to 3 months` detects
+`Age 47 to 3`. After `ages`, a comma alone does join, so `ages 39, 2 children` detects
+`ages 39, 2`.
 
 A number following a keyword is read as an age only when it is between 0 and 125, so `Bronze Age
 1200` and `form AGE 2024` are not detected. A zero-padded value, as a fixed-width record writes it
