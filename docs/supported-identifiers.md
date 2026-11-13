@@ -159,6 +159,9 @@ another age, so `aged 30 and 2 children` detects `aged 30 and 2` and `Age 47 to 
 `Age 47 to 3`. After `ages`, a comma alone does join, so `ages 39, 2 children` detects
 `ages 39, 2`.
 
+A keyword match never stops right before a `-` or `/` followed by a digit, so a date after a
+keyword, as in `age 25-03-2024` or `Age: 12/25/2020`, is not detected as an age.
+
 A number following a keyword is read as an age only when it is between 0 and 125, so `Bronze Age
 1200` and `form AGE 2024` are not detected. A zero-padded value, as a fixed-width record writes it
 (`AGE 047`), still reads. The bound applies only to the keyword forms: a number

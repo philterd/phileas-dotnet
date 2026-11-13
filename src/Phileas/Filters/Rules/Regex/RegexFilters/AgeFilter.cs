@@ -82,6 +82,13 @@ public class AgeFilter : RegexFilter
     /// </summary>
     private const string AgeSeries = $@"(?:{PlausibleAge}(?:(?:\s*,\s*|{AgeWordJoin}){PlausibleAge})*)";
 
+    /// <summary>
+    ///     Ends a keyword match. A match may not stop right before <c>-</c> or <c>/</c> and a digit, so
+    ///     the date in <c>age 25-03-2024</c> or <c>Age: 12/25/2020</c> is not cut into a partial age
+    ///     and left to the date filter.
+    /// </summary>
+    private const string KeywordEnd = @"\b(?![-/][0-9])";
+
     /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
     private static readonly HashSet<string> ContextualTerms = new() { "age", "years" };
 
@@ -91,21 +98,21 @@ public class AgeFilter : RegexFilter
             .WithInitialConfidence(0.90).Build(),
         // "age 25", "Age: 47", "at the age of 39", "age 18-65".
         new FilterPattern.Builder()
-            .WithPattern($@"\bage(?:\s+of)?{KeywordSeparator}{AgeOrRange}\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\bage(?:\s+of)?{KeywordSeparator}{AgeOrRange}{KeywordEnd}", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         // "aged 65", "aged 39 to 41", "aged 3, 5 and 7".
         new FilterPattern.Builder()
-            .WithPattern($@"\baged{KeywordSeparator}{AgeRun}\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\baged{KeywordSeparator}{AgeRun}{KeywordEnd}", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         // "ages 39-41", "Ages: 39, 41", "the ages of 39, 41, and 44".
         new FilterPattern.Builder()
-            .WithPattern($@"\bages(?:\s+of)?{KeywordSeparator}{AgeSeries}\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\bages(?:\s+of)?{KeywordSeparator}{AgeSeries}{KeywordEnd}", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         // "age between 18 and 65", "Age: between 18 and 65", "the ages of between 18 and 65". The
         // keyword is separated from "between" or "from" by whitespace or a separator, never by
         // nothing, so "agebetween" is not a keyword.
         new FilterPattern.Builder()
-            .WithPattern($@"\bage[ds]?(?:\s+of)?(?:\s*[:=-]\s*|\s+)(?:between|from)\s+{AgeRun}\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\bage[ds]?(?:\s+of)?(?:\s*[:=-]\s*|\s+)(?:between|from)\s+{AgeRun}{KeywordEnd}", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder()
             .WithPattern(@"\b[0-9.]+[-]*(year|years|yrs|yr|yo)(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase)

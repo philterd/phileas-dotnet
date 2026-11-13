@@ -109,10 +109,24 @@ public class AgeFilterTests
     [InlineData("Eligible age 18-65.", "age 18-65")]
     [InlineData("at age 39 to 41", "age 39 to 41")]
     [InlineData("Ages: 39, 2", "Ages: 39, 2")] // after the plural, a bare comma joins
+    [InlineData("ages 3-5-7", "ages 3-5-7")] // a hyphen chain of plausible ages after the plural
     public void Filter_DetectsEveryAgeInARangeOrList(string input, string spanText)
     {
         var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
         Assert.Equal(spanText, Assert.Single(result.Spans).Text);
+    }
+
+    [Theory]
+    [InlineData("age 25-03-2024")]
+    [InlineData("ages 12-25-2020")]
+    [InlineData("Age: 12/25/2020")]
+    [InlineData("aged 12-25-2020")]
+    [InlineData("age between 12-25-2020")]
+    public void ADateAfterAKeywordIsNotCutIntoAPartialAge(string input)
+    {
+        // A keyword match stopped at a hyphen or slash, so the first part of a date was redacted as
+        // an age and the rest was left for the date filter to miss.
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
     }
 
     [Theory]
