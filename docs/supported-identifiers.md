@@ -8,7 +8,7 @@ phileas-dotnet ships with a comprehensive set of built-in PII identifier types, 
 
 | Property Name | JSON Key | Description |
 |---|---|---|
-| `Age` | `age` | Numeric age expressions (e.g. "42 years old") |
+| `Age` | `age` | Age expressions (numeric and spelled-out, e.g. "42 years old", "thirty-five years old") |
 | `BankRoutingNumber` | `bankRoutingNumber` | US ABA bank routing numbers |
 | `BitcoinAddress` | `bitcoinAddress` | Bitcoin wallet addresses |
 | `CanadaSin` | `canadaSin` | Canadian Social Insurance Numbers (`NNN-NNN-NNN`, Luhn-validated) |
@@ -132,9 +132,14 @@ Detects age expressions in the forms below.
 
 | Written form | Example |
 |---|---|
-| A number with its unit | `42 years old`, `42-year-old`, `30 yo`, `3.5 yrs`, `22 y/o` |
-| An `age`, `aged` or `ages` keyword | `age 25`, `aged 65`, `Age: 47`, `Age = 47`, `Age - 47`, `Age:47`, `at the age of 39` |
+| A number with its unit | `42 years old`, `42-year-old`, `30 yo`, `3.5 yrs`, `22 y/o`, `thirty-five years old`, `five yo` |
+| An `age`, `aged` or `ages` keyword | `age 25`, `aged 65`, `Age: 47`, `Age = 47`, `Age - 47`, `Age:47`, `at the age of 39`, `age of thirty-nine`, `aged forty one` |
 | Two or more ages after a keyword | `aged 39 and 41`, `ages 39-41`, `the ages of 39, 41, and 44`, `age between 18 and 65` |
+
+Spelled-out numbers are supported in two forms:
+
+* **Before age units:** Numbers from `zero` through `ninety-nine`, and hundreds prefixed with `one hundred` or `a hundred` (with optional `and`, up to `one hundred and ninety-nine`), e.g., `thirty-five years old`, `five yo`, `twelve yrs`, `one hundred thirty years old`. Compound tens and units may be hyphenated or space-separated (`thirty-five`, `thirty five`). Because the explicit unit identifies the expression as an age, the 125 plausibility ceiling does not apply to unit-based forms. Multi-hundred numbers (e.g., `two hundred`) are not recognized.
+* **After single-age keywords:** Numbers from `zero` through `one hundred and twenty-five` following `age`, `age of`, `aged`, or `Age:`, e.g., `age of thirty-nine`, `aged forty one`, `Age: twenty`, `age of one hundred and two`. Keyword matches enforce the 125 plausibility ceiling: numbers above 125 (such as `age of one hundred twenty-six`, `age of one hundred thirty`, or `age of two hundred`) are not detected. Spelled-out multiple-age expressions (e.g., `aged thirty and forty`) are not supported.
 
 A keyword may be separated from its value by `:`, `=` or `-`, with or without surrounding
 whitespace, or by whitespace alone, and that whitespace may include a line break, so a label on one
@@ -162,10 +167,10 @@ another age, so `aged 30 and 2 children` detects `aged 30 and 2` and `Age 47 to 
 A keyword match never stops right before a `-` or `/` followed by a digit, so a date after a
 keyword, as in `age 25-03-2024` or `Age: 12/25/2020`, is not detected as an age.
 
-A number following a keyword is read as an age only when it is between 0 and 125, so `Bronze Age
-1200` and `form AGE 2024` are not detected. A zero-padded value, as a fixed-width record writes it
+A number following a keyword is read as an age only when it is between 0 and 125 (numeric or spelled-out), so
+`Bronze Age 1200`, `form AGE 2024`, and `age of one hundred thirty` are not detected. A zero-padded value, as a fixed-width record writes it
 (`AGE 047`), still reads. The bound applies only to the keyword forms: a number
-carrying its own unit, as in `1200 years old`, is what makes that form an age and is not
+carrying its own unit, as in `1200 years old` or `one hundred thirty years old`, is what makes that form an age and is not
 plausibility-checked.
 
 ```csharp

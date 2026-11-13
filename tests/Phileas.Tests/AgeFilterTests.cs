@@ -337,6 +337,132 @@ public class AgeFilterTests
             $"4x the input took {longRun:F1} ms against {shortRun:F1} ms, which looks quadratic");
     }
 
+    // ---------------- spelled-out ages (#191) ----------------
+
+    [Theory]
+    [InlineData("The patient is thirty-five years old.", "thirty-five years old")]
+    [InlineData("He is thirty five years old.", "thirty five years old")]
+    [InlineData("She is a thirty-five-year-old female.", "thirty-five-year-old")]
+    [InlineData("He is five yo.", "five yo")]
+    [InlineData("The child was twelve yrs.", "twelve yrs")]
+    [InlineData("Patient is twelve yrs old", "twelve yrs old")]
+    [InlineData("He is one hundred years old.", "one hundred years old")]
+    [InlineData("She is a hundred years old.", "a hundred years old")]
+    [InlineData("one hundred and two years old", "one hundred and two years old")]
+    [InlineData("one hundred and twenty-five years old", "one hundred and twenty-five years old")]
+    [InlineData("She is twenty-two y/o.", "twenty-two y/o")]
+    [InlineData("He is twenty two y/o.", "twenty two y/o")]
+    [InlineData("a seventy-year-old patient", "seventy-year-old")]
+    [InlineData("forty-one-yr-old", "forty-one-yr-old")]
+    [InlineData("two yo", "two yo")]
+    [InlineData("one hundred thirty years old", "one hundred thirty years old")]
+    public void Filter_DetectsSpelledOutAgeWithUnits(string input, string spanText)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Equal(spanText, Assert.Single(result.Spans).Text);
+    }
+
+    [Theory]
+    [InlineData("She died at the age of thirty-nine", "age of thirty-nine")]
+    [InlineData("He left at the age of twenty", "age of twenty")]
+    [InlineData("at the age of thirty-nine", "age of thirty-nine")]
+    [InlineData("Age of thirty-nine", "Age of thirty-nine")]
+    [InlineData("age thirty-nine", "age thirty-nine")]
+    [InlineData("aged forty one", "aged forty one")]
+    [InlineData("aged forty-two", "aged forty-two")]
+    [InlineData("Age: twenty", "Age: twenty")]
+    [InlineData("Age:twenty", "Age:twenty")]
+    [InlineData("Age = twenty", "Age = twenty")]
+    [InlineData("Age - twenty", "Age - twenty")]
+    [InlineData("age of one hundred and two", "age of one hundred and two")]
+    [InlineData("age of one hundred two", "age of one hundred two")]
+    [InlineData("age of one hundred", "age of one hundred")]
+    [InlineData("age of a hundred", "age of a hundred")]
+    [InlineData("age of one hundred and twenty-five", "age of one hundred and twenty-five")]
+    [InlineData("age of one hundred twenty-five", "age of one hundred twenty-five")]
+    [InlineData("age of zero", "age of zero")]
+    [InlineData("age zero", "age zero")]
+    public void Filter_DetectsSpelledOutAgeAfterKeyword(string input, string spanText)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Equal(spanText, Assert.Single(result.Spans).Text);
+    }
+
+    [Theory]
+    [InlineData("THIRTY-FIVE YEARS OLD", "THIRTY-FIVE YEARS OLD")]
+    [InlineData("Age Of Thirty-Nine", "Age Of Thirty-Nine")]
+    [InlineData("AGED FORTY ONE", "AGED FORTY ONE")]
+    [InlineData("Age: Twenty", "Age: Twenty")]
+    [InlineData("ONE HUNDRED AND TWO YEARS OLD", "ONE HUNDRED AND TWO YEARS OLD")]
+    public void SpelledOutAge_CaseInsensitivity(string input, string spanText)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Equal(spanText, Assert.Single(result.Spans).Text);
+    }
+
+    [Theory]
+    [InlineData("age of one hundred twenty-five", true)]
+    [InlineData("age of one hundred and twenty-five", true)]
+    [InlineData("age of one hundred and twenty", true)]
+    [InlineData("age of one hundred and nineteen", true)]
+    [InlineData("age of one hundred", true)]
+    [InlineData("age of a hundred", true)]
+    [InlineData("age of one hundred and twenty-six", false)]
+    [InlineData("age of one hundred twenty-six", false)]
+    [InlineData("age of one hundred thirty", false)]
+    [InlineData("age of one hundred and thirty", false)]
+    [InlineData("age of one hundred thirty-five", false)]
+    [InlineData("age of one hundred forty", false)]
+    [InlineData("age of one hundred ninety-nine", false)]
+    [InlineData("age of two hundred", false)]
+    [InlineData("age of two hundred and one", false)]
+    [InlineData("age of three hundred", false)]
+    [InlineData("age two hundred", false)]
+    [InlineData("aged one hundred twenty-six", false)]
+    public void SpelledOutAge_KeywordCeilingAt125(string input, bool detected)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Equal(detected, result.Spans.Count > 0);
+    }
+
+    [Theory]
+    [InlineData("age often")]
+    [InlineData("aged tenderloin")]
+    [InlineData("aged cheddar")]
+    [InlineData("storage of thirty")]
+    [InlineData("average of twenty")]
+    [InlineData("coverage of thirty")]
+    [InlineData("images of thirty")]
+    [InlineData("agethirty")]
+    [InlineData("ageofthirty")]
+    [InlineData("storage - twenty")]
+    [InlineData("mileage: twenty")]
+    public void SpelledOutAge_FalsePositivesAreRejected(string input)
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
+    [Fact]
+    public void AnAgeWrittenWithBothASpelledKeywordAndAUnitIsOneSpan()
+    {
+        var result = CreateFilter().Filter(CreatePolicy(), "test", 0, "She retired at the age of thirty-nine years.");
+        Assert.Equal("age of thirty-nine", Assert.Single(result.Spans).Text);
+    }
+
+    [Fact]
+    public void FilterService_RedactsSpelledOutAge()
+    {
+        var policy = new PhileasPolicy
+        {
+            Name = "test",
+            Identifiers = new Identifiers { Age = new Age() }
+        };
+        var result = new FilterService().Filter(policy, "test", 0, "The patient is thirty-five years old.");
+        Assert.Contains("REDACTED", result.FilteredText);
+        Assert.DoesNotContain("thirty-five years old", result.FilteredText);
+    }
+
     private static double Time(Action action)
     {
         action(); // let the compiled patterns warm up
