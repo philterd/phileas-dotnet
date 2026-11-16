@@ -89,6 +89,61 @@ public class AgeFilter : RegexFilter
     /// </summary>
     private const string KeywordEnd = @"\b(?![-/][0-9])";
 
+    /// <summary>Number words from zero through nineteen.</summary>
+    private const string NumberWordZeroToNineteen =
+        @"(?:nineteen|eighteen|seventeen|sixteen|fifteen|fourteen|thirteen|twelve|eleven|ten|nine|eight|seven|six|five|four|three|two|one|zero)";
+
+    /// <summary>Number words for tens from twenty through ninety.</summary>
+    private const string NumberWordTens =
+        @"(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)";
+
+    /// <summary>Number words from one through nine, used as the unit in compound tens.</summary>
+    private const string NumberWordOneToNine =
+        @"(?:nine|eight|seven|six|five|four|three|two|one)";
+
+    /// <summary>Number words from one through five, used as the unit in centenarian compounds (121-125).</summary>
+    private const string NumberWordOneToFive =
+        @"(?:five|four|three|two|one)";
+
+    /// <summary>Compound number words from 21 through 99 with either a space or a hyphen.</summary>
+    private const string NumberWordCompound =
+        $@"(?:{NumberWordTens}[-\s]+{NumberWordOneToNine})";
+
+    /// <summary>Cardinal numbers from 0 through 99 in words.</summary>
+    private const string Spelled0To99 =
+        $@"(?:{NumberWordCompound}|{NumberWordTens}|{NumberWordZeroToNineteen})";
+
+    /// <summary>Hundred prefix with either "one hundred" or "a hundred".</summary>
+    private const string HundredPrefix =
+        @"(?:(?:one|a)\s+hundred)";
+
+    /// <summary>Optional "and" connector after a hundred prefix.</summary>
+    private const string HundredAnd =
+        @"(?:\s+and)?\s+";
+
+    /// <summary>Spelled-out numbers up to any age (0-99 or 100+ with optional unit) for unit patterns.</summary>
+    private const string SpelledNumber =
+        $@"(?:{HundredPrefix}(?:{HundredAnd}{Spelled0To99})?|{Spelled0To99})";
+
+    /// <summary>
+    ///     Spelled-out numbers from 0 through 125 for keyword-based age detection.
+    ///     Enforces the plausibility ceiling of 125, matching the numeric <see cref="PlausibleAge" /> bound.
+    /// </summary>
+    private const string PlausibleSpelledAge =
+        $@"(?:{HundredPrefix}{HundredAnd}twenty(?:[-\s]+{NumberWordOneToFive})?|{HundredPrefix}(?:{HundredAnd}(?:nineteen|eighteen|seventeen|sixteen|fifteen|fourteen|thirteen|twelve|eleven|ten|nine|eight|seven|six|five|four|three|two|one))?|{Spelled0To99})";
+
+    /// <summary>All number words used to detect implausible continuations after a spelled-out keyword age.</summary>
+    private const string AllNumberWords =
+        $@"(?:hundred|thousand|million|billion|{NumberWordTens}|{NumberWordZeroToNineteen})";
+
+    /// <summary>
+    ///     Ends a spelled-out keyword match. A match may not be followed by another number word (or "and"
+    ///     plus a number word), which would indicate an unparsed multi-word number or a value exceeding 125,
+    ///     nor by a date delimiter and digit.
+    /// </summary>
+    private const string SpelledKeywordEnd =
+        $@"\b(?![\s-]+(?:and\s+)?{AllNumberWords}\b)(?![-/][0-9])";
+
     /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
     private static readonly HashSet<string> ContextualTerms = new() { "age", "years" };
 
@@ -118,6 +173,14 @@ public class AgeFilter : RegexFilter
             .WithPattern(@"\b[0-9.]+[-]*(year|years|yrs|yr|yo)(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder().WithPattern(@"\b([0-9]{1,3}) (y\/o)\b", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.90).Build(),
+        // Pattern 8: Spelled-out ages before units: "thirty-five years old", "thirty-five-year-old", "five yo", "twelve yrs", "one hundred years old".
+        new FilterPattern.Builder()
+            .WithPattern($@"\b{SpelledNumber}[\s-]+(?:year|years|yrs|yr|yo|y\/o)(?:\.?)(?:[\s-]+old)?\b", RegexOptions.IgnoreCase)
+            .WithInitialConfidence(0.90).Build(),
+        // Pattern 9: Spelled-out ages after keywords: "age of thirty-nine", "age thirty-nine", "aged forty one", "Age: twenty", "age of one hundred and two".
+        new FilterPattern.Builder()
+            .WithPattern($@"\b(?:age(?:\s+of\b)?|aged){KeywordSeparator}\b{PlausibleSpelledAge}{SpelledKeywordEnd}", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build()
     );
 
