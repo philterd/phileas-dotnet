@@ -19,7 +19,7 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 /// <summary>
 ///     Regular-expression fragments shared by the filters that detect hyphenated numeric
 ///     identifiers, currently <see cref="SsnFilter" />, <see cref="EinFilter" />,
-///     <see cref="ItinFilter" /> and <see cref="CanadaSinFilter" />. They live in one place so they cannot drift apart over what
+///     <see cref="ItinFilter" />, <see cref="CanadaSinFilter" /> and <see cref="ZipCodeFilter" />. They live in one place so they cannot drift apart over what
 ///     separates an identifier's digit groups: a value a reader would write the same way should be
 ///     detected the same way by each.
 /// </summary>
@@ -32,6 +32,14 @@ internal static class IdentifierSeparators
     ///     preceding character forming a range.
     /// </summary>
     public const string HyphenCharacters = @"\-\u00AD\u2010-\u2015\u2212\uFE58\uFE63\uFF0D";
+
+    /// <summary>
+    ///     The hyphens that join digits into one token: <see cref="HyphenCharacters" /> without the
+    ///     en dash, em dash and horizontal bar (U+2013 to U+2015) and the small em dash, which are
+    ///     punctuation between words rather than part of an identifier. Mirrors Java's
+    ///     <c>IdentifierSeparators.JOINING_HYPHENS</c>.
+    /// </summary>
+    public const string JoiningHyphens = @"\-\u00AD\u2010-\u2012\u2212\uFE63\uFF0D";
 
     /// <summary>
     ///     The equivalent of Java's <c>\h</c>, which .NET has no shorthand for. It excludes line
