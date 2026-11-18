@@ -6,6 +6,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 _Unreleased._
 
+### Changed
+
+- **The ZIP code filter no longer detects five digits joined by a hyphen to a letter or digit before them** ([#193](https://github.com/philterd/phileas-dotnet/issues/193)), as in the Java port (philterd/phileas#485). The hyphen was read as a word boundary, so `00847` in the case number `2026-00847` and `48213` in the reference code `FR-48213` were redacted, and with `validate` set `48213` still was, because it is a real ZIP code. The non-breaking hyphen and the other hyphens that join digits into one token count too. **Behavior change:** these values are no longer detected as ZIP codes. A ZIP code after a space or other punctuation, such as `MA 02116`, `02116-1234` or `(02116)`, is detected as before, and both ZIP codes of a range such as `02116-02118` are still detected. See [Supported Identifiers → ZIP Code](docs/supported-identifiers.md#zip-code).
+
 ### Fixed
 
 - **Dates with the `Sept` abbreviation are detected** ([#184](https://github.com/philterd/phileas-dotnet/issues/184)), as in the Java port (philterd/phileas#466). `Sep` was the only accepted abbreviation of September, so `Sept 5, 2020`, `Sept. 5, 2020`, `SEPT 5, 2020`, `5 Sept 2020` and `5-Sept-2020` were left in the output. `Sept` and `Sept.` are now accepted wherever `Sep` is, in any case, and a word that only begins with them, such as `Septic`, is not read as a month. `SHIFT` keeps a month that does not change as written, so `Sept 3, 2020` shifted ten days reads `Sept 13, 2020`, and abbreviates a changed month to three letters, so `Sept 25, 2020` reads `Oct 5, 2020`. `TRUNCATE_TO_YEAR`, `RELATIVE` and `RANDOM_REPLACE` act on these dates as they do on `Sep`. See [Supported Identifiers → Date](docs/supported-identifiers.md#date).

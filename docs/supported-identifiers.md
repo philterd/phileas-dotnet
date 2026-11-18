@@ -937,6 +937,8 @@ Identifiers = new Identifiers { Vin = new Vin() }
 
 Detects 5-digit US ZIP codes and ZIP+4 codes (e.g. `12345`, `12345-6789`).
 
+Five digits joined by a hyphen to a letter or digit before them, as in a case number such as `2026-00847` or a reference code such as `FR-48213`, are part of a longer identifier and are not detected as a ZIP code. The non-breaking hyphen and the other hyphens that join digits into one token are treated the same way. Both ZIP codes of a range such as `02116-02118` are still detected.
+
 ```csharp
 Identifiers = new Identifiers { ZipCode = new ZipCode() }
 ```
