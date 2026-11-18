@@ -473,7 +473,11 @@ complete identifier, line break included.
   hyphen. Whitespace following a hyphen is not limited, as above.
 - Non-ASCII digits, including the fullwidth, Arabic-Indic and Devanagari forms.
 - A value with a hyphen immediately before or after it, so a fragment straddling two longer
-  identifiers is not claimed: `45-6789123` inside `123-45-6789123-45-6789` produces no span.
+  identifiers is not claimed: `45-6789123` inside `123-45-6789123-45-6789` produces no span. This
+  covers the hyphens that join digits into one token: the ASCII hyphen-minus, U+00AD, U+2010
+  through U+2012, U+2212, U+FE63 and U+FF0D. The en dash, em dash, horizontal bar and small em
+  dash (U+2013 to U+2015, U+FE58) are punctuation between words, so an EIN with one of them
+  immediately before or after it is detected.
 
 Set `onlyValidPrefixes` to `true` to keep only matches whose two-digit prefix is one the IRS currently issues, which reduces false positives on format-valid but non-issued numbers. It defaults to `false` (match any EIN-formatted value), so a prefix issued after this release is still detected; the strict list is engine-carried and only affects the opt-in mode.
 

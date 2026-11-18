@@ -89,10 +89,12 @@ internal static class IdentifierSeparators
     /// <summary>
     ///     A boundary that also rejects an adjacent hyphen, for an identifier whose own separator is
     ///     a hyphen. Without it a fragment straddling two longer identifiers matches: an EIN was
-    ///     found in <c>45-6789123</c> out of <c>123-45-6789123-45-6789</c>.
+    ///     found in <c>45-6789123</c> out of <c>123-45-6789123-45-6789</c>. Only a
+    ///     <see cref="JoiningHyphens" /> hyphen counts, as in Java, so an identifier directly before or
+    ///     after an en or em dash is still found.
     /// </summary>
-    public const string NotWordOrHyphenBefore = "(?<![0-9A-Za-z_" + HyphenCharacters + "])";
+    public const string NotWordOrHyphenBefore = "(?<![0-9A-Za-z_" + JoiningHyphens + "])";
 
     /// <inheritdoc cref="NotWordOrHyphenBefore" />
-    public const string NotWordOrHyphenAfter = "(?![0-9A-Za-z_" + HyphenCharacters + "])";
+    public const string NotWordOrHyphenAfter = "(?![0-9A-Za-z_" + JoiningHyphens + "])";
 }
