@@ -58,4 +58,22 @@ public class DateAnonymizationServiceTests
         var service = new DateAnonymizationService(new InMemoryContextService());
         Assert.NotNull(service.GetContextService());
     }
+
+    [Theory]
+    [InlineData("Sep. 5, 2020")]
+    [InlineData("Sept. 5, 2020")]
+    [InlineData("Sep 5, 2020")]
+    [InlineData("September 5, 2020")]
+
+    public void RealisticReplacement_RecognizesMonthDateFormats(string token)
+    {
+        var service = new DateAnonymizationService(
+            new InMemoryContextService(),
+            new Random(),
+            AnonymizationMethod.Realistic);
+
+        var replacement = service.Anonymize(token);
+
+        Assert.Matches(@"^[A-Z][a-z]+ \d{2}, \d{4}$", replacement);
+    }
 }
