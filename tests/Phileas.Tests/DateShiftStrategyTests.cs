@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Globalization;
 using System.Text.Json;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
@@ -109,7 +110,7 @@ public class DateShiftStrategyTests
         var filtered = new FilterService()
             .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, input).FilteredText;
 
-        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""));
+        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""), CultureInfo.InvariantCulture);
         Assert.True(shifted <= DateTime.Today, $"{shifted:d} should not be in the future");
         Assert.Equal(recent.AddDays(-100).Date, shifted.Date);
     }
@@ -124,7 +125,7 @@ public class DateShiftStrategyTests
         var filtered = new FilterService()
             .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, input).FilteredText;
 
-        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""));
+        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""), CultureInfo.InvariantCulture);
         Assert.Equal(recent.AddDays(100).Date, shifted.Date);
     }
 
@@ -139,7 +140,7 @@ public class DateShiftStrategyTests
         var filtered = new FilterService()
             .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, input).FilteredText;
 
-        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""));
+        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""), CultureInfo.InvariantCulture);
         Assert.Equal(ahead.AddDays(5).Date, shifted.Date);
     }
 
