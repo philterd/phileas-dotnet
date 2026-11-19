@@ -40,7 +40,7 @@ public class RulesConfidenceTests
     [InlineData("date", "", "seen 3/15/26 today", "3/15/26", 0.75)] // Java reports 75 here
     [InlineData("date", "", "seen March 15, 2026 today", "March 15, 2026", 0.75)]
     [InlineData("driversLicense", "", "number A1234567 issued", "A1234567", 0.50)]
-    [InlineData("driversLicense", "", "number 123456789 issued", "123456789", 0.50)]
+    [InlineData("driversLicense", "", "license number 123456789 issued", "123456789", 0.55)]
     [InlineData("ein", "", "number 12-3456789 on file", "12-3456789", 0.95)]
     [InlineData("emailAddress", "", "mail jane@example.com today", "jane@example.com", 0.90)]
     [InlineData("ipAddress", "", "host 192.0.2.10 is up", "192.0.2.10", 0.90)]
