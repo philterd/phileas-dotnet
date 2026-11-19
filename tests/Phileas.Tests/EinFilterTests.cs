@@ -239,6 +239,33 @@ public class EinFilterTests
         Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
     }
 
+    [Theory]
+    [InlineData("\u00AD")] // soft hyphen
+    [InlineData("\u2010")] // hyphen
+    [InlineData("\u2011")] // non-breaking hyphen
+    [InlineData("\u2012")] // figure dash
+    [InlineData("\u2212")] // minus sign
+    [InlineData("\uFE63")] // small hyphen-minus
+    [InlineData("\uFF0D")] // fullwidth hyphen-minus
+    public void Filter_DoesNotDetectNextToAJoiningHyphen(string hyphen)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, "x " + hyphen + "12-3456789 y").Spans);
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, "x 12-3456789" + hyphen + " y").Spans);
+    }
+
+    // An en or em dash is punctuation between words, not part of the identifier, as in Java.
+    [Theory]
+    [InlineData("EIN\u201412-3456789.")] // em dash before
+    [InlineData("EIN\u201312-3456789.")] // en dash before
+    [InlineData("EIN\u201512-3456789.")] // horizontal bar before
+    [InlineData("EIN\uFE5812-3456789.")] // small em dash before
+    [InlineData("EIN: 12-3456789\u2014filed")] // em dash after
+    [InlineData("EIN: 12-3456789\u2013filed")] // en dash after
+    public void Filter_DetectsNextToADash(string input)
+    {
+        AssertRedacted(input, "12-3456789");
+    }
+
     [Fact]
     public void Filter_OnlyValidPrefixesOn_KeepsIssuedPrefixOnAWrappedMatch()
     {

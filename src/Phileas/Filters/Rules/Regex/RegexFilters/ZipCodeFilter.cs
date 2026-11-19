@@ -30,12 +30,23 @@ public class ZipCodeFilter : RegexFilter
     /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
     private static readonly HashSet<string> ContextualTerms = new() { "zip", "zipcode", "postal" };
 
+    // Five digits joined by a hyphen to a letter or digit before them, as in a case number like 2026-00847
+    // or a reference code like FR-48213, are part of a longer identifier and not a ZIP code (#193, as
+    // philterd/phileas#485). A standalone five-digit number before the hyphen is still allowed, so both
+    // ends of a range like 02116-02118 are found.
+    private const string NotAfterHyphen =
+        @"(?:(?<![\p{L}\p{N}][" + IdentifierSeparators.JoiningHyphens + "])"
+        + @"|(?<=(?:^|[^" + IdentifierSeparators.JoiningHyphens + @"\p{L}\p{N}])[0-9]{5}["
+        + IdentifierSeparators.JoiningHyphens + "]))";
+
     private static readonly Analyzer DelimitedAnalyzer = new(ContextualTerms,
-        new FilterPattern.Builder().WithPattern(@"\b[0-9]{5}(?:-[0-9]{4})?\b").WithInitialConfidence(0.90).Build()
+        new FilterPattern.Builder().WithPattern(NotAfterHyphen + @"\b[0-9]{5}(?:-[0-9]{4})?\b")
+            .WithInitialConfidence(0.90).Build()
     );
 
     private static readonly Analyzer UndelimitedAnalyzer = new(ContextualTerms,
-        new FilterPattern.Builder().WithPattern(@"\b[0-9]{5}(?:-?[0-9]{4})?\b").WithInitialConfidence(0.50).Build()
+        new FilterPattern.Builder().WithPattern(NotAfterHyphen + @"\b[0-9]{5}(?:-?[0-9]{4})?\b")
+            .WithInitialConfidence(0.50).Build()
     );
 
     private static readonly ZipCodeMetadataService ZipCodeMetadata = new();

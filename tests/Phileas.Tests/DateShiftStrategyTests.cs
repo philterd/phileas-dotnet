@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Globalization;
 using System.Text.Json;
 using Phileas.Policy;
 using Phileas.Policy.Filters;
@@ -103,13 +104,13 @@ public class DateShiftStrategyTests
     {
         // A large forward shift on a recent date would land ahead of today.
         var recent = DateTime.Today.AddDays(-5);
-        var input = "seen on " + recent.ToString("M/d/yyyy") + " today";
+        var input = "seen on " + recent.ToString("M/d/yyyy", CultureInfo.InvariantCulture) + " today";
         var json = PolicyJson("SHIFT", "\"shiftDays\": 100");
 
         var filtered = new FilterService()
             .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, input).FilteredText;
 
-        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""));
+        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""), CultureInfo.InvariantCulture);
         Assert.True(shifted <= DateTime.Today, $"{shifted:d} should not be in the future");
         Assert.Equal(recent.AddDays(-100).Date, shifted.Date);
     }
@@ -118,13 +119,13 @@ public class DateShiftStrategyTests
     public void FutureDates_True_AllowsTheShiftToLandAhead()
     {
         var recent = DateTime.Today.AddDays(-5);
-        var input = "seen on " + recent.ToString("M/d/yyyy") + " today";
+        var input = "seen on " + recent.ToString("M/d/yyyy", CultureInfo.InvariantCulture) + " today";
         var json = PolicyJson("SHIFT", "\"shiftDays\": 100, \"futureDates\": true");
 
         var filtered = new FilterService()
             .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, input).FilteredText;
 
-        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""));
+        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""), CultureInfo.InvariantCulture);
         Assert.Equal(recent.AddDays(100).Date, shifted.Date);
     }
 
@@ -133,13 +134,13 @@ public class DateShiftStrategyTests
     {
         // The guard only keeps a past date in the past; it does not drag a future date backwards.
         var ahead = DateTime.Today.AddDays(30);
-        var input = "seen on " + ahead.ToString("M/d/yyyy") + " today";
+        var input = "seen on " + ahead.ToString("M/d/yyyy", CultureInfo.InvariantCulture) + " today";
         var json = PolicyJson("SHIFT", "\"shiftDays\": 5");
 
         var filtered = new FilterService()
             .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0, input).FilteredText;
 
-        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""));
+        var shifted = DateTime.Parse(filtered.Replace("seen on ", "").Replace(" today", ""), CultureInfo.InvariantCulture);
         Assert.Equal(ahead.AddDays(5).Date, shifted.Date);
     }
 
@@ -206,7 +207,7 @@ public class DateShiftStrategyTests
         var json = PolicyJson("RELATIVE", "\"futureDates\": " + (futureDates ? "true" : "false"));
         return new FilterService()
             .Filter(PolicySerializer.DeserializeFromJson(json), "ctx", 0,
-                "seen on " + date.ToString("M/d/yyyy") + " today")
+                "seen on " + date.ToString("M/d/yyyy", CultureInfo.InvariantCulture) + " today")
             .FilteredText;
     }
 
@@ -246,7 +247,7 @@ public class DateShiftStrategyTests
         // Strategy names are matched without regard to case, as the Java filters do, so a policy is
         // not silently broken by its casing. The schema's enum is uppercase; this is leniency toward
         // a hand-written policy, not a second spelling to document.
-        var threeMonthsAgo = DateTime.Today.AddMonths(-3).ToString("M/d/yyyy");
+        var threeMonthsAgo = DateTime.Today.AddMonths(-3).ToString("M/d/yyyy", CultureInfo.InvariantCulture);
         var json = PolicyJson(strategy, "\"futureDates\": false");
 
         var filtered = new FilterService()
