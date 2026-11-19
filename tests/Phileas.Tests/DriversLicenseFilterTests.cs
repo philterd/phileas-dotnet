@@ -83,6 +83,54 @@ public class DriversLicenseFilterTests
         Assert.Equal(FilterType.DriversLicenseNumber, result.Spans[0].FilterType);
     }
 
+    [Theory]
+    [InlineData("the number is 123456789.")]
+    [InlineData("Address: 1234 Oak Street, Austin, TX 78701.")]
+    [InlineData("The visit lasted 45 minutes and cost 2500 dollars.")]
+    [InlineData("Account 12345678 was closed.")]
+    [InlineData("Call 1234567890 for details.")]
+    [InlineData("The reference is 12-3456789.")]
+    [InlineData("Order 1234-56-7890 shipped.")]
+    [InlineData("Hemoglobin 1350 mg per dL today.")]
+    [InlineData("Volume 2500 dl recorded.")]
+    public void Filter_NumbersWithoutContextAreNotLicenses(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
+    [Theory]
+    [InlineData("Driver's license 12345678 on file.")]
+    [InlineData("drivers license number: 12345678")]
+    [InlineData("DL# 12345678")]
+    [InlineData("DLN: 12345678")]
+    [InlineData("D.L. 12345678 issued in Texas.")]
+    [InlineData("Licence no. 12345678.")]
+    [InlineData("12345678 is the license on file.")]
+    [InlineData("the license number is 123456789.")]
+    [InlineData("License D1234567 on file.")]
+    [InlineData("Here is D1234567 for you.")]
+    public void Filter_NumbersWithContextAreLicenses(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.NotEmpty(result.Spans);
+        Assert.Equal(FilterType.DriversLicenseNumber, result.Spans[0].FilterType);
+    }
+
+    [Theory]
+    [InlineData("The license was renewed and then on a later visit the patient paid 2500 dollars.")]
+    public void Filter_ContextOutsideTheWindowIsNotEnough(string input)
+    {
+        var filter = CreateFilter();
+        var policy = CreatePolicy();
+        var result = filter.Filter(policy, "test", 0, input);
+        Assert.Empty(result.Spans);
+    }
+
     [Fact]
     public void Filter_EmptyInput_ReturnsNoSpans()
     {

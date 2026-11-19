@@ -427,7 +427,15 @@ code sets `CustomDictionaries`. Two things change when it is folded:
 
 ### Driver's License
 
-Detects US state driver's license number formats.
+This filter identifies U.S. driver's license numbers in the formats of all 50 states and the District of Columbia.
+
+Many states issue license numbers that are only digits, such as `194784357`, which cannot be told apart from a house
+number, ZIP code, or amount by their shape. A match that contains no letters is identified only when one of these
+contextual terms appears within `windowSize` words of it, ignoring case and punctuation: `license`, `licence`, `lic`,
+`driver`, `drivers`, or `driver's`. `DL`, `D.L.`, and `DLN` also count, but only in capitals, because lowercase `dl` or
+`dL` is usually the deciliter unit. For example, `194784357` is identified in
+`Driver's license 194784357` and `DL# 194784357` but not in `the number is 194784357`. A match that contains a letter,
+such as `D1234567`, is identified without a contextual term.
 
 ```csharp
 Identifiers = new Identifiers { DriversLicense = new DriversLicense() }
