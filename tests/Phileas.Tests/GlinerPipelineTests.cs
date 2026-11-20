@@ -154,6 +154,127 @@ public class GlinerPipelineTests
         Assert.Equal(8, entities[1].End);
     }
 
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\r")]
+    public void Decode_SpanAcrossLineBreak_IsNotReturned(string lineBreak)
+    {
+        // Two table rows: "Morgan Example" ends one, "SSN ( Jordan" starts the next.
+        var text = "Morgan Example" + lineBreak + "SSN (Jordan";
+        var words = GlinerModel.SplitWords(text); // Morgan Example SSN ( Jordan
+        var labels = new List<string> { "name" };
+
+        // The model scores the cross-row run highest; without the line boundary it would swallow both names.
+        var logits = Logits(new Dictionary<(int, int, int), float>
+        {
+            [(0, 4, 0)] = 6f, // "Morgan Example ... Jordan", crosses the line break
+            [(0, 1, 0)] = 4f, // "Morgan Example"
+            [(4, 0, 0)] = 4f // "Jordan"
+        });
+
+        var entities = GlinerModel.Decode(text, words, labels, 0.5, MaxWidth, logits);
+
+        Assert.Equal(new[] { "Morgan Example", "Jordan" }, entities.Select(e => e.Text));
+    }
+
+    [Fact]
+    public void Decode_SpanWithinALine_AfterALineBreak_IsReturned()
+    {
+        const string text = "Taxpayer\nJordan Smith";
+        var words = GlinerModel.SplitWords(text);
+        var labels = new List<string> { "name" };
+
+        var entities = GlinerModel.Decode(text, words, labels, 0.5, MaxWidth,
+            Logits(new Dictionary<(int, int, int), float> { [(1, 1, 0)] = 5f }));
+
+        var entity = Assert.Single(entities);
+        Assert.Equal("Jordan Smith", entity.Text);
+        Assert.Equal(9, entity.Start);
+    }
+
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\r")]
+    public void Decode_WrappedName_FoundOnlyAcrossTheLineBreak_IsReturned(string lineBreak)
+    {
+        // A name wrapped onto the next line: neither half fires alone, only the whole.
+        var text = "approved by John" + lineBreak + "Smith today";
+        var words = GlinerModel.SplitWords(text); // approved by John Smith today
+        var labels = new List<string> { "name" };
+
+        var entities = GlinerModel.Decode(text, words, labels, 0.5, MaxWidth,
+            Logits(new Dictionary<(int, int, int), float> { [(2, 1, 0)] = 5f }));
+
+        var entity = Assert.Single(entities);
+        Assert.Equal("John" + lineBreak + "Smith", entity.Text);
+    }
+
+    [Fact]
+    public void Decode_WeakSameLineSpan_StillBeatsAStrongCrossLineSpan()
+    {
+        const string text = "Morgan Example\nSSN (Jordan";
+        var words = GlinerModel.SplitWords(text);
+        var labels = new List<string> { "name" };
+
+        var entities = GlinerModel.Decode(text, words, labels, 0.5, MaxWidth, Logits(new Dictionary<(int, int, int), float>
+        {
+            [(0, 4, 0)] = 8f, // cross-line, ~0.9997
+            [(4, 0, 0)] = 0.5f // "Jordan", ~0.62
+        }));
+
+        // The cross-line span overlaps "Jordan", so only "Jordan" is kept.
+        var entity = Assert.Single(entities);
+        Assert.Equal("Jordan", entity.Text);
+    }
+
+    [Fact]
+    public void Decode_CrossLineSpans_ResolveAmongThemselvesByScore()
+    {
+        const string text = "Al\nBo\nCy";
+        var words = GlinerModel.SplitWords(text);
+        var labels = new List<string> { "name" };
+
+        var entities = GlinerModel.Decode(text, words, labels, 0.5, MaxWidth, Logits(new Dictionary<(int, int, int), float>
+        {
+            [(0, 1, 0)] = 3f, // "Al\nBo"
+            [(1, 1, 0)] = 5f // "Bo\nCy" wins the overlap
+        }));
+
+        var entity = Assert.Single(entities);
+        Assert.Equal("Bo\nCy", entity.Text);
+    }
+
+    [Fact]
+    public void Decode_CrossLineSpan_ElsewhereOnThePage_IsKept()
+    {
+        // A row pair handled by same-line spans, then an unrelated wrapped name further down.
+        const string text = "Jordan\nTaylor\nsent to Maria\nLopez";
+        var words = GlinerModel.SplitWords(text); // Jordan Taylor sent to Maria Lopez
+        var labels = new List<string> { "name" };
+
+        var entities = GlinerModel.Decode(text, words, labels, 0.5, MaxWidth, Logits(new Dictionary<(int, int, int), float>
+        {
+            [(0, 0, 0)] = 4f, // "Jordan"
+            [(1, 0, 0)] = 4f, // "Taylor"
+            [(0, 1, 0)] = 6f, // "Jordan\nTaylor", overlaps both and loses
+            [(4, 1, 0)] = 6f // "Maria\nLopez", overlaps nothing and is kept
+        }));
+
+        Assert.Equal(new[] { "Jordan", "Taylor", "Maria\nLopez" }, entities.Select(e => e.Text));
+    }
+
+    [Fact]
+    public void ResolveSpans_DedupsRepeatedCrossLineSpans()
+    {
+        var a = new GlinerModel.Entity("name", "Al\nBo", 0, 5, 0.9);
+        var b = new GlinerModel.Entity("name", "Al\nBo", 0, 5, 0.8);
+
+        var entity = Assert.Single(GlinerModel.ResolveSpans(new List<GlinerModel.Entity> { b, a }));
+        Assert.Equal(0.9, entity.Score);
+    }
+
     [Fact]
     public void Decode_MapsLabelIndexToLabelString()
     {

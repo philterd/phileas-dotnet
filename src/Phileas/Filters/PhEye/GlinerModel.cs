@@ -354,16 +354,23 @@ public sealed class GlinerModel : IDisposable
     ///     descending score, skip any that overlap one already chosen, return ordered by start offset. Because an
     ///     identical span overlaps its own duplicate, this also dedups the repeats that overlapping chunks produce,
     ///     keeping the highest-scored copy.
+    ///     Spans within one line are chosen first; a span crossing a line break is used only where it overlaps none of
+    ///     them. The model never sees line breaks, so in tables and forms it can join the end of one row to the start
+    ///     of the next and outscore the real entities in both, while a name wrapped across lines is often found only
+    ///     as a cross-line span.
     /// </summary>
     internal static List<Entity> ResolveSpans(List<Entity> candidates)
     {
         var chosen = new List<Entity>();
-        foreach (var c in candidates.OrderByDescending(x => x.Score))
+        foreach (var crossesLine in new[] { false, true })
+        foreach (var c in candidates.Where(x => CrossesLine(x) == crossesLine).OrderByDescending(x => x.Score))
             if (!chosen.Any(u => c.Start < u.End && u.Start < c.End))
                 chosen.Add(c);
 
         return chosen.OrderBy(x => x.Start).ToList();
     }
+
+    private static bool CrossesLine(Entity e) => e.Text.AsSpan().IndexOfAny('\n', '\r') >= 0;
 
     /// <summary>
     ///     Plans contiguous word ranges so each chunk's full sequence — the <paramref name="promptTokens" /> frame, the
