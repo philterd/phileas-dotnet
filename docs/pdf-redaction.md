@@ -20,6 +20,12 @@ image with redaction rectangles burned in.
    optionally, replacement text) over each detected span and each [graphical bounding
    box](#graphical-bounding-boxes), and reassembles the pages into the requested output format.
 
+A span's rectangle is larger than the glyph boxes of its characters, because rendered glyphs extend past
+those boxes (round characters overshoot, and the rasterizer anti-aliases their edges). Each side is padded
+by a quarter of the rectangle's height plus one pixel at the rendering DPI, and rounded outward to whole
+pixels. The padding can cover the edges of adjacent characters. It is not configurable. Graphical bounding
+boxes are drawn exactly as given.
+
 ## Quick start
 
 ```csharp

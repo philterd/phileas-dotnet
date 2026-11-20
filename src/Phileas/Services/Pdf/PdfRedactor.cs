@@ -136,8 +136,18 @@ public sealed class PdfRedactor
         return builder.Build();
     }
 
+    /// <summary>
+    ///     Padding added to each side of a span's box, as a fraction of the box's height. The box is the union of
+    ///     the glyph boxes PdfPig reports, and the rendered glyphs extend past it. Measured across Helvetica,
+    ///     Helvetica-Bold, Times and Courier at 6 to 24 pt and 72 to 400 DPI, a word's glyphs extended at most 0.11
+    ///     of its box's height beyond one device pixel. A single character's box can be much shorter than a word's:
+    ///     at 0.2, the dot of a lone semicolon (24 pt Courier, 400 DPI) was left uncovered. See
+    ///     philterd/phileas-dotnet#175.
+    /// </summary>
+    internal const float SpanPaddingFraction = 0.25f;
+
     // Renders one page and burns in the redaction boxes for its spans and bounding boxes.
-    private static SKBitmap RenderPage(byte[] document, int pageNumber, (double Width, double Height) pageSize,
+    internal static SKBitmap RenderPage(byte[] document, int pageNumber, (double Width, double Height) pageSize,
         IList<Span> spans, IList<BoundingBoxModel> boundingBoxes, PdfConfig pdf)
     {
         var (widthPts, heightPts) = pageSize;
@@ -155,9 +165,10 @@ public sealed class PdfRedactor
                 var rect = ToPixelRect(span.LowerLeftX, span.LowerLeftY, span.UpperRightX,
                     span.UpperRightY, heightPts, scaleX, scaleY);
                 // A span with no located box (e.g. one detected in an annotation or form field, whose
-                // text isn't rendered into the image) has nothing to burn in — skip it.
+                // text isn't rendered into the image) has nothing to burn in, so skip it.
                 if (rect.Width <= 0 || rect.Height <= 0)
                     continue;
+                rect = PadSpanRect(rect);
                 // The bar uses the redacting strategy's color when set, else the policy-wide PDF color,
                 // else black. A set-but-unrecognized color renders black (never left un-redacted).
                 using var redactionPaint = new SKPaint
@@ -224,6 +235,22 @@ public sealed class PdfRedactor
         var top = (float)((pageHeightPts - upperRightY) * scaleY);
         var bottom = (float)((pageHeightPts - lowerLeftY) * scaleY);
         return new SKRect(left, top, right, bottom);
+    }
+
+    /// <summary>
+    ///     Grows a span's pixel rectangle so it covers the rendered glyphs: by <see cref="SpanPaddingFraction" />
+    ///     of its height plus one device pixel for anti-aliasing on every side, with each edge then rounded
+    ///     outward to a whole pixel, since an unantialiased fill leaves a pixel unpainted when its centre falls
+    ///     outside the rectangle.
+    /// </summary>
+    internal static SKRect PadSpanRect(SKRect rect)
+    {
+        var padding = rect.Height * SpanPaddingFraction + 1f;
+        return new SKRect(
+            MathF.Floor(rect.Left - padding),
+            MathF.Floor(rect.Top - padding),
+            MathF.Ceiling(rect.Right + padding),
+            MathF.Ceiling(rect.Bottom + padding));
     }
 
     private byte[] BuildPdf(List<SKBitmap> bitmaps, List<(double Width, double Height)> pageSizes, PdfConfig pdf)
