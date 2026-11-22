@@ -41,7 +41,8 @@ Every other filter type still falls back to `REDACT`.
 Replaces the token with a formatted label. The `redactionFormat` string may contain:
 
 - `%t` is replaced with the filter type name (e.g. `ssn`, `email-address`)
-- `%l` is replaced with the token's classification label, if any
+- `%l` is replaced with the token's classification label: the custom identifier or dictionary classification, the tracking number carrier (e.g. `ups`), the PhEye label, or `US` for a passport number. Filters without a classification, including the driver's license filter, replace it with an empty string.
+- `%v` is replaced with the original text, exactly as it appears (a `%t` or `%l` inside it is not expanded). This keeps the sensitive value in the output, so use it to annotate text, not to redact it.
 
 **Default format:** `{{{REDACTED-%t}}}`
 
