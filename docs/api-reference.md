@@ -138,6 +138,7 @@ public class TextFilterResult
     public IList<IncrementalRedaction> IncrementalRedactions { get; }
     public long Tokens { get; }
     public IList<string> RegexTimeouts { get; }
+    public bool ReviewSampled { get; }
 }
 ```
 
@@ -150,6 +151,7 @@ public class TextFilterResult
 | `IncrementalRedactions` | `IList<IncrementalRedaction>` | Per-redaction snapshot trail (populated only when the service is constructed with incremental redactions enabled). |
 | `Tokens` | `long` | Number of whitespace-delimited tokens in the input. |
 | `RegexTimeouts` | `IList<string>` | Patterns that exceeded their match budget during this pass; empty when none did. See [Regex match budget](#regex-match-budget). |
+| `ReviewSampled` | `bool` | Whether the request was selected for human spot review by the policy's `config.review.samplingRate`. See [Review Sampling](policies.md#review-sampling). |
 
 ---
 

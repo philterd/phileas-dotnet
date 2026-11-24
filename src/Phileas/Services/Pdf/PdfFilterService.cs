@@ -52,6 +52,9 @@ public sealed class PdfFilterService
     public BinaryDocumentFilterResult Filter(PhileasPolicy policy, string context, byte[] input,
         MimeType outputMimeType)
     {
+        // One draw for the document, not one per page or annotation.
+        var reviewSampled = ReviewSampler.IsSelected(policy);
+
         var lines = _textExtractor.GetLines(input);
 
         var spans = new List<Span>();
@@ -83,7 +86,7 @@ public sealed class PdfFilterService
             if (string.IsNullOrWhiteSpace(pageText))
                 continue;
 
-            var result = _filterService.Filter(policy, context, piece++, pageText);
+            var result = _filterService.FilterUnsampled(policy, context, piece++, pageText);
             tokens += result.Tokens;
 
             foreach (var span in result.Spans)
@@ -97,7 +100,7 @@ public sealed class PdfFilterService
         var unknownPageSpan = false;
         foreach (var (page, text) in ExtractAnnotationAndFormText(input))
         {
-            var result = _filterService.Filter(policy, context, piece++, text);
+            var result = _filterService.FilterUnsampled(policy, context, piece++, text);
             tokens += result.Tokens;
             foreach (var span in result.Spans)
             {
@@ -114,7 +117,7 @@ public sealed class PdfFilterService
         var redacted = _redactor.Process(input, spans, policy.Config.Pdf, policy.Graphical.BoundingBoxes,
             outputMimeType, policy.Config.Pdf.PreserveUnredactedPages && !unknownPageSpan);
 
-        return new BinaryDocumentFilterResult(redacted, context, spans, tokens);
+        return new BinaryDocumentFilterResult(redacted, context, spans, tokens, reviewSampled);
     }
 
     /// <summary>

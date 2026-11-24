@@ -28,11 +28,24 @@ public class BinaryDocumentFilterResult
     /// <param name="spans">The detected spans (with page numbers and coordinates).</param>
     /// <param name="tokens">The number of whitespace-delimited tokens in the source document.</param>
     public BinaryDocumentFilterResult(byte[] document, string context, IList<Span> spans, long tokens)
+        : this(document, context, spans, tokens, false)
+    {
+    }
+
+    /// <summary>Creates a binary document filter result with its review selection.</summary>
+    /// <param name="document">The redacted document bytes.</param>
+    /// <param name="context">The context identifier.</param>
+    /// <param name="spans">The detected spans (with page numbers and coordinates).</param>
+    /// <param name="tokens">The number of whitespace-delimited tokens in the source document.</param>
+    /// <param name="reviewSampled">Whether the request was selected for human spot review.</param>
+    public BinaryDocumentFilterResult(byte[] document, string context, IList<Span> spans, long tokens,
+        bool reviewSampled)
     {
         Document = document;
         Context = context;
         Spans = spans;
         Tokens = tokens;
+        ReviewSampled = reviewSampled;
     }
 
     /// <summary>Gets the redacted document bytes (a PDF or a ZIP of images depending on the requested format).</summary>
@@ -46,4 +59,10 @@ public class BinaryDocumentFilterResult
 
     /// <summary>Gets the number of whitespace-delimited tokens in the source document.</summary>
     public long Tokens { get; }
+
+    /// <summary>
+    ///     Gets whether the request was selected for human spot review by the policy's
+    ///     <c>config.review.samplingRate</c>. Selection does not change the redacted output.
+    /// </summary>
+    public bool ReviewSampled { get; }
 }

@@ -48,6 +48,22 @@ public class TextFilterResult
     public TextFilterResult(string filteredText, string context, int piece, IList<Span> spans,
         IList<IncrementalRedaction> incrementalRedactions, long tokens,
         IList<string>? regexTimeouts = null)
+        : this(filteredText, context, piece, spans, incrementalRedactions, tokens, regexTimeouts, false)
+    {
+    }
+
+    /// <summary>Initializes a fully populated <see cref="TextFilterResult" /> with its review selection.</summary>
+    /// <param name="filteredText">The redacted output text.</param>
+    /// <param name="context">The context identifier.</param>
+    /// <param name="piece">Zero-based piece index within a multi-part document.</param>
+    /// <param name="spans">The spans that were identified in the input.</param>
+    /// <param name="incrementalRedactions">The per-redaction snapshot trail (empty when disabled).</param>
+    /// <param name="tokens">The number of tokens in the input.</param>
+    /// <param name="regexTimeouts">The patterns that exceeded their match budget, empty or null when none did.</param>
+    /// <param name="reviewSampled">Whether the request was selected for human spot review.</param>
+    public TextFilterResult(string filteredText, string context, int piece, IList<Span> spans,
+        IList<IncrementalRedaction> incrementalRedactions, long tokens,
+        IList<string>? regexTimeouts, bool reviewSampled)
     {
         FilteredText = filteredText;
         Context = context;
@@ -56,6 +72,7 @@ public class TextFilterResult
         IncrementalRedactions = incrementalRedactions;
         Tokens = tokens;
         RegexTimeouts = regexTimeouts ?? Array.Empty<string>();
+        ReviewSampled = reviewSampled;
     }
 
     /// <summary>Gets the input text with all detected entities replaced by their configured redaction values.</summary>
@@ -84,6 +101,19 @@ public class TextFilterResult
 
     /// <summary>Gets the number of tokens in the input.</summary>
     public long Tokens { get; }
+
+    /// <summary>
+    ///     Gets whether the request was selected for human spot review by the policy's
+    ///     <c>config.review.samplingRate</c>. Selection does not change the redacted output.
+    /// </summary>
+    public bool ReviewSampled { get; }
+
+    /// <summary>Returns a copy of this result with <see cref="ReviewSampled" /> set to <paramref name="reviewSampled" />.</summary>
+    internal TextFilterResult WithReviewSampled(bool reviewSampled) =>
+        reviewSampled == ReviewSampled
+            ? this
+            : new TextFilterResult(FilteredText, Context, Piece, Spans, IncrementalRedactions, Tokens, RegexTimeouts,
+                reviewSampled);
 
     /// <summary>
     ///     Combines per-piece results (in piece order) into a single result: the filtered texts are

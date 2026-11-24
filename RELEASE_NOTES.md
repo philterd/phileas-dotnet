@@ -6,6 +6,10 @@ All notable changes to Phileas (.NET) are recorded here. Versions follow [Semant
 
 _Unreleased._
 
+### Added
+
+- **Review sampling** ([#215](https://github.com/philterd/phileas-dotnet/issues/215)), as specified in philterd/phisql#84 and implemented in the Java port by philterd/phileas#536. A policy can set `config.review.samplingRate`, from `0.0` to `1.0` (default `0.0`), the probability that a filter request is selected for human spot review. The draw is made once per `FilterService.Filter` or `PdfFilterService.Filter` call, including when the input is split, and keeps no state between requests. Selection does not change the redacted output. `TextFilterResult` and `BinaryDocumentFilterResult` have `ReviewSampled`. For Word and Excel documents, call `ReviewSampler.IsSelected(policy)` once per document. A rate outside `0.0` to `1.0` is refused when the policy is loaded, with or without schema validation. Requires `Philterd.PhiSql` 1.6.0, whose schema defines `config.review`. See [Policies → Review Sampling](docs/policies.md#review-sampling).
+
 ### Changed
 
 - **The ZIP code filter no longer detects five digits joined by a hyphen to a letter or digit before them** ([#193](https://github.com/philterd/phileas-dotnet/issues/193)), as in the Java port (philterd/phileas#485). The hyphen was read as a word boundary, so `00847` in the case number `2026-00847` and `48213` in the reference code `FR-48213` were redacted, and with `validate` set `48213` still was, because it is a real ZIP code. The non-breaking hyphen and the other hyphens that join digits into one token count too. **Behavior change:** these values are no longer detected as ZIP codes. A ZIP code after a space or other punctuation, such as `MA 02116`, `02116-1234` or `(02116)`, is detected as before, and both ZIP codes of a range such as `02116-02118` are still detected. See [Supported Identifiers → ZIP Code](docs/supported-identifiers.md#zip-code).

@@ -110,6 +110,7 @@ public class BinaryDocumentFilterResult
     public string Context { get; }
     public IList<Span> Spans { get; }
     public long Tokens { get; }
+    public bool ReviewSampled { get; }
 }
 ```
 
@@ -119,6 +120,7 @@ public class BinaryDocumentFilterResult
 | `Context` | `string` | The context name passed to `Filter`. |
 | `Spans` | `IList<Span>` | The detected spans, each carrying its `PageNumber` and bounding box (`LowerLeftX/Y`, `UpperRightX/Y`). |
 | `Tokens` | `long` | The number of whitespace-delimited tokens in the source document. |
+| `ReviewSampled` | `bool` | Whether the request was selected for human spot review by the policy's `config.review.samplingRate`, drawn once for the document. See [Review Sampling](policies.md#review-sampling). |
 
 ## Custom text extraction (`ITextExtractor`)
 
