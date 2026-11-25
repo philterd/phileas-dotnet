@@ -99,13 +99,29 @@ public sealed class PdfTextExtractor : ITextExtractor
             {
                 var value = letter.Value ?? string.Empty;
                 text.Append(value);
-                var box = letter.BoundingBox;
-                var charBox = new CharBox(box.Left, box.Bottom, box.Right, box.Top);
+                var charBox = BoxOf(letter);
                 for (var c = 0; c < value.Length; c++)
                     charBoxes.Add(charBox);
             }
         }
 
         return new PdfLine(pageNumber, text.ToString(), charBoxes);
+    }
+
+    /// <summary>
+    ///     The box of a letter. PdfPig measures a glyph's height from its outline, so a letter in a font that
+    ///     isn't embedded, as form fields' fonts often aren't, comes back as a line along its baseline. The
+    ///     redactor skips a box with no height, which left that text readable in the output. For such a
+    ///     horizontal letter the box runs from a quarter of the font size below the baseline to the full font
+    ///     size above it, which holds any Latin glyph's descender and ascender.
+    /// </summary>
+    internal static CharBox BoxOf(Letter letter)
+    {
+        var box = letter.BoundingBox;
+        if (box.Height > 0 || letter.PointSize <= 0 || letter.TextOrientation != TextOrientation.Horizontal)
+            return new CharBox(box.Left, box.Bottom, box.Right, box.Top);
+
+        var baseline = letter.StartBaseLine.Y;
+        return new CharBox(box.Left, baseline - letter.PointSize / 4, box.Right, baseline + letter.PointSize);
     }
 }
