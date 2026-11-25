@@ -97,6 +97,18 @@ public class FilterService : IFilterService
     public TextFilterResult Filter(PhileasPolicy policy, string context, int piece, string input,
         IContextService? contextService = null)
     {
+        // Drawn once per request, here rather than per piece, so splitting does not raise the chance of selection.
+        var reviewSampled = ReviewSampler.IsSelected(policy);
+        return FilterUnsampled(policy, context, piece, input, contextService).WithReviewSampled(reviewSampled);
+    }
+
+    /// <summary>
+    ///     <see cref="Filter" /> without the review draw, for a caller such as <see cref="Pdf.PdfFilterService" />
+    ///     that filters one document in several calls and draws once for the document itself.
+    /// </summary>
+    internal TextFilterResult FilterUnsampled(PhileasPolicy policy, string context, int piece, string input,
+        IContextService? contextService = null)
+    {
         // Use the per-call service if given, otherwise the injected one, otherwise a fresh in-memory store.
         contextService ??= _contextService ?? new InMemoryContextService();
         var filters = BuildFilters(policy, contextService);

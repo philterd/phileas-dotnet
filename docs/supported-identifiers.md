@@ -560,7 +560,7 @@ Identifiers = new Identifiers { IpAddress = new IpAddress() }
 
 ### ITIN
 
-Detects US Individual Taxpayer Identification Numbers: SSN-shaped values that always begin with 9 (`9XX-XX-XXXX`). The same three forms the [SSN](#ssn) identifier accepts are matched: hyphenated (`912-70-1234`), separated by a single whitespace character (`912 70 1234`), and unformatted (`912701234`). Spans are reported as `itin`.
+Detects US Individual Taxpayer Identification Numbers: SSN-shaped values that always begin with 9 (`9XX-XX-XXXX`). The same forms the [SSN](#ssn) identifier accepts are matched: hyphenated (`912-70-1234`), separated by a single whitespace character (`912 70 1234`), unformatted (`912701234`), and [one digit to a box](#one-digit-to-a-box) (`9 1 2 7 0 1 2 3 4`), as in the SSN fields on Form 1040, where an ITIN is also entered. Spans are reported as `itin`.
 
 ```csharp
 Identifiers = new Identifiers { Itin = new Itin() }
@@ -570,7 +570,7 @@ The separators, line-wrap handling, boundaries, and intentional exclusions are t
 
 #### IRS ranges and ATINs
 
-By default any `9XX-XX-XXXX` value is detected. Set `onlyValidRanges` to `true` to keep only values whose fourth and fifth digits fall in the ranges the IRS issues for ITINs: 50 to 65, 70 to 88, 90 to 92, and 94 to 99 ([IRS Publication 4757](https://www.irs.gov/pub/irs-pdf/p4757.pdf); [IRM 3.21.263](https://www.irs.gov/irm/part3/irm_03-021-263r), which reserves 89 and 93 for other programs). It is off by default so that a range the IRS issues after this release is still detected.
+By default any `9XX-XX-XXXX` value is detected. Set `onlyValidRanges` to `true` to keep only values, in any of the accepted forms, whose fourth and fifth digits fall in the ranges the IRS issues for ITINs: 50 to 65, 70 to 88, 90 to 92, and 94 to 99 ([IRS Publication 4757](https://www.irs.gov/pub/irs-pdf/p4757.pdf); [IRM 3.21.263](https://www.irs.gov/irm/part3/irm_03-021-263r), which reserves 89 and 93 for other programs). It is off by default so that a range the IRS issues after this release is still detected.
 
 Adoption Taxpayer Identification Numbers (ATINs) also begin with 9, and their fourth and fifth digits are always 93 ([IRM 3.13.40](https://www.irs.gov/irm/part3/irm_03-013-040)). In the default mode an ATIN is reported as `itin`; with `onlyValidRanges` it is dropped.
 
@@ -815,6 +815,14 @@ as one span covering the run, since there is no boundary to split on. Each SSN i
 the separator rule on its own, so `123-45-6789123456789` is also a run. SSNs with anything between
 them, such as `123-45-6789 123-45-6789` or `123-45-6789, 123-45-6789`, produce one span each. A digit
 run that does not divide evenly into SSNs, such as a 20-digit account number, produces no span.
+
+#### One digit to a box
+
+An SSN written one digit to a box, as in the SSN fields on Form 1040, comes out of a PDF with a space
+between every digit: `5 1 2 4 8 7 3 2 9`. Nine digits with one horizontal whitespace character
+between each are detected, with the same range exclusions. A match may not be part of a longer run of
+digits written that way, so ten such digits produce no span. The [ITIN](#itin) identifier detects nine
+such digits beginning with 9 the same way.
 
 #### Intentional exclusions
 
