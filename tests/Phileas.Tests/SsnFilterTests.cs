@@ -316,4 +316,34 @@ public class SsnFilterTests
         // The repetition is bounded, as in the Java port, so a ninth SSN leaves the whole run undetected.
         AssertNotDetected("the ssns are " + string.Concat(Enumerable.Repeat("123-45-6789", 9)) + ".");
     }
+
+    // -------------------------------------------------------------------------
+    // One digit to a box, as Form 1040's SSN fields come out of a PDF.
+    // -------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("Your social security number 5 1 2 4 8 7 3 2 9", "5 1 2 4 8 7 3 2 9")]
+    [InlineData("Maria L Gonzalez 5 1 2 4 8 7 3 2 9", "5 1 2 4 8 7 3 2 9")]
+    [InlineData("(3) SSN 7 3 1 0 4 5 5 2 8", "7 3 1 0 4 5 5 2 8")]
+    [InlineData("5 1 2 4 8 7 3 2 9 is on file", "5 1 2 4 8 7 3 2 9")]
+    public void Filter_DetectsOneDigitToABox(string input, string ssn)
+    {
+        AssertRedacted(input, ssn);
+    }
+
+    [Theory]
+    [InlineData("SSN 0 0 0 4 5 6 7 8 9")] // Area 000 is invalid
+    [InlineData("SSN 6 6 6 4 5 6 7 8 9")] // Area 666 is invalid
+    [InlineData("SSN 9 1 2 7 0 1 2 3 4")] // Area 9xx is an ITIN, not an SSN
+    [InlineData("SSN 1 2 3 0 0 6 7 8 9")] // Group 00 is invalid
+    [InlineData("SSN 1 2 3 4 5 0 0 0 0")] // Serial 0000 is invalid
+    [InlineData("SSN 1 2 3 4 5 6 7 8")] // Eight digits
+    [InlineData("scores 1 2 3 4 5 6 7 8 9 4 in a row")] // Part of a longer run of spaced digits
+    [InlineData("scores 4 1 2 3 4 5 6 7 8 9 in a row")]
+    [InlineData("SSN 1  2 3 4 5 6 7 8 9")] // Two spaces between two of the digits
+    [InlineData("SSN 1 2 3 4 5 6 7 8 9x")]
+    public void Filter_DoesNotDetectOneDigitToABoxThatIsNotAnSsn(string input)
+    {
+        AssertNotDetected(input);
+    }
 }

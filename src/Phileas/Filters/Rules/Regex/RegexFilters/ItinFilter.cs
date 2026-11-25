@@ -38,7 +38,9 @@ public class ItinFilter : RegexFilter
         new FilterPattern.Builder()
             .WithPattern(IdentifierSeparators.NotWordBefore
                          + IdentifierSeparators.Join("9" + Digit + "{2}", Digit + "{2}", Digit + "{4}")
-                         + IdentifierSeparators.NotWordAfter)
+                         + IdentifierSeparators.NotWordAfter
+                         // Or one digit to a box: an ITIN goes in the same SSN fields on Form 1040.
+                         + "|" + IdentifierSeparators.SpacedDigits("9", Digit, Digit, Digit, Digit, Digit, Digit, Digit, Digit))
             .WithInitialConfidence(0.90).Build()
     );
 

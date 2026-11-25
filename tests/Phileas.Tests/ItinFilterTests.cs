@@ -339,4 +339,34 @@ public class ItinFilterTests
     {
         Assert.Empty(Filter($"the address ends {zip} here.").Spans);
     }
+
+    [Theory]
+    [InlineData("9 1 2 7 0 1 2 3 4")]
+    [InlineData("9 0 0 9 4 0 0 0 0")]
+    public void Filter_DetectsOneDigitToABox(string itin)
+    {
+        var result = Filter("Your social security number " + itin + " Spouse");
+        var span = Assert.Single(result.Spans);
+        Assert.Equal(itin, span.Text);
+        Assert.Equal(28, span.CharacterStart);
+        Assert.Equal(28 + itin.Length, span.CharacterEnd);
+    }
+
+    [Theory]
+    [InlineData("9 1 2 8 9 1 2 3 4")] // 89 is reserved for other programs
+    [InlineData("9 1 2 4 9 1 2 3 4")]
+    public void Filter_OnlyValidRanges_AppliesToOneDigitToABox(string itin)
+    {
+        Assert.Single(Filter("ITIN " + itin).Spans);
+        Assert.Empty(Filter("ITIN " + itin, onlyValidRanges: true).Spans);
+    }
+
+    [Theory]
+    [InlineData("ITIN 8 1 2 7 0 1 2 3 4")]
+    [InlineData("ITIN 9 1 2 7 0 1 2 3")]
+    [InlineData("codes 9 1 2 7 0 1 2 3 4 5 in a row")]
+    public void Filter_DoesNotDetectOneDigitToABoxThatIsNotAnItin(string input)
+    {
+        Assert.Empty(Filter(input).Spans);
+    }
 }

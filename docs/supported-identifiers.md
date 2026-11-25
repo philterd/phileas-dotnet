@@ -816,6 +816,14 @@ the separator rule on its own, so `123-45-6789123456789` is also a run. SSNs wit
 them, such as `123-45-6789 123-45-6789` or `123-45-6789, 123-45-6789`, produce one span each. A digit
 run that does not divide evenly into SSNs, such as a 20-digit account number, produces no span.
 
+#### One digit to a box
+
+An SSN written one digit to a box, as in the SSN fields on Form 1040, comes out of a PDF with a space
+between every digit: `5 1 2 4 8 7 3 2 9`. Nine digits with one horizontal whitespace character
+between each are detected, with the same range exclusions. A match may not be part of a longer run of
+digits written that way, so ten such digits produce no span. The [ITIN](#itin) identifier detects nine
+such digits beginning with 9 the same way.
+
 #### Intentional exclusions
 
 These forms produce no span, each by design:

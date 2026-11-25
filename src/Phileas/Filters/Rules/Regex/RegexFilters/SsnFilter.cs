@@ -25,6 +25,7 @@ namespace Phileas.Filters.Rules.Regex.RegexFilters;
 public class SsnFilter : RegexFilter
 {
     private const string Digit = IdentifierSeparators.Digit;
+    private const string Space = IdentifierSeparators.HorizontalSpace;
 
     /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
     private static readonly HashSet<string> ContextualTerms = new() { "ssn", "tin", "social", "ssid" };
@@ -42,7 +43,13 @@ public class SsnFilter : RegexFilter
             .WithPattern(IdentifierSeparators.NotWordBefore
                          + "(?:" + IdentifierSeparators.Join("(?!000|666|9" + Digit + "{2})" + Digit + "{3}",
                              "(?!00)" + Digit + "{2}", "(?!0000)" + Digit + "{4}") + "){1,8}"
-                         + IdentifierSeparators.NotWordAfter)
+                         + IdentifierSeparators.NotWordAfter
+                         // Or one digit to a box, as in Form 1040's SSN fields, with the same area,
+                         // group and serial checks.
+                         + "|" + IdentifierSeparators.SpacedDigits(
+                             "(?!0" + Space + "0" + Space + "0|6" + Space + "6" + Space + "6|9)" + Digit, Digit, Digit,
+                             "(?!0" + Space + "0)" + Digit, Digit,
+                             "(?!0" + Space + "0" + Space + "0" + Space + "0)" + Digit, Digit, Digit, Digit))
             .WithInitialConfidence(0.90).Build()
     );
 
