@@ -90,8 +90,9 @@ public abstract class AbstractFilterStrategy
     public string Strategy { get; set; } = Redact;
 
     /// <summary>
-    ///     Gets or sets the redaction format string. The placeholder <c>%t</c> is replaced with the filter-type slug.
-    ///     Defaults to <c>"{{{REDACTED-%t}}}"</c>.
+    ///     Gets or sets the redaction format string. <c>%t</c> is replaced with the filter-type slug, <c>%l</c> with
+    ///     the classification label (empty when there is none), and <c>%v</c> with the original text, which keeps
+    ///     the sensitive value in the output. Defaults to <c>"{{{REDACTED-%t}}}"</c>.
     /// </summary>
     [JsonPropertyName("redactionFormat")]
     public string RedactionFormat { get; set; } = "{{{REDACTED-%t}}}";
