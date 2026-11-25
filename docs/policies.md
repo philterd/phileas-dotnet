@@ -43,6 +43,7 @@ public class Policy
 | `Pdf` | `Pdf` | `pdf` | PDF redaction rendering options. |
 | `PostFilters` | `PostFilters` | `postFilters` | Cleanup applied to replacements (see [PostFilters](#postfilters)). |
 | `Analysis` | `Analysis` | `analysis` | Analysis options. |
+| `Review` | `Review` | `review` | Selects a share of requests for human spot review (see [Review Sampling](#review-sampling)). |
 
 ### Splitting
 
@@ -84,6 +85,39 @@ piece separately and concatenating the results, and on that path span offsets in
 than the input and the input's whitespace is not preserved.
 
 > The per-filter context **window size** is configured on each identifier via `WindowSize` (see [Common Options](#common-identifier-options)), not on `Config`.
+
+### Review Sampling
+
+A policy can select a share of filter requests for human spot review, so a person can check whole documents for
+values that were not detected.
+
+| Property | JSON key | Default | Description |
+|---|---|---|---|
+| `SamplingRate` | `samplingRate` | `0.0` | The probability, from `0.0` to `1.0`, that a request is selected. `0.0` selects none; `1.0` selects every request. |
+
+```json
+{
+   "config": {
+      "review": {
+         "samplingRate": 0.10
+      }
+   }
+}
+```
+
+A request is selected when a value drawn uniformly from [0, 1) is below the rate. The draw is made once per
+request: once per `FilterService.Filter` call, whether or not the input is split into pieces, and once per
+`PdfFilterService.Filter` call, whatever the page count. No count is kept between requests, so the share selected
+converges on the rate but is not exact over a small number of requests. A rate outside `0.0` to `1.0` is refused
+when the policy is loaded, with or without schema validation, and a policy built in code with such a rate is
+refused when it is used.
+
+Selection does not change the redacted output. It is reported by `ReviewSampled` on the
+[`TextFilterResult`](api-reference.md#textfilterresult) or
+[`BinaryDocumentFilterResult`](pdf-redaction.md#binarydocumentfilterresult). What to do with a selected request,
+such as queuing it for a reviewer, is up to the application. Word and Excel redaction calls the filter once per
+paragraph or cell, so for those documents call `ReviewSampler.IsSelected(policy)` once for the document (see
+[Word & Excel Redaction](office-redaction.md#review-sampling)).
 
 ---
 

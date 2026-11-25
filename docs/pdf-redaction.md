@@ -20,6 +20,9 @@ image with redaction rectangles burned in.
    optionally, replacement text) over each detected span and each [graphical bounding
    box](#graphical-bounding-boxes), and reassembles the pages into the requested output format.
 
+A glyph's box comes from its font program. For a letter in a font that isn't embedded in the PDF, which
+has none, the box runs from a quarter of the font size below the baseline to the font size above it.
+
 A span's rectangle is larger than the glyph boxes of its characters, because rendered glyphs extend past
 those boxes (round characters overshoot, and the rasterizer anti-aliases their edges). Each side is padded
 by a quarter of the rectangle's height plus one pixel at the rendering DPI, and rounded outward to whole
@@ -110,6 +113,7 @@ public class BinaryDocumentFilterResult
     public string Context { get; }
     public IList<Span> Spans { get; }
     public long Tokens { get; }
+    public bool ReviewSampled { get; }
 }
 ```
 
@@ -119,6 +123,7 @@ public class BinaryDocumentFilterResult
 | `Context` | `string` | The context name passed to `Filter`. |
 | `Spans` | `IList<Span>` | The detected spans, each carrying its `PageNumber` and bounding box (`LowerLeftX/Y`, `UpperRightX/Y`). |
 | `Tokens` | `long` | The number of whitespace-delimited tokens in the source document. |
+| `ReviewSampled` | `bool` | Whether the request was selected for human spot review by the policy's `config.review.samplingRate`, drawn once for the document. See [Review Sampling](policies.md#review-sampling). |
 
 ## Custom text extraction (`ITextExtractor`)
 

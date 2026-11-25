@@ -38,4 +38,8 @@ public class Config
     /// <summary>Gets or sets the analysis configuration.</summary>
     [JsonPropertyName("analysis")]
     public Analysis Analysis { get; set; } = new();
+
+    /// <summary>Gets or sets the review sampling configuration.</summary>
+    [JsonPropertyName("review")]
+    public Review Review { get; set; } = new();
 }

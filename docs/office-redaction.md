@@ -94,6 +94,17 @@ byte[] input = /* the uploaded .docx bytes */;
 The file-path overloads simply read the input, call the `byte[]` core, and write the result, so both paths
 produce identical output.
 
+### Review sampling
+
+The redactors call the filter delegate once per paragraph or cell, so `ReviewSampled` on each delegate result does
+not describe the document. To apply the policy's [`config.review.samplingRate`](policies.md#review-sampling), draw
+once for the document:
+
+```csharp
+bool reviewSampled = ReviewSampler.IsSelected(policy);
+(byte[] redacted, List<OfficeRedactionSpan> spans) = WordDocumentRedactor.Redact(input, filter);
+```
+
 ## `WordDocumentRedactor`
 
 `WordDocumentRedactor` (in `Phileas.Services.Office`) is a static entry point for `.docx`.

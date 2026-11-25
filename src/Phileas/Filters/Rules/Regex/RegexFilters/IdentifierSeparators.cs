@@ -72,6 +72,19 @@ internal static class IdentifierSeparators
     }
 
     /// <summary>
+    ///     Joins single-digit patterns with one horizontal space each: an identifier written one digit
+    ///     to a box, as in the comb fields for the SSN on Form 1040, comes out of a PDF with a space
+    ///     between every digit. Each pattern matches one digit and may start with a lookahead, which
+    ///     sees the spaces too. A match may not be part of a longer run of spaced digits.
+    /// </summary>
+    public static string SpacedDigits(params string[] digits)
+    {
+        return NotWordBefore + "(?<!" + Digit + HorizontalSpace + ")"
+               + string.Join(HorizontalSpace, digits)
+               + "(?!" + HorizontalSpace + Digit + ")" + NotWordAfter;
+    }
+
+    /// <summary>
     ///     Digits are ASCII only, matching the Java filters. .NET's <c>\d</c> spans every Unicode
     ///     decimal digit, which would accept fullwidth, Arabic-Indic and Devanagari forms.
     /// </summary>
