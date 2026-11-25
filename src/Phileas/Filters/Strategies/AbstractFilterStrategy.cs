@@ -268,19 +268,20 @@ public abstract class AbstractFilterStrategy
         string? classification, FilterPattern? filterPattern);
 
     /// <summary>
-    ///     Produces a redacted token string by substituting the filter-type slug and optional label
-    ///     into <see cref="RedactionFormat" />.
+    ///     Produces a redacted token string by substituting the filter-type slug, the label and the
+    ///     original text into <see cref="RedactionFormat" />, as the Java port does.
     /// </summary>
-    /// <param name="token">The original entity text (unused in the default implementation).</param>
-    /// <param name="label">Optional label to substitute for the <c>%l</c> placeholder.</param>
+    /// <param name="token">The original entity text, substituted for the <c>%v</c> placeholder.</param>
+    /// <param name="label">Label substituted for the <c>%l</c> placeholder; empty when <see langword="null" />.</param>
     /// <param name="filterType">The filter type whose slug replaces the <c>%t</c> placeholder.</param>
     /// <returns>The formatted redaction string.</returns>
     protected string GetRedactedToken(string token, string? label, FilterType filterType)
     {
         var format = RedactionFormat ?? DefaultRedaction;
-        var result = format.Replace("%t", filterType.GetFilterTypeName());
-        if (label != null)
-            result = result.Replace("%l", label);
-        return result;
+        // %v goes last so that a %t or %l inside the original text is kept literally.
+        return format
+            .Replace("%t", filterType.GetFilterTypeName())
+            .Replace("%l", label ?? string.Empty)
+            .Replace("%v", token);
     }
 }

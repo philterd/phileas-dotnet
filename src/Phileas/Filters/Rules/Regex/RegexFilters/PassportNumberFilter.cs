@@ -27,12 +27,13 @@ public class PassportNumberFilter : RegexFilter
     /// <summary>Words near a match that raise its confidence; the Java port's list.</summary>
     private static readonly HashSet<string> ContextualTerms = new() { "passport" };
 
+    // As in the Java port, every match is labelled US (the %l placeholder of a redaction format).
     private static readonly Analyzer PassportAnalyzer = new(ContextualTerms,
         // 1-2 letter prefix + digits: most alphanumeric passports, plus the US passport card (C + 8 digits).
-        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).Build(),
+        new FilterPattern.Builder().WithPattern(@"\b[A-Z]{1,2}[0-9]{6,9}\b").WithInitialConfidence(0.75).WithClassification("US").Build(),
         // All-numeric 9-digit US passport book number (no leading letter). Ambiguous with a bare SSN or
         // driver's-license number, so a lower confidence; it edges out the driver's-license 9-digit shape.
-        new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.55).Build()
+        new FilterPattern.Builder().WithPattern(@"\b[0-9]{9}\b").WithInitialConfidence(0.55).WithClassification("US").Build()
     );
 
     /// <summary>
