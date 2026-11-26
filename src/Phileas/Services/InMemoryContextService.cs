@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using Phileas.Model;
+
 namespace Phileas.Services;
 
 /// <summary>
@@ -50,6 +52,32 @@ public class InMemoryContextService : IContextService
             }
 
             ctx[token] = replacement;
+        }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    ///     Atomic: <paramref name="valueFactory" /> runs at most once for a key in a context, under the same lock
+    ///     as <see cref="Get" /> and <see cref="Put" />. The value is kept among the context's tokens.
+    /// </remarks>
+    public string ComputeValueIfAbsent(string contextName, string key, FilterType filterType,
+        Func<string> valueFactory)
+    {
+        lock (_lock)
+        {
+            if (!_contexts.TryGetValue(contextName, out var ctx))
+            {
+                ctx = new Dictionary<string, string>();
+                _contexts[contextName] = ctx;
+            }
+
+            if (!ctx.TryGetValue(key, out var value))
+            {
+                value = valueFactory();
+                ctx[key] = value;
+            }
+
+            return value;
         }
     }
 }

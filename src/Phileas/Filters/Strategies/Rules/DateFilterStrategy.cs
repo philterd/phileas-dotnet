@@ -15,6 +15,7 @@
  */
 
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Phileas.Model;
 using Phileas.Policy;
@@ -28,7 +29,14 @@ namespace Phileas.Filters.Strategies.Rules;
 /// </summary>
 public class DateFilterStrategy : StandardFilterStrategy
 {
-    private static readonly Random Random = new();
+    /// <summary>
+    ///     The key of the context value that holds a context's random shift, in days. A detected token cannot
+    ///     contain a NUL character, so the key cannot be a token. The same key as the Java port.
+    /// </summary>
+    internal const string ContextShiftKey = "\0date-shift";
+
+    /// <summary>The fewest days a random shift moves a date.</summary>
+    internal const int MinRandomShiftDays = 30;
 
     /// <summary>The invariant culture with September abbreviated <c>Sept</c> rather than <c>Sep</c> (#184).</summary>
     private static readonly CultureInfo SeptCulture = CreateSeptCulture();
@@ -56,11 +64,7 @@ public class DateFilterStrategy : StandardFilterStrategy
         // SHIFT_DATE is what this port has always accepted.
         if (Is(ShiftDate) || Is(AbstractFilterStrategy.Shift))
         {
-            var (days, months, years) = ShiftRandom
-                ? (Random.Next(1, 30), Random.Next(1, 12), -Random.Next(1, 3))
-                : (ShiftDays, ShiftMonths, ShiftYears);
-
-            var shifted = ShiftDateValue(token, filterPattern, days, months, years, FutureDates);
+            var shifted = ShiftDateValue(context, token, filterPattern);
 
             // A detected date that cannot be parsed is still PHI, so it is redacted rather than
             // returned as it was. Returning the token left the value in the document, which is the
@@ -260,23 +264,73 @@ public class DateFilterStrategy : StandardFilterStrategy
     }
 
     /// <summary>
+    ///     The number of days a random shift moves <paramref name="date" />. With the CONTEXT replacement
+    ///     scope the shift is drawn for the first date the context sees and kept in the context, so every
+    ///     date in the context moves by the same number of days and keeps its order and the days between it
+    ///     and the others. It is kept in days rather than months and years: adding a month moves January 30
+    ///     and January 31 both to the end of February. Without a context service, each date gets its own
+    ///     shift, as with the DOCUMENT scope.
+    /// </summary>
+    private int RandomShiftDays(string context, DateTime date)
+    {
+        if (ContextService != null
+            && string.Equals(ReplacementScope, ReplacementScopeContext, StringComparison.OrdinalIgnoreCase))
+        {
+            var days = ContextService.ComputeValueIfAbsent(context, ContextShiftKey, FilterType.Date,
+                () => DrawRandomShiftDays(date).ToString(CultureInfo.InvariantCulture));
+            return int.Parse(days, NumberStyles.Integer, CultureInfo.InvariantCulture);
+        }
+
+        return DrawRandomShiftDays(date);
+    }
+
+    /// <summary>
+    ///     Draws a shift of one to twenty-nine days and one to eleven months forward and one or two years
+    ///     back, and returns it in days. A draw that moves the date by fewer than
+    ///     <see cref="MinRandomShiftDays" /> days is drawn again: the amounts can nearly cancel, and 29 days
+    ///     and 11 months forward and a year back from February 28, 2021 leave it unchanged. Drawn with a
+    ///     cryptographic generator, as the Java port's <c>SecureRandom</c>, since the shift is what hides the
+    ///     real dates.
+    /// </summary>
+    private static int DrawRandomShiftDays(DateTime date)
+    {
+        int days;
+        do
+        {
+            var shifted = date.AddDays(RandomNumberGenerator.GetInt32(1, 30))
+                .AddMonths(RandomNumberGenerator.GetInt32(1, 12))
+                .AddYears(-RandomNumberGenerator.GetInt32(1, 3));
+            days = (shifted - date).Days;
+        } while (Math.Abs(days) < MinRandomShiftDays);
+
+        return days;
+    }
+
+    /// <summary>
     ///     Shifts a detected date, preserving how it was written. Returns <see langword="null" /> when
     ///     the token cannot be parsed, which the caller turns into a redaction.
     /// </summary>
-    private static string? ShiftDateValue(string token, FilterPattern? filterPattern, int days, int months,
-        int years, bool futureDates)
+    private string? ShiftDateValue(string context, string token, FilterPattern? filterPattern)
     {
         if (!TryParseToken(token, filterPattern, out var date, out var format))
             return null;
 
         var original = date;
-        date = date.AddDays(days).AddMonths(months).AddYears(years);
+        var randomDays = ShiftRandom ? RandomShiftDays(context, original) : 0;
+
+        // direction is 1 to apply the shift and -1 to apply it backwards.
+        DateTime Shifted(int direction) => ShiftRandom
+            ? original.AddDays(direction * randomDays)
+            : original.AddDays(direction * ShiftDays).AddMonths(direction * ShiftMonths)
+                .AddYears(direction * ShiftYears);
+
+        date = Shifted(1);
 
         // A date that was in the past must stay there unless the policy allows otherwise, so the shift
         // is applied in the opposite direction rather than dropped: the magnitude the policy asked for
         // is preserved either way.
-        if (!futureDates && date > DateTime.Today && original <= DateTime.Today)
-            date = original.AddDays(-days).AddMonths(-months).AddYears(-years);
+        if (!FutureDates && date > DateTime.Today && original <= DateTime.Today)
+            date = Shifted(-1);
 
         // Written back with the format it was read with, so the ordering, separators and padding of
         // the original are reproduced exactly. Every numeric pattern carries a format, so the branches

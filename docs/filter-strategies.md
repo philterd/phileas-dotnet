@@ -370,7 +370,7 @@ left in the document.
 | `ShiftDays` | `shiftDays` | `int` | `0` | Days to add (negative to subtract) |
 | `ShiftMonths` | `shiftMonths` | `int` | `0` | Months to add (negative to subtract) |
 | `ShiftYears` | `shiftYears` | `int` | `0` | Years to add (negative to subtract) |
-| `ShiftRandom` | `shiftRandom` | `bool` | `false` | Shift by a random amount instead of the configured offsets: one to twenty-nine days forward, one to eleven months forward, and one or two years back |
+| `ShiftRandom` | `shiftRandom` | `bool` | `false` | Shift by a random amount instead of the configured offsets: one to twenty-nine days forward, one to eleven months forward, and one or two years back. A draw that moves the date by fewer than 30 days is drawn again. See [Random shift in a context](#random-shift-in-a-context) |
 | `FutureDates` | `futureDates` | `bool` | `false` | Whether a shifted date may land in the future. When `false`, a shift that would move a past date beyond today is applied in the opposite direction instead |
 
 **C# example**
@@ -411,6 +411,29 @@ var policy = new Policy
         "strategy": "SHIFT",
         "shiftYears": -1,
         "shiftDays": 14
+      }]
+    }
+  }
+}
+```
+
+#### Random shift in a context
+
+With `shiftRandom` and the default `replacementScope` of `DOCUMENT`, each date is shifted by its own random amount, so the dates in a document lose their order and the days between them.
+
+With `replacementScope` set to `CONTEXT`, the random shift is drawn for the first date a [context](context-service.md) sees and kept in the context as a number of days. Every later date in that context, in the same document or another one, moves by the same number of days, so the dates keep their order and the days between them. In `Admitted 01/05/2020. Surgery 01/07/2020.`, the surgery is still two days after the admission. A different context draws its own shift. The shift is kept in days rather than months and years, because adding a month moves January 30 and January 31 both to the end of February.
+
+The shift is kept through `IContextService.ComputeValueIfAbsent`; see [Values kept with a context](context-service.md#values-kept-with-a-context). With no context service, each date gets its own shift, as with `DOCUMENT`. The `shiftDays`, `shiftMonths` and `shiftYears` shift is the same in either scope.
+
+```json
+{
+  "name": "date-shift-context-policy",
+  "identifiers": {
+    "date": {
+      "dateFilterStrategies": [{
+        "strategy": "SHIFT",
+        "shiftRandom": true,
+        "replacementScope": "CONTEXT"
       }]
     }
   }
