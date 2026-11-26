@@ -6,7 +6,7 @@ When the `RANDOM_REPLACE` filter strategy is used, Phileas replaces detected PII
 
 When you need referential integrity, meaning the same input value always maps to the same fake value, set `replacementScope = "CONTEXT"` on the strategy. In that mode the **Context Service** maintains a mapping of PII tokens to their replacement values within a named *context*: if the same token is encountered again inside the same context, the previously-generated replacement is reused.
 
-> **In short:** the Context Service only affects `RANDOM_REPLACE` strategies whose `replacementScope` is `"CONTEXT"`. With the default `"DOCUMENT"` scope the context service is not consulted.
+> **In short:** the Context Service only affects `RANDOM_REPLACE` strategies, and a date `SHIFT` with `shiftRandom`, whose `replacementScope` is `"CONTEXT"`. With the default `"DOCUMENT"` scope the context service is not consulted.
 
 ## Concepts
 
@@ -31,6 +31,12 @@ public interface IContextService
 
     /// Stores a replacement value for the given token in the context.
     void Put(string contextName, string token, string replacement);
+
+    /// Returns a value that belongs to the context rather than to a token,
+    /// creating and storing one only if the context has none for the key yet.
+    /// The default implementation uses Get and Put.
+    string ComputeValueIfAbsent(string contextName, string key, FilterType filterType,
+        Func<string> valueFactory);
 }
 ```
 
@@ -112,6 +118,12 @@ var strategy = new SsnFilterStrategy
    - **Hit**: the previously stored replacement is returned unchanged.
    - **Miss**: a new replacement is generated (a realistic fake value via the anonymization service, or a GUID when none is wired in), stored via `ContextService.Put(context, token, replacement)`, and returned.
 3. Otherwise (the default `"DOCUMENT"` scope, or no `ContextService`), a fresh replacement is generated for every occurrence and the context service is not consulted.
+
+## Values kept with a context
+
+Some values belong to a context rather than to a token. A date `SHIFT` with `shiftRandom` and `replacementScope = "CONTEXT"` draws one random shift for the context and moves every date in it by that many days (see [Random shift in a context](filter-strategies.md#random-shift-in-a-context)). It keeps the shift through `ComputeValueIfAbsent(context, "\0date-shift", FilterType.Date, ...)`, as a number of days.
+
+The default implementation of `ComputeValueIfAbsent` stores the value as a token entry, with the key as the token, through `Get` and `Put`. A detected token cannot contain a NUL character, so the key cannot be a token. The default is not atomic: if two dates in a new context are shifted at the same time, both can find no shift and each store one, so they can move by different amounts. `InMemoryContextService` overrides it so the value is created once. Override it in your own implementation if it is used from more than one thread or process, and keep the value with the context itself if your implementation evicts, deletes or lists a context's entries.
 
 ## Implementing a Custom Context Service
 

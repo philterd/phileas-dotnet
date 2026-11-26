@@ -268,10 +268,12 @@ public interface IContextService
 {
     string? Get(string contextName, string token);
     void Put(string contextName, string token, string replacement);
+    string ComputeValueIfAbsent(string contextName, string key, FilterType filterType,
+        Func<string> valueFactory); // has a default implementation
 }
 ```
 
-Implement this interface to persist random replacement mappings across calls or processes. See [Context Service](context-service.md) for a full explanation and examples.
+Implement this interface to persist random replacement mappings across calls or processes. See [Context Service](context-service.md) for a full explanation and examples, and [Values kept with a context](context-service.md#values-kept-with-a-context) for `ComputeValueIfAbsent`.
 
 ---
 
@@ -382,7 +384,7 @@ does not suppress the detection it was being tested against, so the value is sti
 | `MaskLength` | `string` | `"same"` | Mask length (`"same"` or integer string). |
 | `Condition` | `string?` | `null` | Condition expression evaluated to decide whether the strategy applies (see [Filter Conditions](filter-conditions.md)). |
 | `Salt` | `bool` | `false` | Whether to add a random salt before hashing. |
-| `ContextService` | `IContextService?` | `null` | Context service for `RANDOM_REPLACE` under `CONTEXT` scope. |
+| `ContextService` | `IContextService?` | `null` | Context service for `RANDOM_REPLACE`, and a date `SHIFT` with `shiftRandom`, under `CONTEXT` scope. |
 | `AnonymizationService` | `IAnonymizationService?` | `null` | Generates realistic fake values for `RANDOM_REPLACE`. |
 | `AnonymizationMethod` | `string?` | `null` | Generation method for `RANDOM_REPLACE`. |
 | `AnonymizationCandidates` | `List<string>?` | `null` | Explicit value pool for `RANDOM_REPLACE`. |
