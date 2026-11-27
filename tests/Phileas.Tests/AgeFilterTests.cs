@@ -293,13 +293,45 @@ public class AgeFilterTests
     [InlineData("1200 years old")]
     [InlineData("2024 years old")]
     [InlineData("130 yrs")]
-    [InlineData("47-year-old")]
-    [InlineData("3.5 years old")]
-    public void TheBoundDoesNotReachTheFormsThatCarryTheirOwnUnit(string input)
+    [InlineData("the bridge is 150 years old")]
+    [InlineData("a 1990 yr old car")]
+    [InlineData("the 2019 years old")]
+    [InlineData("patient is 126 years old")]
+    [InlineData("a 150-year-old bridge")]
+    [InlineData("patient is 161 y/o and")]
+    public void TheBoundReachesTheFormsWithAUnit(string input)
     {
-        // "years old" and "y/o" are what make those forms ages, so a number in front of one needs no
-        // plausibility check. The bound applies to the keyword pattern alone.
-        Assert.NotEmpty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+        // A year or the age of an object before a unit is not an age (issue #213).
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Theory]
+    [InlineData("the 1990 yo-yo craze")]
+    [InlineData("she bought 3 yo-yos")]
+    [InlineData("five yo-yos")]
+    public void AUnitThatBeginsAnotherWordIsNotAUnit(string input)
+    {
+        Assert.Empty(CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans);
+    }
+
+    [Fact]
+    public void AUnitBeforeAHyphenAndOldIsStillAUnit()
+    {
+        Assert.NotEmpty(CreateFilter().Filter(CreatePolicy(), "test", 0, "a 47 year-old woman").Spans);
+    }
+
+    [Theory]
+    [InlineData("patient is 125 years old", "125 years old")]
+    [InlineData("a 5 yo boy", "5 yo")]
+    [InlineData("Patient is 61 y/o.", "61 y/o")]
+    [InlineData("a 47-year-old woman", "47-year-old")]
+    [InlineData("the patient is 3.5 years old.", "3.5 years old")]
+    [InlineData("he is 110 yrs", "110 yrs")]
+    [InlineData("He is thirty-five years old.", "thirty-five years old")]
+    public void AnAgeWithAUnitUpTo125IsStillDetected(string input, string spanText)
+    {
+        var spans = CreateFilter().Filter(CreatePolicy(), "test", 0, input).Spans;
+        Assert.Equal(spanText, Assert.Single(spans).Text);
     }
 
     [Theory]
