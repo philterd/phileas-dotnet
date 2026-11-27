@@ -34,7 +34,17 @@ public class AgeFilter : RegexFilter
     private const string KeywordSeparator = @"\s*(?:[:=-]\s*)?";
 
     /// <summary>
-    ///     A plausible age written after a keyword: 0 to 125, with an optional fractional part.
+    ///     A plausible whole age: 0 to 125.
+    ///     <para>
+    ///         Leading zeros are allowed, so the zero-padded value of a fixed-width form export such as
+    ///         <c>AGE 047</c> still reads. The count is bounded rather than written <c>0*</c>, which
+    ///         would backtrack over a long run of zeros.
+    ///     </para>
+    /// </summary>
+    private const string PlausibleWholeAge = @"(?:0{0,2}(?:1[01][0-9]|12[0-5]|[1-9][0-9]|[0-9]))";
+
+    /// <summary>
+    ///     A plausible age: 0 to 125, with an optional fractional part.
     ///     <para>
     ///         The keyword pattern previously took any number at all, so <c>Bronze Age 1200</c> and
     ///         <c>form AGE 2024</c> were redacted as ages. The ceiling is set well above a typical
@@ -42,17 +52,19 @@ public class AgeFilter : RegexFilter
     ///         but extreme age.
     ///     </para>
     ///     <para>
-    ///         Leading zeros are allowed, so the zero-padded value of a fixed-width form export such as
-    ///         <c>AGE 047</c> still reads. The count is bounded rather than written <c>0*</c>, which
-    ///         would backtrack over a long run of zeros.
-    ///     </para>
-    ///     <para>
-    ///         Only the keyword pattern is bounded. The <c>years old</c> and <c>y/o</c> forms carry
-    ///         their own unit, which is what makes them ages, so a number in front of one needs no
-    ///         plausibility check.
+    ///         The number before a unit (<c>years old</c>, <c>yrs</c>, <c>yo</c>, <c>y/o</c>) is bounded
+    ///         the same way, so a year or the age of an object, as in <c>a 1990 yr old car</c> or
+    ///         <c>the bridge is 150 years old</c>, is not an age.
     ///     </para>
     /// </summary>
-    private const string PlausibleAge = @"(?:0{0,2}(?:1[01][0-9]|12[0-5]|[1-9][0-9]|[0-9])(?:\.[0-9]+)?)";
+    private const string PlausibleAge = $@"(?:{PlausibleWholeAge}(?:\.[0-9]+)?)";
+
+    /// <summary>
+    ///     The units of an age. A unit followed by a hyphen and a letter begins another word, as
+    ///     <c>yo</c> does in <c>yo-yo</c>, and is not a unit, except before <c>old</c>, as in
+    ///     <c>47 year-old</c>.
+    /// </summary>
+    private const string AgeUnit = @"(year|years|yrs|yr|yo)(?!-(?!old\b)[a-z])";
 
     // The composite patterns below are grouped so each can be quantified or alternated as a unit.
     // Their joiners never succeed on the same text (a comma joiner is followed by a digit, a word
@@ -149,7 +161,7 @@ public class AgeFilter : RegexFilter
 
     private static readonly Analyzer AgeAnalyzer = new(ContextualTerms,
         new FilterPattern.Builder()
-            .WithPattern(@"\b[0-9.]+[\s]*(year|years|yrs|yr|yo)(\.?)(\s)*(old)?\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\b{PlausibleAge}[\s]*{AgeUnit}(\.?)(\s)*(old)?\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         // "age 25", "Age: 47", "at the age of 39", "age 18-65".
         new FilterPattern.Builder()
@@ -170,13 +182,13 @@ public class AgeFilter : RegexFilter
             .WithPattern($@"\bage[ds]?(?:\s+of)?(?:\s*[:=-]\s*|\s+)(?:between|from)\s+{AgeRun}{KeywordEnd}", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         new FilterPattern.Builder()
-            .WithPattern(@"\b[0-9.]+[-]*(year|years|yrs|yr|yo)(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\b{PlausibleAge}[-]*{AgeUnit}(\.?)(-)*(old)?\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
-        new FilterPattern.Builder().WithPattern(@"\b([0-9]{1,3}) (y\/o)\b", RegexOptions.IgnoreCase)
+        new FilterPattern.Builder().WithPattern($@"\b({PlausibleWholeAge}) (y\/o)\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         // Pattern 8: Spelled-out ages before units: "thirty-five years old", "thirty-five-year-old", "five yo", "twelve yrs", "one hundred years old".
         new FilterPattern.Builder()
-            .WithPattern($@"\b{SpelledNumber}[\s-]+(?:year|years|yrs|yr|yo|y\/o)(?:\.?)(?:[\s-]+old)?\b", RegexOptions.IgnoreCase)
+            .WithPattern($@"\b{SpelledNumber}[\s-]+(?:year|years|yrs|yr|yo|y\/o)(?!-(?!old\b)[a-z])(?:\.?)(?:[\s-]+old)?\b", RegexOptions.IgnoreCase)
             .WithInitialConfidence(0.90).Build(),
         // Pattern 9: Spelled-out ages after keywords: "age of thirty-nine", "age thirty-nine", "aged forty one", "Age: twenty", "age of one hundred and two".
         new FilterPattern.Builder()

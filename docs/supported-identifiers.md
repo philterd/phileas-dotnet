@@ -136,9 +136,14 @@ Detects age expressions in the forms below.
 | An `age`, `aged` or `ages` keyword | `age 25`, `aged 65`, `Age: 47`, `Age = 47`, `Age - 47`, `Age:47`, `at the age of 39`, `age of thirty-nine`, `aged forty one` |
 | Two or more ages after a keyword | `aged 39 and 41`, `ages 39-41`, `the ages of 39, 41, and 44`, `age between 18 and 65` |
 
+A number written in digits before a unit (`years`, `yrs`, `yr`, `yo`, or `y/o`) is an age only up to
+125, as after a keyword, so a year or the age of an object, such as `the 2019 years old`,
+`a 1990 yr old car`, or `the bridge is 150 years old`, is not detected. A unit that begins another
+word, as `yo` does in `yo-yo`, is not a unit; `47 year-old` still is.
+
 Spelled-out numbers are supported in two forms:
 
-* **Before age units:** Numbers from `zero` through `ninety-nine`, and hundreds prefixed with `one hundred` or `a hundred` (with optional `and`, up to `one hundred and ninety-nine`), e.g., `thirty-five years old`, `five yo`, `twelve yrs`, `one hundred thirty years old`. Compound tens and units may be hyphenated or space-separated (`thirty-five`, `thirty five`). Because the explicit unit identifies the expression as an age, the 125 plausibility ceiling does not apply to unit-based forms. Multi-hundred numbers (e.g., `two hundred`) are not recognized.
+* **Before age units:** Numbers from `zero` through `ninety-nine`, and hundreds prefixed with `one hundred` or `a hundred` (with optional `and`, up to `one hundred and ninety-nine`), e.g., `thirty-five years old`, `five yo`, `twelve yrs`, `one hundred thirty years old`. Compound tens and units may be hyphenated or space-separated (`thirty-five`, `thirty five`). The 125 plausibility ceiling does not apply to spelled-out numbers before a unit. Multi-hundred numbers (e.g., `two hundred`) are not recognized.
 * **After single-age keywords:** Numbers from `zero` through `one hundred and twenty-five` following `age`, `age of`, `aged`, or `Age:`, e.g., `age of thirty-nine`, `aged forty one`, `Age: twenty`, `age of one hundred and two`. Keyword matches enforce the 125 plausibility ceiling: numbers above 125 (such as `age of one hundred twenty-six`, `age of one hundred thirty`, or `age of two hundred`) are not detected. Spelled-out multiple-age expressions (e.g., `aged thirty and forty`) are not supported.
 
 A keyword may be separated from its value by `:`, `=` or `-`, with or without surrounding
